@@ -30,10 +30,6 @@ public class movement {
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
         odo.resetPosAndIMU();
         odo.setPosition(new Pose2D(DistanceUnit.INCH, x, y,AngleUnit.DEGREES, h));
-        FL = new wheel(l.hardwareMap, "FL", true);
-        FR = new wheel(l.hardwareMap, "FR", false);
-        BL = new wheel(l.hardwareMap, "BL", false);
-        BR = new wheel(l.hardwareMap, "BR", true);
         x0 = x;
         y0 = y;
         h0 = h;
