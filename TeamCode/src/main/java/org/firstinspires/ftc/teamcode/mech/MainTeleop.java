@@ -15,14 +15,14 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 @TeleOp
 public class MainTeleop extends LinearOpMode{
-        LinearOpMode lom;
-        double x, y, z;
+        private LinearOpMode lom;
+        private movement movement;
+        private double x, y, z;
         @Override
         public void runOpMode() {
-                movement movement;
-               // LinearOpMode lom = null;
-
                 //Initialize things here
+                lom = this;
+                movement = new movement(lom, x, y, z);
 
                 waitForStart();
 
@@ -31,10 +31,11 @@ public class MainTeleop extends LinearOpMode{
                 while (opModeIsActive()) {
 
                         //Put any code here which should loop until Stop is pressed
-                        movement = new movement(lom, x, y, z);
+
                         x = gamepad1.left_stick_x;
                         y = gamepad1.left_stick_y;
                         z = gamepad1.right_stick_y;
+                        movement.move(x,y,z);
 
                         idle(); //Give the system more time to do background tasks
                         //This shouldn't be necessary and isn't in the boilerplate template,
