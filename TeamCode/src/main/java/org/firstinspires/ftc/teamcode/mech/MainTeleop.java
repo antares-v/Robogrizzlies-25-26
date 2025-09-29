@@ -33,7 +33,7 @@ public class MainTeleop extends LinearOpMode{
 
                         double x = gamepad1.left_stick_x;
                         double y = gamepad1.left_stick_y;
-                        double h = gamepad1.right_stick_y;
+                        double h = gamepad1.right_stick_x;
                         movement.move(x,y,h);
                        // movement = new movement(lom, x, y, h);
 

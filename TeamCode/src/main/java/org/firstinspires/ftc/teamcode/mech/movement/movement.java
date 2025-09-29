@@ -35,8 +35,8 @@ public class movement {
         */
         FL = new wheel(l.hardwareMap, "FL", true);
         FR = new wheel(l.hardwareMap, "FR", false);
-        BL = new wheel(l.hardwareMap, "BL", false);
-        BR = new wheel(l.hardwareMap, "BR", true);
+        BL = new wheel(l.hardwareMap, "BL",true);
+        BR = new wheel(l.hardwareMap, "BR", false);
         x0 = x;
         y0 = y;
         h0 = h;
@@ -45,9 +45,9 @@ public class movement {
         return (FL.getPower() > 0 || FR.getPower() > 0 || BL.getPower() > 0  || BR.getPower() > 0 );
     }
     public void move(double l_x, double l_y, double turn){
-        double FLPower = (-l_y - l_x - turn) * FL_PERCENT * power;
-        double FRPower = (-l_y - l_x - turn) * FR_PERCENT * power;
-        double BLPower = (-l_y - l_x - turn) * BL_PERCENT * power;
+        double FLPower = (-l_y - l_x + turn) * FL_PERCENT * power;
+        double FRPower = (-l_y + l_x - turn) * FR_PERCENT * power;
+        double BLPower = (-l_y + l_x + turn) * BL_PERCENT * power;
         double BRPower = (-l_y - l_x - turn) * BR_PERCENT * power;
 
         FL.setPower(FLPower);
