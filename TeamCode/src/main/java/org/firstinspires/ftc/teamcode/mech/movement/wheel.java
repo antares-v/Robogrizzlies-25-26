@@ -11,6 +11,7 @@ public class wheel {
     //Define our motor for the wheel
     private DcMotor motor;
     //Constructor For Wheel:
+    private Servo servo;
     public wheel(HardwareMap map, String s, boolean reverse){
         motor = map.get(DcMotor.class, s);
         if(reverse){
@@ -19,6 +20,9 @@ public class wheel {
             motor.setDirection(DcMotor.Direction.FORWARD);
         }
     }
+    /*public servoV2(HardwareMap map, String s){
+        servo = map.get(DcMotor.class, s);
+    }*/
     public void setPower(double power){
         //if above 1
         motor.setPower(power);
