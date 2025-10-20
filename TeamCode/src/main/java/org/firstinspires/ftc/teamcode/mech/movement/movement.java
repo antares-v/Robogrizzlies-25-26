@@ -1,4 +1,5 @@
 package org.firstinspires.ftc.teamcode.mech.movement;
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 //import com.acmerobotics.dashboard.config.Config;
@@ -24,12 +25,18 @@ public class movement {
     public movement(LinearOpMode l, double x, double y, double h){
         li = l;
         l.telemetry.addData("movement", "movement");
-        odo = l.hardwareMap.get(GoBildaPinpointDriver.class, "imu");
+       /* odo = l.hardwareMap.get(GoBildaPinpointDriver.class, "imu");
         odo.setOffsets(-84.0, -168.0);
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
         odo.resetPosAndIMU();
         odo.setPosition(new Pose2D(DistanceUnit.INCH, x, y,AngleUnit.DEGREES, h));
+
+        */
+        FL = new wheel(l.hardwareMap, "FL", true);
+        FR = new wheel(l.hardwareMap, "FR", false);
+        BL = new wheel(l.hardwareMap, "BL",true);
+        BR = new wheel(l.hardwareMap, "BR", false);
         x0 = x;
         y0 = y;
         h0 = h;
@@ -38,10 +45,17 @@ public class movement {
         return (FL.getPower() > 0 || FR.getPower() > 0 || BL.getPower() > 0  || BR.getPower() > 0 );
     }
     public void move(double l_x, double l_y, double turn){
-        FL.setPower((-l_y - l_x - turn)*FL_PERCENT*power);
-        FR.setPower((-l_y + l_x + turn)*FR_PERCENT*power);
-        BL.setPower((-l_y - l_x + turn)*BL_PERCENT*power);
-        BR.setPower((-l_y + l_x - turn)*BR_PERCENT*power);
+        double FLPower = (-l_y - l_x + turn) * FL_PERCENT * power;
+        double FRPower = (-l_y + l_x - turn) * FR_PERCENT * power;
+        double BLPower = (-l_y + l_x + turn) * BL_PERCENT * power;
+        double BRPower = (-l_y - l_x - turn) * BR_PERCENT * power;
+
+        FL.setPower(FLPower);
+        FR.setPower(FRPower);
+        BL.setPower(BLPower);
+        BR.setPower(BRPower);
+
+      //  telemetry.addData("flpower", FLPower);
     }
 
 }
