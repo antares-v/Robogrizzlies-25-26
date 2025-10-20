@@ -37,7 +37,7 @@ public class CV {
             }
         });
         camera.startStreaming(320, 420, OpenCvCameraRotation.UPRIGHT);
-        OpenCvPipeline pipeline = new SampleDetectionEdges(tele.telemetry);
+        OpenCvPipeline pipeline = new AprilTagDetectionPipeline(tele.telemetry);
         camera.setPipeline(pipeline);
     }
 }

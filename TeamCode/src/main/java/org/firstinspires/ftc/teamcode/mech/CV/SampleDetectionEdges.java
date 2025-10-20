@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode.mech.CV;
 
 
-import com.acmerobotics.dashboard.config.Config;
+// import com.acmerobotics.dashboard.config.Config;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.opencv.core.Core;
@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import org.openftc.easyopencv.OpenCvPipeline;
 
 
-@Config
+//@Config
 public class SampleDetectionEdges extends OpenCvPipeline {
     public int width = 320;
     public int length = 240;
