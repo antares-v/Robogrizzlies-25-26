@@ -9,7 +9,7 @@ public class rotatingWheel {
     double pos1 = 0.0;
     double pos2 = 0.0;
     double pos3 = 0.0;
-    int posloc;
+    int posloc = 2;
     LinearOpMode l;
     public rotatingWheel(LinearOpMode l) {
         spinServo = l.hardwareMap.get(Servo.class, "spinDexer");
