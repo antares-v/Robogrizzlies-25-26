@@ -42,6 +42,7 @@ public class MainOp extends LinearOpMode{
                         double x = gamepad1.left_stick_x;
                         boolean aButton = gamepad1.a;
                         boolean bButton = gamepad1.b;
+                        boolean xButton = gamepad1.x;
                         double y = gamepad1.left_stick_y;
                         double h = gamepad1.right_stick_x;
                         movement.move(x,y,h);
@@ -53,7 +54,12 @@ public class MainOp extends LinearOpMode{
                         }else{
                           intake.stop();
                         } 
-                  
+
+                        if(xButton){
+                                rotatingWheel.servopos1();    
+                        } else if(rotatingWheel.location()!=2){
+                                rotatingWheel.servopos2();
+                        }
                         idle(); //Give the system more time to do background tasks
                         //This shouldn't be necessary and isn't in the boilerplate template,
                         //but try adding it if your program crashes at random just in case.
