@@ -9,6 +9,7 @@ public class rotatingWheel {
     double pos1 = 0.0;
     double pos2 = 0.0;
     double pos3 = 0.0;
+    int posloc;
     LinearOpMode l;
     public rotatingWheel(LinearOpMode l) {
         spinServo = l.hardwareMap.get(Servo.class, "spinDexer");
@@ -16,12 +17,18 @@ public class rotatingWheel {
 
     public void servopos1() {
         spinServo.setPosition(pos1);
+        posloc = 1;
     }
     public void servopos2() {
         spinServo.setPosition(pos2);
+        posloc = 2;
     }
     public void servopos3() {
         spinServo.setPosition(pos3);
+        posloc = 3;
+    }
+    public int location(){
+        return posloc;
     }
 
 }
