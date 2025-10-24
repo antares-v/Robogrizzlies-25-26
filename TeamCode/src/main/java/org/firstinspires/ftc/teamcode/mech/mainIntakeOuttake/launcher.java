@@ -13,9 +13,16 @@ public class launcher {
     LinearOpMode l;
     private DcMotor launcher;
     //Constructor For Wheel:
-    public launcher(LinearOpMode l){
-        launcher = l.hardwareMap.get(DcMotor.class, "Launcher");
+    public launcher(LinearOpMode l, String launchername){
+        launcher = l.hardwareMap.get(DcMotor.class, launchername);
         launcher.setDirection(DcMotor.Direction.FORWARD);
+        launcher.setPower(0);
+    }
+    public on(){
+        launcher.setPower(1);
+    }
+    public off(){
+        launcher.setPower(0);
     }
 }
 
