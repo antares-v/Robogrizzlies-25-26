@@ -28,7 +28,8 @@ public class MainOp extends LinearOpMode{
                 lom = this;
                 movement = new movement(lom, 0, 0, 0);
                 intake = new intake(lom, false);
-                launcher = new launcher(lom);
+                launcher1 = new launcher(lom,"launcher1");
+                launcher2 = new launcher(lom,"launcher2");
                 rotatingWheel = new rotatingWheel(lom);
           
                 waitForStart();
@@ -43,6 +44,7 @@ public class MainOp extends LinearOpMode{
                         boolean aButton = gamepad1.a;
                         boolean bButton = gamepad1.b;
                         boolean xButton = gamepad1.x;
+                        boolean yButton = gamepad1.y;
                         double y = gamepad1.left_stick_y;
                         double h = gamepad1.right_stick_x;
                         movement.move(x,y,h);
@@ -59,6 +61,13 @@ public class MainOp extends LinearOpMode{
                                 rotatingWheel.servopos1();    
                         } else if(rotatingWheel.location()!=2){
                                 rotatingWheel.servopos2();
+                        }
+                        if(yButton){
+                                launcher1.on();
+                                launcher2.on();
+                        } else{
+                                launcher1.off();
+                                launcher2.off();
                         }
                         idle(); //Give the system more time to do background tasks
                         //This shouldn't be necessary and isn't in the boilerplate template,
