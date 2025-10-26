@@ -18,10 +18,10 @@ public class launcher {
         launcher.setDirection(DcMotor.Direction.FORWARD);
         launcher.setPower(0);
     }
-    public on(){
+    public void on(){
         launcher.setPower(1);
     }
-    public off(){
+    public void off(){
         launcher.setPower(0);
     }
 }

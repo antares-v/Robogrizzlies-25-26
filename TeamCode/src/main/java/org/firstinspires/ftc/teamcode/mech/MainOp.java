@@ -22,6 +22,10 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 public class MainOp extends LinearOpMode{
         private LinearOpMode lom;
         private movement movement;
+        private launcher launcher1;
+        private launcher launcher2;
+        private intake intake;
+        private rotatingWheel rotatingWheel;
         @Override
         public void runOpMode() {
                 //Initialize things here
