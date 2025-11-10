@@ -5,6 +5,12 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
+/*
+Notes for spindexer values:
+Ball Input: 0,0.4,0.7
+Ball Output: 0.1,0.5,0.9
+*/
+
 @TeleOp
 public class servoTest extends LinearOpMode{
     Servo servo;

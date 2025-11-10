@@ -11,18 +11,17 @@ import com.qualcomm.robotcore.util.Range;
 public class launcher {
     //Define our motor for the wheel
     LinearOpMode l;
-    private DcMotor launcher;
+    private DcMotor launcher1;
     //Constructor For Wheel:
-    public launcher(LinearOpMode l, String launchername){
-        launcher = l.hardwareMap.get(DcMotor.class, launchername);
-        launcher.setDirection(DcMotor.Direction.FORWARD);
-        launcher.setPower(0);
+    public launcher(LinearOpMode l){
+        launcher1 = l.hardwareMap.get(DcMotor.class, "Launcher");
+        launcher1.setDirection(DcMotor.Direction.FORWARD);
     }
     public void on(){
-        launcher.setPower(1);
+        launcher1.setPower(1);
     }
     public void off(){
-        launcher.setPower(0);
+        launcher1.setPower(0);
     }
 }
 
