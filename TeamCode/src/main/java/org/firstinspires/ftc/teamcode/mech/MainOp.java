@@ -66,9 +66,9 @@ public class MainOp extends LinearOpMode{
                         }*/ 
 
                         if(D_Right){
-                                rotatingWheel.servopos1();    
+                                rotatingWheel.Right_Move();    
                         } else if(D_Left){
-                                rotatingWheel.servopos2();
+                                rotatingWheel.Left_Move();
                         }
                         if(yButton){
                                 launcher1.on();
