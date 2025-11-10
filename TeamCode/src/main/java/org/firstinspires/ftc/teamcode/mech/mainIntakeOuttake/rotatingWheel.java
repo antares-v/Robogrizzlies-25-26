@@ -6,10 +6,13 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 public class rotatingWheel {
     Servo spinServo;
-    double pos1 = 0.0;
-    double pos2 = 0.0;
-    double pos3 = 0.0;
-    int posloc = 2;
+    priavte final double pos1 = 0.0;
+    priavte final double pos2 = 0.0;
+    priavte final double pos3 = 0.0;
+    priavte final double pos4 = 0.0;
+    priavte final double pos5 = 0.0;
+    priavte final double pos6 = 0.0;
+    private int posloc = 2;
     LinearOpMode l;
     public rotatingWheel(LinearOpMode l) {
         spinServo = l.hardwareMap.get(Servo.class, "spinDexer");
@@ -26,6 +29,18 @@ public class rotatingWheel {
     public void servopos3() {
         spinServo.setPosition(pos3);
         posloc = 3;
+    }
+    public void servopos4() {
+        spinServo.setPosition(pos4);
+        posloc = 4;
+    }
+    public void servopos5() {
+        spinServo.setPosition(pos5);
+        posloc = 5;
+    }
+    public void servopos6() {
+        spinServo.setPosition(pos6);
+        posloc = 6;
     }
     public int location(){
         return posloc;
