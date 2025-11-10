@@ -49,27 +49,31 @@ public class MainOp extends LinearOpMode{
                         boolean bButton = gamepad1.b;
                         boolean xButton = gamepad1.x;
                         boolean yButton = gamepad1.y;
+                        boolean D_Left = gamepad1.dpad_left;
+                        boolean D_Right = gamepad1.dpad_right;
+                        boolean R_B = gamepad1.right_bumper
                         double y = gamepad1.left_stick_y;
                         double h = gamepad1.right_stick_x;
                         movement.move(x,y,h);
 
-                        if(aButton){
+                        if(R_B){
                           intake.takeIn();
-                        } else if(bButton){
-                          intake.eject();
-                        }else{
+                        } else{
                           intake.stop();
-                        } 
+                        }
+                        /*(else if(bButton){
+                          intake.eject();
+                        }*/ 
 
-                        if(xButton){
+                        if(D_Right){
                                 rotatingWheel.servopos1();    
-                        } else if(rotatingWheel.location()!=2){
+                        } else if(D_Left){
                                 rotatingWheel.servopos2();
                         }
                         if(yButton){
                                 launcher1.on();
                                 launcher2.on();
-                        } else{
+                        } else if(aButton){
                                 launcher1.off();
                                 launcher2.off();
                         }
