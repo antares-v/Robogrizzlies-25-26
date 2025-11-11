@@ -64,7 +64,7 @@ public class MainOp extends LinearOpMode{
                         /*(else if(bButton){
                           intake.eject();
                         }*/ 
-
+/*
                         if(D_Right){
                                 rotatingWheel.Right_Move();    
                         } else if(D_Left){

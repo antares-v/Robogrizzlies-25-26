@@ -15,8 +15,8 @@ public class intake {
     public static double intake_constant = 1.0;
     public double targetValue = 650; //Intensity Threshold
     public intake(LinearOpMode l){
-        leftIntake = l.hardwareMap.get(DcMotor.class, "leftintake");
-        leftIntake = l.hardwareMap.get(DcMotor.class, "leftintake");
+        leftIntake = l.hardwareMap.get(DcMotor.class, "leftIntake");
+        rightIntake = l.hardwareMap.get(DcMotor.class, "rightIntake");
         leftIntake.setDirection(DcMotorSimple.Direction.REVERSE);
         //l.hardwareMap.get(ColorSensor.class, "color_sensor");
     }
