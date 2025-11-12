@@ -22,7 +22,7 @@ public class MainTeleop extends LinearOpMode{
         CRServo leftFlywheel, rightFlywheel;
         Servo spindexer;
         DcMotor leftIntake, rightIntake, launcher;
-        double[] spindexerPos = {0.0,0.1,0.4,0.5,0.7,0.9};
+        double[] spindexerPos = {0,0.19,0.38,0.59,0.79,0.99};
         int i = 0;
         @Override
         public void runOpMode() {

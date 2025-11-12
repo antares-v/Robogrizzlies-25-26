@@ -11,27 +11,30 @@ Notes for spindexer values:
 */
 
 @TeleOp
-public class servoTest extends LinearOpMode{
+public class spindexerTest extends LinearOpMode{
     Servo servo;
     double curPos;
     LinearOpMode l;
+    int i = 0;
     @Override
     public void runOpMode() {
         curPos = 0.0;
         servo = hardwareMap.get(Servo.class, "servo");
+        double[] spindexerPos = {0,0.19,0.38,0.59,0.79,0.99};
         waitForStart();
         while (opModeIsActive()) {
             if (gamepad1.y) {
-                curPos += 0.01;
-                sleep(100);
+                i++;
+                sleep(250);
             }
             if (gamepad1.a) {
-                curPos -= 0.01;
-                sleep(100);
+                i--;
+                sleep(250);
             }
-            servo.setPosition(curPos);
+            servo.setPosition(spindexerPos[i]);
             telemetry.addData("servoPos", servo.getPosition());
-            telemetry.addData("curPos", curPos);
+            telemetry.addData("curPos", spindexerPos[i]);
+            telemetry.addData("i", i);
             telemetry.update();
         }
     }
