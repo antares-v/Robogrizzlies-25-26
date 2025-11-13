@@ -9,9 +9,11 @@ import org.firstinspires.ftc.teamcode.mech.movement.movement;
 import org.firstinspires.ftc.teamcode.mech.intake.intake;
 
 import org.firstinspires.ftc.teamcode.mech.mainIntakeOuttake.launcher;
+import org.firstinspires.ftc.teamcode.mech.mainIntakeOuttake.intermediatelauncher;
 import org.firstinspires.ftc.teamcode.mech.mainIntakeOuttake.rotatingWheel;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 
@@ -23,7 +25,7 @@ public class MainOp extends LinearOpMode{
         private LinearOpMode lom;
         private movement movement;
         private launcher launcher1;
-        private launcher launcher2;
+        private intermediatelauncher launcher2;
         private intake intake;
         private rotatingWheel rotatingWheel;
         @Override
@@ -33,7 +35,7 @@ public class MainOp extends LinearOpMode{
                 movement = new movement(lom, 0, 0, 0);
                 intake = new intake(lom, false);
                 launcher1 = new launcher(lom,"launcher1");
-                launcher2 = new launcher(lom,"launcher2");
+                launcher2 = new intermediatelauncher(lom,"launcher2");
                 rotatingWheel = new rotatingWheel(lom);
           
                 waitForStart();

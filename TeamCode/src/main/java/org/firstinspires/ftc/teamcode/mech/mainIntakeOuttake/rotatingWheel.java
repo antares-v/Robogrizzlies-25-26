@@ -6,13 +6,13 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 public class rotatingWheel {
     Servo spinServo;
-    priavte final double pos1 = 0.0;
-    priavte final double pos2 = 0.0;
-    priavte final double pos3 = 0.0;
-    priavte final double pos4 = 0.0;
-    priavte final double pos5 = 0.0;
-    priavte final double pos6 = 0.0;
-    priavte final double[] pos = {pos1, pos2, pos3, pos4, pos5, pos6};
+    private final double pos1 = 0.0;
+    private final double pos2 = 0.0;
+    private final double pos3 = 0.0;
+    private final double pos4 = 0.0;
+    private final double pos5 = 0.0;
+    private final double pos6 = 0.0;
+    private final double[] pos = {pos1, pos2, pos3, pos4, pos5, pos6};
     private int posloc = 2;
     LinearOpMode l;
     public rotatingWheel(LinearOpMode l) {

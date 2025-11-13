@@ -122,6 +122,35 @@ public class AprilTagDetectionPipeline extends OpenCvPipeline
         }
     }
 
+    public int getPattern()
+    {
+        ArrayList<AprilTagDetection> aprilList = getLatestDetections();
+        for (AprilTagDetection detection : aprilList)
+        {
+            if (detection.id == 21)
+            {
+                //Green Purple Purple
+                return 1;
+            }
+            else if (detection.id == 22)
+            {
+                // Purple Green Purple
+                return 2;
+            }
+            else if (detection.id == 23)
+            {
+                // Purple Purple Green
+                return 3;
+            }
+            else
+            {
+                // Oh F*ck
+                return 4;
+            }
+        }
+        return 4;
+    }
+
     public ArrayList<AprilTagDetection> getLatestDetections()
     {
         return detections;

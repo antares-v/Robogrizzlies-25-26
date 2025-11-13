@@ -23,11 +23,11 @@ public class spindexerTest extends LinearOpMode{
         double[] spindexerPos = {0,0.19,0.38,0.59,0.79,0.99};
         waitForStart();
         while (opModeIsActive()) {
-            if (gamepad1.y) {
+            if (gamepad1.y && i < spindexerPos.length-1) {
                 i++;
                 sleep(250);
             }
-            if (gamepad1.a) {
+            if (gamepad1.a && i > 0) {
                 i--;
                 sleep(250);
             }
