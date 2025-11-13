@@ -59,7 +59,7 @@ public class MainTeleop extends LinearOpMode{
 
                         if (gamepad1.y) {
                                 launcher.setPower(1);
-                                sleep(1000);
+                                sleep(2000);
                                 leftFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
                                 leftFlywheel.setPower(1);
                                 rightFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -67,9 +67,9 @@ public class MainTeleop extends LinearOpMode{
                         }
                         if (gamepad1.a) {
                                 leftFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
-                                leftFlywheel.setPower(1);
+                                leftFlywheel.setPower(0);
                                 rightFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
-                                rightFlywheel.setPower(1);
+                                rightFlywheel.setPower(0);
                                 launcher.setPower(0);
                         }
                         if (dLeft&&i<5) {
@@ -98,6 +98,7 @@ public class MainTeleop extends LinearOpMode{
                         telemetry.addData("y", y);
                         telemetry.addData("h", h);
                         telemetry.update(); //OpMode does this for you
+
                 }
 
                 //Put anything here that needs to run once when Stop is pressed
