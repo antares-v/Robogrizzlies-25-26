@@ -74,7 +74,7 @@ public class MainTeleop extends LinearOpMode{
                                 rightFlywheel.setPower(0);
                                 launcher.setPower(0);
                         }
-                        if (dLeft&&i<spindexerPosIntake.length) {
+                        if (dLeft&&i<spindexerPosIntake.length-1) {
                                 i++;
                                 sleep(200);
                         }
@@ -85,14 +85,17 @@ public class MainTeleop extends LinearOpMode{
                         if (rB) {
                                 rightIntake.setPower(1);
                                 leftIntake.setPower(1);
-                                intakeBool = true;
                         }
                         if (lB) {
                                 rightIntake.setPower(-1);
                                 leftIntake.setPower(-1);
+                        }
+                        if (rB||lB) {
                                 intakeBool = true;
                         }
-                        intakeBool = false;
+                        else {
+                                intakeBool = false;
+                        }
                         leftIntake.setPower(0);
                         rightIntake.setPower(0);
                         if (intakeBool) {
@@ -107,6 +110,11 @@ public class MainTeleop extends LinearOpMode{
                         telemetry.addData("x", x);
                         telemetry.addData("y", y);
                         telemetry.addData("h", h);
+                        telemetry.addData("intakeBool", intakeBool);
+                        telemetry.addData("i", i);
+                        telemetry.addData("spindexerPos", spindexer.getPosition());
+                        telemetry.addData("spindexerPosIntake", spindexerPosOuttake[i]);
+                        telemetry.addData("spindexerPosOuttake", spindexerPosOuttake[i]);
                         telemetry.update(); //OpMode does this for you
 
                 }

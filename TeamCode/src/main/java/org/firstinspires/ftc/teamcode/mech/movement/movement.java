@@ -45,10 +45,10 @@ public class movement {
         return (FL.getPower() > 0 || FR.getPower() > 0 || BL.getPower() > 0  || BR.getPower() > 0 );
     }
     public void move(double l_x, double l_y, double turn){
-        double FLPower = (+l_y + l_x - turn) * FL_PERCENT * power;
-        double FRPower = (+l_y - l_x + turn) * FR_PERCENT * power;
-        double BLPower = (+l_y - l_x - turn) * BL_PERCENT * power;
-        double BRPower = (+l_y + l_x + turn) * BR_PERCENT * power;
+        double FLPower = (+l_y - l_x - turn) * FL_PERCENT * power;
+        double FRPower = (+l_y + l_x + turn) * FR_PERCENT * power;
+        double BLPower = (+l_y + l_x - turn) * BL_PERCENT * power;
+        double BRPower = (+l_y - l_x + turn) * BR_PERCENT * power;
 
         FL.setPower(FLPower);
         FR.setPower(FRPower);
