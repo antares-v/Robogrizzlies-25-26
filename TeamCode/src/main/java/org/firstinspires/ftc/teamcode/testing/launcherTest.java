@@ -10,7 +10,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 //import org.firstinspires.ftc.teamcode.mech.mainIntakeOuttake.launcher;
 
 @TeleOp
-public class transferServoTest extends LinearOpMode{
+public class launcherTest extends LinearOpMode{
     CRServo leftservo;
     CRServo rightservo;
     LinearOpMode lom;

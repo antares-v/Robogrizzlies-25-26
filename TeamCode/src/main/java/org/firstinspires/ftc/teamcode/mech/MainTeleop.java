@@ -22,7 +22,9 @@ public class MainTeleop extends LinearOpMode{
         CRServo leftFlywheel, rightFlywheel;
         Servo spindexer;
         DcMotor leftIntake, rightIntake, launcher;
-        double[] spindexerPos = {0,0.19,0.38,0.59,0.79,0.99};
+        double[] spindexerPosIntake = {0,0.38,0.79};
+        double[] spindexerPosOuttake = {0.19,0.59,0.99};
+        boolean intakeBool = true;
         int i = 0;
         @Override
         public void runOpMode() {
@@ -72,25 +74,33 @@ public class MainTeleop extends LinearOpMode{
                                 rightFlywheel.setPower(0);
                                 launcher.setPower(0);
                         }
-                        if (dLeft&&i<5) {
+                        if (dLeft&&i<spindexerPosIntake.length) {
                                 i++;
-                                sleep(250);
+                                sleep(200);
                         }
                         if (dRight&&i>0) {
                                 i--;
-                                sleep(250);
+                                sleep(200);
                         }
                         if (rB) {
                                 rightIntake.setPower(1);
                                 leftIntake.setPower(1);
+                                intakeBool = true;
                         }
                         if (lB) {
                                 rightIntake.setPower(-1);
                                 leftIntake.setPower(-1);
+                                intakeBool = true;
                         }
+                        intakeBool = false;
                         leftIntake.setPower(0);
                         rightIntake.setPower(0);
-                        spindexer.setPosition(spindexerPos[i]);
+                        if (intakeBool) {
+                                spindexer.setPosition(spindexerPosIntake[i]);
+                        }
+                        else {
+                                spindexer.setPosition(spindexerPosOuttake[i]);
+                        }
                         idle(); //Give the system more time to do background tasks
                         //This shouldn't be necessary and isn't in the boilerplate template,
                         //but try adding it if your program crashes at random just in case.
