@@ -58,18 +58,18 @@ public final class MecanumDrive {
         // TODO: fill in these values based on
         //   see https://ftc-docs.firstinspires.org/en/latest/programming_resources/imu/imu.html?highlight=imu#physical-hub-mounting
         public RevHubOrientationOnRobot.LogoFacingDirection logoFacingDirection =
-                RevHubOrientationOnRobot.LogoFacingDirection.UP;
+                RevHubOrientationOnRobot.LogoFacingDirection.RIGHT;
         public RevHubOrientationOnRobot.UsbFacingDirection usbFacingDirection =
                 RevHubOrientationOnRobot.UsbFacingDirection.FORWARD;
 
         // drive model parameters
-        public double inPerTick = 1;
-        public double lateralInPerTick = inPerTick;
+        public double inPerTick = 0.0020287;
+        public double lateralInPerTick = 0.001749430814985256;
         public double trackWidthTicks = 0;
 
         // feedforward parameters (in tick units)
-        public double kS = 0;
-        public double kV = 0;
+        public double kS = 1.299173179014626;
+        public double kV = 0.0002957773337592187;
         public double kA = 0;
 
         // path profile parameters (in inches)
@@ -138,7 +138,8 @@ public final class MecanumDrive {
             imu = lazyImu.get();
 
             // TODO: reverse encoders if needed
-            //   leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
+            rightFront.setDirection(DcMotorSimple.Direction.REVERSE);
+            rightBack.setDirection(DcMotorSimple.Direction.REVERSE);
 
             this.pose = pose;
         }
@@ -228,13 +229,15 @@ public final class MecanumDrive {
         leftFront = hardwareMap.get(DcMotorEx.class, "FL");
         leftBack = hardwareMap.get(DcMotorEx.class, "BL");
         rightBack = hardwareMap.get(DcMotorEx.class, "BR");
-        rightFront = hardwareMap.get(DcMotorEx.class, "RF");
+        rightFront = hardwareMap.get(DcMotorEx.class, "FR");
 
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
         // TODO: reverse motor directions if needed
         //   leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
 
@@ -245,8 +248,8 @@ public final class MecanumDrive {
 
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
 
-        localizer = new DriveLocalizer(pose);
-
+//        localizer = new DriveLocalizer(pose);
+          localizer = new PinpointLocalizer(hardwareMap, PARAMS.inPerTick, pose);
         FlightRecorder.write("MECANUM_PARAMS", PARAMS);
     }
 

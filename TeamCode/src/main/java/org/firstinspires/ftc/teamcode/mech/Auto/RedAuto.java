@@ -29,6 +29,7 @@ public class RedAuto extends LinearOpMode{
                     return false; // This tells the sequence that the action is finished
                 };
             }
+
             public Action shoot() {
                 // Example of another action
                 return telemetry -> {
@@ -37,32 +38,30 @@ public class RedAuto extends LinearOpMode{
                     return false;
                 };
 
-        }
+            }
 
             Pose2d Startingpos = new Pose2d(0, 0, Math.toRadians(0));
             //ts is all placeholders change it up when gain brainpower
-            Vector2d Ballrow1 = new Vector2d(0,0);
+            Vector2d Ballrow1 = new Vector2d(0, 0);
             //More placeholders for the location of ball rows 1 for
-            Vector2d Ballrow1end = new Vector2d(0,0);
+            Vector2d Ballrow1end = new Vector2d(0, 0);
             //More placeholders for the location of ball rows 1 end for
-            Vector2d Ballrow2 = new Vector2d(0,0);
+            Vector2d Ballrow2 = new Vector2d(0, 0);
             //More placeholders for the location of ball rows 2 for
-            Vector2d Ballrow2end = new Vector2d(0,0);
+            Vector2d Ballrow2end = new Vector2d(0, 0);
             //More placeholders for the location of ball rows 2 end for
-            Vector2d Ballrow3 = new Vector2d(0,0);
+            Vector2d Ballrow3 = new Vector2d(0, 0);
             //More placeholders for the location of ball rows 3 for
-            Vector2d Ballrow3end = new Vector2d(0,0);
+            Vector2d Ballrow3end = new Vector2d(0, 0);
             //More placeholders for the location of ball rows 3 end for
-            Vector2d Shootingpos = new Vector2d(0,0);
+            Vector2d Shootingpos = new Vector2d(0, 0);
             MecanumDrive Drivetrain = new MecanumDrive(hardwareMap, Startingpos);
 
             Action autonoumouschain = Drivetrain.actionBuilder(Startingpos)
-                .splineTo(Ballrow1, Math.toRadians(0))
-                .splineTo(Ballrow2, Math.toRadians(0))
-                .splineTo(Ballrow3, Math.toRadians(0))
-                .build();
-
-            Actions.runBlocking(autonoumouschain);
+                    .splineTo(Ballrow1, Math.toRadians(0))
+                    .splineTo(Ballrow2, Math.toRadians(0))
+                    .splineTo(Ballrow3, Math.toRadians(0))
+                    .build();
         }
 }
 }
