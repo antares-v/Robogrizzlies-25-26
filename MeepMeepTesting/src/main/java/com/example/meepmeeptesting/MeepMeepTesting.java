@@ -15,31 +15,23 @@ public class MeepMeepTesting {
                 .setConstraints(60, 60, Math.toRadians(180), Math.toRadians(180), 0402.2)
                 .build();
 
-        myBot.runAction(myBot.getDrive().actionBuilder(new Pose2d(0, 0, 0))
-                        .splineTo(new Vector2d(54.719, 11.969), Math.toRadians(180))
-                        .splineTo(new Vector2d(49.719, 11.969), Math.toRadians(180))
-                        .splineTo(new Vector2d(44.719, 11.969), Math.toRadians(180)) // Fixed bug from original code
-                        .splineTo(new Vector2d(39.719, 11.969), Math.toRadians(180))
-                        // Go to shoot
-                        .splineTo(new Vector2d(0, 0), Math.toRadians(45))
+        myBot.runAction(myBot.getDrive().actionBuilder(new Pose2d(24, -60, Math.toRadians(0)))
+                        //Far Row
+                        .strafeTo(new Vector2d(24, 11))
+                        .strafeTo(new Vector2d(38,11))
+                        .splineToLinearHeading(new Pose2d(50,50, Math.toRadians(45)), Math.toRadians(45))// Fixed bug from original code
                         .waitSeconds(2)
 
-                        // --- ROW 2 ---
-                        .splineTo(new Vector2d(54.719, -11.969), Math.toRadians(180))
-                        .splineTo(new Vector2d(49.719, -11.969), Math.toRadians(180))
-                        .splineTo(new Vector2d(44.719, -11.969), Math.toRadians(180))
-                        .splineTo(new Vector2d(39.719, -11.969), Math.toRadians(180))
-                        // Go to shoot
-                        .splineTo(new Vector2d(0, 0), Math.toRadians(45))
+                        // Middle Row
+                        .strafeToLinearHeading(new Vector2d(0, -15), Math.toRadians(0))
+                        .strafeTo(new Vector2d(38,-15))
+                        .splineToLinearHeading(new Pose2d(50,50, Math.toRadians(45)), Math.toRadians(45))
                         .waitSeconds(2)
 
-                        // --- ROW 3 ---
-                        .splineTo(new Vector2d(54.719, -35.218), Math.toRadians(180))
-                        .splineTo(new Vector2d(49.719, -35.218), Math.toRadians(180))
-                        .splineTo(new Vector2d(44.719, -35.218), Math.toRadians(180))
-                        .splineTo(new Vector2d(39.719, -35.218), Math.toRadians(180))
-                        // Go to shoot
-                        .splineTo(new Vector2d(0, 0), Math.toRadians(45))
+                        // Close Row
+                        .strafeToLinearHeading(new Vector2d(0, -35), Math.toRadians(0))
+                        .strafeTo(new Vector2d(38,-35))
+                        .splineToLinearHeading(new Pose2d(50,50, Math.toRadians(45)), Math.toRadians(45))
                         .waitSeconds(2)
 
                         .build()

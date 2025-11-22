@@ -15,6 +15,8 @@ import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import java.net.ProxySelector;
+
 
 @Autonomous(name="Right Auto")
 //ts is the auto for one side you can prolly mirror for the other side
@@ -34,57 +36,36 @@ public class RightAuto extends LinearOpMode{
         launcher = hardwareMap.get(DcMotor.class, "launcher");
         double[] spindexerPosIntake = {0,0.38,0.79};
         double[] spindexerPosOuttake = {0.19,0.59,0.99};
+        double interballDistance = 5;
         class RobotMechanisms {
             // 2. Define the method that returns an Action
-
-            Pose2d Startingpos = new Pose2d(12.52, 12, Math.toRadians(180));
-            //ts is all placeholders change it up when gain brainpower
-            Vector2d Ballrow3end = new Vector2d(54.719, 11.969);
-            Pose2d Ballrow3endpose = new Pose2d(54.719, 11.969, Math.toRadians(180));
-            Vector2d Ballrow3_3= new Vector2d(49.719, 11.969);
-            //Middle of row
-            Pose2d Ballrow3_3pose = new Pose2d(49.719, 11.969, Math.toRadians(180));
-            Vector2d Ballrow3_2 = new Vector2d(44.719, 11.969);
-            //Middle of row
-            Pose2d Ballrow3_2pose = new Pose2d(44.719, 11.969, Math.toRadians(180));
-            Vector2d Ballrow3 = new Vector2d(39.719, 11.969);
-            //End of row (closer to center/left)
-            Pose2d Ballrow3pose = new Pose2d(39.719, 11.969, Math.toRadians(180));
-
-            // ROW 2 (Middle) - Moving Leftwards
-            Vector2d Ballrow2end = new Vector2d(54.719, -11.969);
-            //Start of row
-            Pose2d Ballrow2endpose = new Pose2d(54.719, -11.969, Math.toRadians(180));
-            Vector2d Ballrow2_3 = new Vector2d(49.719, -11.969);
-            //Middle of row
-            Pose2d Ballrow2_3pose = new Pose2d(49.719, -11.969, Math.toRadians(180));
-            Vector2d Ballrow2_2 = new Vector2d(44.719, -11.969);
-            //Middle of row
-            Pose2d Ballrow2_2pose = new Pose2d(44.719, -11.969, Math.toRadians(180));
-            Vector2d Ballrow2 = new Vector2d(39.719, -11.969);
-            Pose2d Ballrow2pose = new Pose2d(39.719, -11.969, Math.toRadians(180));
-            //End of row
-
-            // ROW 3 (Bottom) - Moving Leftwards
-            Vector2d Ballrow1end = new Vector2d(54.719, -35.218);
-            //Start of row
-            Pose2d Ballrow1endpose = new Pose2d(54.719, -35.218, Math.toRadians(180));
-            Vector2d Ballrow1_3 = new Vector2d(49.719, -35.218);
-            //Middle of row
-            Pose2d Ballrow1_3pose = new Pose2d(49.719, -35.218, Math.toRadians(180));
-            Vector2d Ballrow1_2 = new Vector2d(44.719, -35.218);
-            //Middle of row
-            Pose2d Ballrow1_2pose = new Pose2d(44.719, -35.218, Math.toRadians(180));
-            Vector2d Ballrow1 = new Vector2d(39.719, -35.218);
-            //End of row
-            Pose2d Ballrow1pose = new Pose2d(39.719, -35.218, Math.toRadians(180));
-
-            Vector2d Shootingpos = new Vector2d(50, 50);
-            Pose2d Shootingpospose = new Pose2d(50, 50, Math.toRadians(45));
+            Pose2d Startingpos = new Pose2d(24, -60, Math.toRadians(0));
+            Pose2d shootLocation = new Pose2d(50,50, Math.toRadians(45));
+            Vector2d farRow1 = new Vector2d(24, 11);
+            Vector2d farRow2 = new Vector2d(24+1*interballDistance, 11);
+            Vector2d farRow3 = new Vector2d(24+2*interballDistance, 11);
+            Vector2d farRow4 = new Vector2d(24+3*interballDistance, 11);
+            Pose2d farRow1End = new Pose2d(24,11, Math.toRadians(0));
+            Pose2d farRow2End = new Pose2d(24+1*interballDistance, 11, Math.toRadians(0));
+            Pose2d farRow3End = new Pose2d(24+2*interballDistance, 11, Math.toRadians(0));
+            Pose2d farRow4End = new Pose2d(24+3*interballDistance, 11, Math.toRadians(0));
+            Vector2d midRow1 = new Vector2d(0, -15);
+            Vector2d midRow2 = new Vector2d(24+1*interballDistance, -15);
+            Vector2d midRow3 = new Vector2d(24+2*interballDistance, -15);
+            Vector2d midRow4 = new Vector2d(24+3*interballDistance, -15);
+            Pose2d midRow1End = new Pose2d(0,-15, Math.toRadians(0));
+            Pose2d midRow2End = new Pose2d(24+1*interballDistance, -15, Math.toRadians(0));
+            Pose2d midRow3End = new Pose2d(24+2*interballDistance, -15, Math.toRadians(0));
+            Pose2d midRow4End = new Pose2d(24+3*interballDistance, -15, Math.toRadians(0));
+            Vector2d closeRow1 = new Vector2d(0, -35);
+            Vector2d closeRow2 = new Vector2d(24+1*interballDistance, -35);
+            Vector2d closeRow3 = new Vector2d(24+2*interballDistance, -35);
+            Vector2d closeRow4 = new Vector2d(24+3*interballDistance, -35);
+            Pose2d closeRow1End = new Pose2d(0,-35, Math.toRadians(0));
+            Pose2d closeRow2End = new Pose2d(24+1*interballDistance, -35, Math.toRadians(0));
+            Pose2d closeRow3End = new Pose2d(24+2*interballDistance, -35, Math.toRadians(0));
+            Pose2d closeRow4End = new Pose2d(24+3*interballDistance, -35, Math.toRadians(0));
             MecanumDrive Drivetrain = new MecanumDrive(hardwareMap, Startingpos);
-
-
-
             public Action collectRowOfBalls(int spinpos) {
                 return new Action() {
                     private boolean initialized = false;
@@ -177,32 +158,32 @@ public class RightAuto extends LinearOpMode{
                 };
             };
 
-            Action trajectoryCollectRow1_1 = Drivetrain.actionBuilder(Ballrow1pose)
-                    .splineTo(Ballrow1_2, Math.toRadians(180))
+            Action trajectoryCollectRow1_1 = Drivetrain.actionBuilder(farRow1End)
+                    .strafeTo(farRow2)
                     .build();
-            Action trajectoryCollectRow1_2 = Drivetrain.actionBuilder(Ballrow1_2pose)
-                    .splineTo(Ballrow1_3, Math.toRadians(180))
+            Action trajectoryCollectRow1_2 = Drivetrain.actionBuilder(farRow2End)
+                    .strafeTo(farRow3)
                     .build();
-            Action trajectoryCollectRow1_3 = Drivetrain.actionBuilder(Ballrow1_3pose)
-                    .splineTo(Ballrow1end, Math.toRadians(180))
+            Action trajectoryCollectRow1_3 = Drivetrain.actionBuilder(farRow3End)
+                    .strafeTo(farRow4)
                     .build();
-            Action trajectoryCollectRow2_1 = Drivetrain.actionBuilder(Ballrow2pose)
-                    .splineTo(Ballrow2_2, Math.toRadians(180))
+            Action trajectoryCollectRow2_1 = Drivetrain.actionBuilder(midRow1End)
+                    .strafeTo(midRow2)
                     .build();
-            Action trajectoryCollectRow2_2 = Drivetrain.actionBuilder(Ballrow2_2pose)
-                    .splineTo(Ballrow2_3, Math.toRadians(180))
+            Action trajectoryCollectRow2_2 = Drivetrain.actionBuilder(midRow2End)
+                    .strafeTo(midRow3)
                     .build();
-            Action trajectoryCollectRow2_3 = Drivetrain.actionBuilder(Ballrow2_3pose)
-                    .splineTo(Ballrow2end, Math.toRadians(180))
+            Action trajectoryCollectRow2_3 = Drivetrain.actionBuilder(midRow3End)
+                    .strafeTo(midRow4)
                     .build();
-            Action trajectoryCollectRow3_1 = Drivetrain.actionBuilder(Ballrow3pose)
-                    .splineTo(Ballrow3_2, Math.toRadians(180))
+            Action trajectoryCollectRow3_1 = Drivetrain.actionBuilder(closeRow1End)
+                    .strafeTo(closeRow2)
                     .build();
-            Action trajectoryCollectRow3_2 = Drivetrain.actionBuilder(Ballrow3_2pose)
-                    .splineTo(Ballrow3_3, Math.toRadians(180))
+            Action trajectoryCollectRow3_2 = Drivetrain.actionBuilder(closeRow2End)
+                    .strafeTo(closeRow3)
                     .build();
-            Action trajectoryCollectRow3_3 = Drivetrain.actionBuilder(Ballrow3_3pose)
-                    .splineTo(Ballrow3end, Math.toRadians(180))
+            Action trajectoryCollectRow3_3 = Drivetrain.actionBuilder(closeRow3End)
+                    .strafeTo(closeRow4)
                     .build();
 
             // 2. Combine the trajectory and your intake action
@@ -245,23 +226,23 @@ public class RightAuto extends LinearOpMode{
                     collectRowOfBalls(2)
             );
             Action Trajectoryrow1 = Drivetrain.actionBuilder(Startingpos)
-                    .splineTo(Ballrow1,Math.toRadians(180))
+                    .strafeTo(farRow1)
                     .build();
 
-            Action Trajectoryrow2 = Drivetrain.actionBuilder(Shootingpospose)
-                    .splineTo(Ballrow2,Math.toRadians(180))
+            Action Trajectoryrow2 = Drivetrain.actionBuilder(shootLocation)
+                    .strafeTo(midRow1)
                     .build();
-            Action Trajectoryrow3 = Drivetrain.actionBuilder(Shootingpospose)
-                    .splineTo(Ballrow3,Math.toRadians(180))
+            Action Trajectoryrow3 = Drivetrain.actionBuilder(shootLocation)
+                    .strafeTo(closeRow1)
                     .build();
-            Action Shootingposa1 = Drivetrain.actionBuilder(Ballrow1endpose)
-                    .splineTo(Shootingpos,Math.toRadians(45))
+            Action Shootingposa1 = Drivetrain.actionBuilder(farRow4End)
+                    .splineToLinearHeading(new Pose2d(50,50, Math.toRadians(45)), Math.toRadians(45))
                     .build();
-            Action Shootingposa2 = Drivetrain.actionBuilder(Ballrow2endpose)
-                    .splineTo(Shootingpos,Math.toRadians(45))
+            Action Shootingposa2 = Drivetrain.actionBuilder(midRow4End)
+                    .splineToLinearHeading(new Pose2d(50,50, Math.toRadians(45)), Math.toRadians(45))
                     .build();
-            Action Shootingposa3 = Drivetrain.actionBuilder(Ballrow3endpose)
-                    .splineTo(Shootingpos,Math.toRadians(45))
+            Action Shootingposa3 = Drivetrain.actionBuilder(closeRow4End)
+                    .splineToLinearHeading(new Pose2d(50,50, Math.toRadians(45)), Math.toRadians(45))
                     .build();
             Action autonoumouschain = new SequentialAction(
                     Trajectoryrow1,
