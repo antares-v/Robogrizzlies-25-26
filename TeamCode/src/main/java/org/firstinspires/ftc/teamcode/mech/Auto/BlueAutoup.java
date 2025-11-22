@@ -18,7 +18,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Autonomous(name="Red Alliance Auto Up")
 //ts is the auto for one side you can prolly mirror for the other side
-public class RedAutoup extends LinearOpMode{
+public class BlueAutoup extends LinearOpMode{
     @Override
     public void runOpMode() throws InterruptedException {
         CRServo leftFlywheel, rightFlywheel;
@@ -38,44 +38,44 @@ public class RedAutoup extends LinearOpMode{
             // 2. Define the method that returns an Action
 
 
-            Pose2d Startingpos = new Pose2d(-12.52, 12, Math.toRadians(0));
+            Pose2d Startingpos = new Pose2d(12.52, 12, Math.toRadians(0));
             //ts is all placeholders change it up when gain brainpower
-            Vector2d Ballrow1 = new Vector2d(-54.719, 11.969);
+            Vector2d Ballrow1 = new Vector2d(54.719, 11.969);
             //More placeholders for the location of ball rows 1 for
-            Pose2d Ballrow1pose = new Pose2d(-54.719, 11.969,Math.toRadians(0));
-            Vector2d Ballrow1_2 = new Vector2d(-49.719, 11.969);
+            Pose2d Ballrow1pose = new Pose2d(54.719, 11.969,Math.toRadians(0));
+            Vector2d Ballrow1_2 = new Vector2d(49.719, 11.969);
             //More placeholders for the location of ball rows 1 for
-            Pose2d Ballrow1_2pose = new Pose2d(-49.719, 11.969,Math.toRadians(0));
-            Vector2d Ballrow1_3 = new Vector2d(-44.719, 11.969);
+            Pose2d Ballrow1_2pose = new Pose2d(49.719, 11.969,Math.toRadians(0));
+            Vector2d Ballrow1_3 = new Vector2d(44.719, 11.969);
             //More placeholders for the location of ball rows 1 for
-            Pose2d Ballrow1_3pose = new Pose2d(-44.719, 11.969,Math.toRadians(0));
-            Vector2d Ballrow1end = new Vector2d(-39.719, 11.969);
+            Pose2d Ballrow1_3pose = new Pose2d(44.719, 11.969,Math.toRadians(0));
+            Vector2d Ballrow1end = new Vector2d(39.719, 11.969);
             //More placeholders for the location of ball rows 1 end for
-            Pose2d Ballrow1endpose = new Pose2d(-39.719, 11.969,Math.toRadians(0));
-            Vector2d Ballrow2 = new Vector2d(-54.719, -11.969);
+            Pose2d Ballrow1endpose = new Pose2d(39.719, 11.969,Math.toRadians(0));
+            Vector2d Ballrow2 = new Vector2d(54.719, -11.969);
             //More placeholders for the location of ball rows 2 for
-            Pose2d Ballrow2pose = new Pose2d(-54.719, -11.969,Math.toRadians(0));
-            Vector2d Ballrow2_2 = new Vector2d(-49.719, -11.969);
+            Pose2d Ballrow2pose = new Pose2d(54.719, -11.969,Math.toRadians(0));
+            Vector2d Ballrow2_2 = new Vector2d(49.719, -11.969);
             //More placeholders for the location of ball rows 1 for
-            Pose2d Ballrow2_2pose = new Pose2d(-49.719, -11.969,Math.toRadians(0));
-            Vector2d Ballrow2_3 = new Vector2d(-44.719, -11.969);
+            Pose2d Ballrow2_2pose = new Pose2d(49.719, -11.969,Math.toRadians(0));
+            Vector2d Ballrow2_3 = new Vector2d(44.719, -11.969);
             //More placeholders for the location of ball rows 1 for
-            Pose2d Ballrow2_3pose = new Pose2d(-44.719, -11.969,Math.toRadians(0));
-            Vector2d Ballrow2end = new Vector2d(-39.719, -11.969);
-            Pose2d Ballrow2endpose = new Pose2d(-39.719, -11.969,Math.toRadians(0));
+            Pose2d Ballrow2_3pose = new Pose2d(44.719, -11.969,Math.toRadians(0));
+            Vector2d Ballrow2end = new Vector2d(39.719, -11.969);
+            Pose2d Ballrow2endpose = new Pose2d(39.719, -11.969,Math.toRadians(0));
             //More placeholders for the location of ball rows 2 end for
-            Vector2d Ballrow3 = new Vector2d(-54.719, -35.218);
+            Vector2d Ballrow3 = new Vector2d(54.719, -35.218);
             //More placeholders for the location of ball rows 3 for
-            Pose2d Ballrow3pose = new Pose2d(-54.719, -35.218,Math.toRadians(0));
-            Vector2d Ballrow3_2 = new Vector2d(-49.719,  -35.218);
+            Pose2d Ballrow3pose = new Pose2d(54.719, -35.218,Math.toRadians(0));
+            Vector2d Ballrow3_2 = new Vector2d(49.719,  -35.218);
             //More placeholders for the location of ball rows 1 for
-            Pose2d Ballrow3_2pose = new Pose2d(-49.719,  -35.218,Math.toRadians(0));
-            Vector2d Ballrow3_3 = new Vector2d(-44.719,  -35.218);
+            Pose2d Ballrow3_2pose = new Pose2d(49.719,  -35.218,Math.toRadians(0));
+            Vector2d Ballrow3_3 = new Vector2d(44.719,  -35.218);
             //More placeholders for the location of ball rows 1 for
-            Pose2d Ballrow3_3pose = new Pose2d(-44.719,  -35.218,Math.toRadians(0));
-            Vector2d Ballrow3end = new Vector2d(-39.719, -35.218);
+            Pose2d Ballrow3_3pose = new Pose2d(44.719,  -35.218,Math.toRadians(0));
+            Vector2d Ballrow3end = new Vector2d(39.719, -35.218);
             //More placeholders for the location of ball rows 3 end for
-            Pose2d Ballrow3endpose = new Pose2d(-39.719, -35.218,Math.toRadians(0));
+            Pose2d Ballrow3endpose = new Pose2d(39.719, -35.218,Math.toRadians(0));
             Vector2d Shootingpos = new Vector2d(0, 0);
             Pose2d Shootingpospose = new Pose2d(0, 0,Math.toRadians(0));
             MecanumDrive Drivetrain = new MecanumDrive(hardwareMap, Startingpos);
@@ -169,10 +169,10 @@ public class RedAutoup extends LinearOpMode{
                             launcher.setPower(0);
                             spindexer.setPosition(spindexerPosOuttake[0]);
                             return false;
-                            }
                         }
-                    };
+                    }
                 };
+            };
 
             Action trajectoryCollectRow1_1 = Drivetrain.actionBuilder(Ballrow1pose)
                     .splineTo(Ballrow1_2, Math.toRadians(0))
@@ -207,10 +207,10 @@ public class RedAutoup extends LinearOpMode{
                     trajectoryCollectRow1_1,
                     collectRowOfBalls(0)
             );
-           Action Pickup1_2  = new ParallelAction(
-                   trajectoryCollectRow1_2,
-                   collectRowOfBalls(1)
-           );
+            Action Pickup1_2  = new ParallelAction(
+                    trajectoryCollectRow1_2,
+                    collectRowOfBalls(1)
+            );
 
             Action Pickup1_3  = new ParallelAction(
                     trajectoryCollectRow1_3,
