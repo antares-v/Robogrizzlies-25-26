@@ -1,13 +1,11 @@
 package org.firstinspires.ftc.teamcode.mech.Auto;
-import java.util.LinkedHashMap;
-import android.os.Build;
 
 import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.SequentialAction;
-import com.acmerobotics.roadrunner.ftc.Actions;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
+import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -17,13 +15,10 @@ import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.mech.Auto.MecanumDrive;
 
-
-
-@Autonomous(name="Red Alliance Auto")
+@Autonomous(name="Red Alliance Auto Up")
 //ts is the auto for one side you can prolly mirror for the other side
-public class RedAuto extends LinearOpMode{
+public class RedAutoup extends LinearOpMode{
     @Override
     public void runOpMode() throws InterruptedException {
         CRServo leftFlywheel, rightFlywheel;
@@ -48,18 +43,36 @@ public class RedAuto extends LinearOpMode{
             Vector2d Ballrow1 = new Vector2d(0, 0);
             //More placeholders for the location of ball rows 1 for
             Pose2d Ballrow1pose = new Pose2d(0, 0,Math.toRadians(0));
+            Vector2d Ballrow1_2 = new Vector2d(0, 0);
+            //More placeholders for the location of ball rows 1 for
+            Pose2d Ballrow1_2pose = new Pose2d(0, 0,Math.toRadians(0));
+            Vector2d Ballrow1_3 = new Vector2d(0, 0);
+            //More placeholders for the location of ball rows 1 for
+            Pose2d Ballrow1_3pose = new Pose2d(0, 0,Math.toRadians(0));
             Vector2d Ballrow1end = new Vector2d(0, 0);
             //More placeholders for the location of ball rows 1 end for
             Pose2d Ballrow1endpose = new Pose2d(0, 0,Math.toRadians(0));
             Vector2d Ballrow2 = new Vector2d(0, 0);
             //More placeholders for the location of ball rows 2 for
             Pose2d Ballrow2pose = new Pose2d(0, 0,Math.toRadians(0));
+            Vector2d Ballrow2_2 = new Vector2d(0, 0);
+            //More placeholders for the location of ball rows 1 for
+            Pose2d Ballrow2_2pose = new Pose2d(0, 0,Math.toRadians(0));
+            Vector2d Ballrow2_3 = new Vector2d(0, 0);
+            //More placeholders for the location of ball rows 1 for
+            Pose2d Ballrow2_3pose = new Pose2d(0, 0,Math.toRadians(0));
             Vector2d Ballrow2end = new Vector2d(0, 0);
             Pose2d Ballrow2endpose = new Pose2d(0, 0,Math.toRadians(0));
             //More placeholders for the location of ball rows 2 end for
             Vector2d Ballrow3 = new Vector2d(0, 0);
             //More placeholders for the location of ball rows 3 for
             Pose2d Ballrow3pose = new Pose2d(0, 0,Math.toRadians(0));
+            Vector2d Ballrow3_2 = new Vector2d(0, 0);
+            //More placeholders for the location of ball rows 1 for
+            Pose2d Ballrow3_2pose = new Pose2d(0, 0,Math.toRadians(0));
+            Vector2d Ballrow3_3 = new Vector2d(0, 0);
+            //More placeholders for the location of ball rows 1 for
+            Pose2d Ballrow3_3pose = new Pose2d(0, 0,Math.toRadians(0));
             Vector2d Ballrow3end = new Vector2d(0, 0);
             //More placeholders for the location of ball rows 3 end for
             Pose2d Ballrow3endpose = new Pose2d(0, 0,Math.toRadians(0));
@@ -69,15 +82,17 @@ public class RedAuto extends LinearOpMode{
 
 
 
-            public Action collectRowOfBalls() {
+            public Action collectRowOfBalls(int spinpos) {
                 return new Action() {
                     private boolean initialized = false;
                     private ElapsedTime timer;
+
 
                     @Override
                     public boolean run(TelemetryPacket packet) {
                         // 1. Start the motors on the very first run
                         if (!initialized) {
+                            spindexer.setPosition(spindexerPosIntake[spinpos]);
                             rightIntake.setPower(1);
                             leftIntake.setPower(1);
                             timer = new ElapsedTime();
@@ -114,6 +129,8 @@ public class RedAuto extends LinearOpMode{
                         if (!initialized) {
                             launcher.setPower(1);
                             initialized = true;
+                            spindexer.setPosition(spindexerPosOuttake[i]);
+                            return true;
                         }
                         if (timer.seconds() < 2.0){
                             return true;
@@ -157,30 +174,73 @@ public class RedAuto extends LinearOpMode{
                     };
                 };
 
-            Action trajectoryCollectRow1 = Drivetrain.actionBuilder(Ballrow1pose)
+            Action trajectoryCollectRow1_1 = Drivetrain.actionBuilder(Ballrow1pose)
+                    .splineTo(Ballrow1_2, Math.toRadians(0))
+                    .build();
+            Action trajectoryCollectRow1_2 = Drivetrain.actionBuilder(Ballrow1_2pose)
+                    .splineTo(Ballrow3, Math.toRadians(0))
+                    .build();
+            Action trajectoryCollectRow1_3 = Drivetrain.actionBuilder(Ballrow1_3pose)
                     .splineTo(Ballrow1end, Math.toRadians(0))
                     .build();
-            Action trajectoryCollectRow2 = Drivetrain.actionBuilder(Ballrow2pose)
+            Action trajectoryCollectRow2_1 = Drivetrain.actionBuilder(Ballrow2pose)
+                    .splineTo(Ballrow2_2, Math.toRadians(0))
+                    .build();
+            Action trajectoryCollectRow2_2 = Drivetrain.actionBuilder(Ballrow2_2pose)
+                    .splineTo(Ballrow2_3, Math.toRadians(0))
+                    .build();
+            Action trajectoryCollectRow2_3 = Drivetrain.actionBuilder(Ballrow2_3pose)
                     .splineTo(Ballrow2end, Math.toRadians(0))
                     .build();
-            Action trajectoryCollectRow3 = Drivetrain.actionBuilder(Ballrow3pose)
+            Action trajectoryCollectRow3_1 = Drivetrain.actionBuilder(Ballrow3pose)
+                    .splineTo(Ballrow3_2, Math.toRadians(0))
+                    .build();
+            Action trajectoryCollectRow3_2 = Drivetrain.actionBuilder(Ballrow3_2pose)
+                    .splineTo(Ballrow3_3, Math.toRadians(0))
+                    .build();
+            Action trajectoryCollectRow3_3 = Drivetrain.actionBuilder(Ballrow3_3pose)
                     .splineTo(Ballrow3end, Math.toRadians(0))
                     .build();
 
             // 2. Combine the trajectory and your intake action
-            Action Pickup1 = new ParallelAction(
-                    trajectoryCollectRow1,       // The driving action
-                    collectRowOfBalls()    // The intake action (from your previous code)
+            Action Pickup1_1 = new ParallelAction(
+                    trajectoryCollectRow1_1,
+                    collectRowOfBalls(0)
             );
-            Action Pickup2 = new ParallelAction(
-                    trajectoryCollectRow2,       // The driving action
-                    collectRowOfBalls()    // The intake action (from your previous code)
+           Action Pickup1_2  = new ParallelAction(
+                   trajectoryCollectRow1_2,
+                   collectRowOfBalls(1)
+           );
+
+            Action Pickup1_3  = new ParallelAction(
+                    trajectoryCollectRow1_3,
+                    collectRowOfBalls(2)
             );
-            Action Pickup3 = new ParallelAction(
-                    trajectoryCollectRow3,       // The driving action
-                    collectRowOfBalls()    // The intake action (from your previous code)
+            Action Pickup2_1 = new ParallelAction(
+                    trajectoryCollectRow2_1,
+                    collectRowOfBalls(0)
+            );
+            Action Pickup2_2 = new ParallelAction(
+                    trajectoryCollectRow2_2,
+                    collectRowOfBalls(1)
+            );
+            Action Pickup2_3 = new ParallelAction(
+                    trajectoryCollectRow2_3,
+                    collectRowOfBalls(2)
             );
 
+            Action Pickup3_1 = new ParallelAction(
+                    trajectoryCollectRow3_1,
+                    collectRowOfBalls(0)
+            );
+            Action Pickup3_2 = new ParallelAction(
+                    trajectoryCollectRow3_2,
+                    collectRowOfBalls(1)
+            );
+            Action Pickup3_3 = new ParallelAction(
+                    trajectoryCollectRow3_3,
+                    collectRowOfBalls(2)
+            );
             Action Trajectoryrow1 = Drivetrain.actionBuilder(Startingpos)
                     .splineTo(Ballrow1,Math.toRadians(0))
                     .build();
@@ -202,19 +262,27 @@ public class RedAuto extends LinearOpMode{
                     .build();
             Action autonoumouschain = new SequentialAction(
                     Trajectoryrow1,
-                    Pickup1,
+                    Pickup1_1,
+                    Pickup1_2,
+                    Pickup1_3,
                     Shootingposa1,
                     Shoot(),
                     Trajectoryrow2,
-                    Pickup2,
+                    Pickup2_1,
+                    Pickup2_2,
+                    Pickup2_3,
                     Shootingposa2,
                     Shoot(),
                     Trajectoryrow3,
-                    Pickup3,
+                    Pickup3_1,
+                    Pickup3_2,
+                    Pickup3_3,
                     Shootingposa3,
                     Shoot()
             );
         }
-
+        waitForStart();
+        RobotMechanisms Robot  = new RobotMechanisms();
+        Actions.runBlocking(Robot.autonoumouschain);
     }
 }

@@ -65,12 +65,12 @@ public final class MecanumDrive {
         // drive model parameters
         public double inPerTick = 0.0020287;
         public double lateralInPerTick = 0.001749430814985256;
-        public double trackWidthTicks = 0;
+        public double trackWidthTicks = 7791.7100271419085;
 
         // feedforward parameters (in tick units)
         public double kS = 1.299173179014626;
         public double kV = 0.0002957773337592187;
-        public double kA = 0;
+        public double kA = 0.00005;
 
         // path profile parameters (in inches)
         public double maxWheelVel = 50;
@@ -82,9 +82,9 @@ public final class MecanumDrive {
         public double maxAngAccel = Math.PI;
 
         // path controller gains
-        public double axialGain = 0.0;
-        public double lateralGain = 0.0;
-        public double headingGain = 0.0; // shared with turn
+        public double axialGain = 3.0;
+        public double lateralGain = 1.0;
+        public double headingGain = 1.0; // shared with turn
 
         public double axialVelGain = 0.0;
         public double lateralVelGain = 0.0;
@@ -219,7 +219,6 @@ public final class MecanumDrive {
 
     public MecanumDrive(HardwareMap hardwareMap, Pose2d pose) {
         LynxFirmware.throwIfModulesAreOutdated(hardwareMap);
-
         for (LynxModule module : hardwareMap.getAll(LynxModule.class)) {
             module.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         }

@@ -98,6 +98,7 @@ public class MainTeleop extends LinearOpMode{
                         }
                         leftIntake.setPower(0);
                         rightIntake.setPower(0);
+                        telemetry.addData("spindexerPosIntake", spindexerPosOuttake[i]);
                         if (intakeBool) {
                                 spindexer.setPosition(spindexerPosIntake[i]);
                         }
@@ -113,7 +114,6 @@ public class MainTeleop extends LinearOpMode{
                         telemetry.addData("intakeBool", intakeBool);
                         telemetry.addData("i", i);
                         telemetry.addData("spindexerPos", spindexer.getPosition());
-                        telemetry.addData("spindexerPosIntake", spindexerPosOuttake[i]);
                         telemetry.addData("spindexerPosOuttake", spindexerPosOuttake[i]);
                         telemetry.update(); //OpMode does this for you
 
