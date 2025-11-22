@@ -16,9 +16,9 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 
-@Autonomous(name="Red Alliance Auto Up")
+@Autonomous(name="Left Auto")
 //ts is the auto for one side you can prolly mirror for the other side
-public class RedAutoup extends LinearOpMode{
+public class LeftAuto extends LinearOpMode{
     @Override
     public void runOpMode() throws InterruptedException {
         CRServo leftFlywheel, rightFlywheel;
@@ -34,6 +34,7 @@ public class RedAutoup extends LinearOpMode{
         launcher = hardwareMap.get(DcMotor.class, "launcher");
         double[] spindexerPosIntake = {0,0.38,0.79};
         double[] spindexerPosOuttake = {0.19,0.59,0.99};
+
         class RobotMechanisms {
             // 2. Define the method that returns an Action
 
@@ -259,7 +260,7 @@ public class RedAutoup extends LinearOpMode{
                     .splineTo(Ballrow3,Math.toRadians(0))
                     .build();
             Action Shootingposa1 = Drivetrain.actionBuilder(Ballrow1endpose)
-                    .splineTo(Shootingpos,Math.toRadians(135))
+                    .splineToSplineHeading(Shootingpospose,Math.toRadians(135))
                     .build();
             Action Shootingposa2 = Drivetrain.actionBuilder(Ballrow2endpose)
                     .splineTo(Shootingpos,Math.toRadians(135))

@@ -16,9 +16,9 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 
-@Autonomous(name="Red Alliance Auto Up")
+@Autonomous(name="Right Auto")
 //ts is the auto for one side you can prolly mirror for the other side
-public class BlueAutoup extends LinearOpMode{
+public class RightAuto extends LinearOpMode{
     @Override
     public void runOpMode() throws InterruptedException {
         CRServo leftFlywheel, rightFlywheel;
@@ -39,45 +39,45 @@ public class BlueAutoup extends LinearOpMode{
 
             Pose2d Startingpos = new Pose2d(12.52, 12, Math.toRadians(180));
             //ts is all placeholders change it up when gain brainpower
-            Vector2d Ballrow1 = new Vector2d(54.719, 11.969);
-            Pose2d Ballrow1pose = new Pose2d(54.719, 11.969, Math.toRadians(180));
-            Vector2d Ballrow1_2 = new Vector2d(49.719, 11.969);
+            Vector2d Ballrow3end = new Vector2d(54.719, 11.969);
+            Pose2d Ballrow3endpose = new Pose2d(54.719, 11.969, Math.toRadians(180));
+            Vector2d Ballrow3_3= new Vector2d(49.719, 11.969);
             //Middle of row
-            Pose2d Ballrow1_2pose = new Pose2d(49.719, 11.969, Math.toRadians(180));
-            Vector2d Ballrow1_3 = new Vector2d(44.719, 11.969);
+            Pose2d Ballrow3_3pose = new Pose2d(49.719, 11.969, Math.toRadians(180));
+            Vector2d Ballrow3_2 = new Vector2d(44.719, 11.969);
             //Middle of row
-            Pose2d Ballrow1_3pose = new Pose2d(44.719, 11.969, Math.toRadians(180));
-            Vector2d Ballrow1end = new Vector2d(39.719, 11.969);
+            Pose2d Ballrow3_2pose = new Pose2d(44.719, 11.969, Math.toRadians(180));
+            Vector2d Ballrow3 = new Vector2d(39.719, 11.969);
             //End of row (closer to center/left)
-            Pose2d Ballrow1endpose = new Pose2d(39.719, 11.969, Math.toRadians(180));
+            Pose2d Ballrow3pose = new Pose2d(39.719, 11.969, Math.toRadians(180));
 
             // ROW 2 (Middle) - Moving Leftwards
-            Vector2d Ballrow2 = new Vector2d(54.719, -11.969);
+            Vector2d Ballrow2end = new Vector2d(54.719, -11.969);
             //Start of row
-            Pose2d Ballrow2pose = new Pose2d(54.719, -11.969, Math.toRadians(180));
-            Vector2d Ballrow2_2 = new Vector2d(49.719, -11.969);
+            Pose2d Ballrow2endpose = new Pose2d(54.719, -11.969, Math.toRadians(180));
+            Vector2d Ballrow2_3 = new Vector2d(49.719, -11.969);
             //Middle of row
-            Pose2d Ballrow2_2pose = new Pose2d(49.719, -11.969, Math.toRadians(180));
-            Vector2d Ballrow2_3 = new Vector2d(44.719, -11.969);
+            Pose2d Ballrow2_3pose = new Pose2d(49.719, -11.969, Math.toRadians(180));
+            Vector2d Ballrow2_2 = new Vector2d(44.719, -11.969);
             //Middle of row
-            Pose2d Ballrow2_3pose = new Pose2d(44.719, -11.969, Math.toRadians(180));
-            Vector2d Ballrow2end = new Vector2d(39.719, -11.969);
-            Pose2d Ballrow2endpose = new Pose2d(39.719, -11.969, Math.toRadians(180));
+            Pose2d Ballrow2_2pose = new Pose2d(44.719, -11.969, Math.toRadians(180));
+            Vector2d Ballrow2 = new Vector2d(39.719, -11.969);
+            Pose2d Ballrow2pose = new Pose2d(39.719, -11.969, Math.toRadians(180));
             //End of row
 
             // ROW 3 (Bottom) - Moving Leftwards
-            Vector2d Ballrow3 = new Vector2d(54.719, -35.218);
+            Vector2d Ballrow1end = new Vector2d(54.719, -35.218);
             //Start of row
-            Pose2d Ballrow3pose = new Pose2d(54.719, -35.218, Math.toRadians(180));
-            Vector2d Ballrow3_2 = new Vector2d(49.719, -35.218);
+            Pose2d Ballrow1endpose = new Pose2d(54.719, -35.218, Math.toRadians(180));
+            Vector2d Ballrow1_3 = new Vector2d(49.719, -35.218);
             //Middle of row
-            Pose2d Ballrow3_2pose = new Pose2d(49.719, -35.218, Math.toRadians(180));
-            Vector2d Ballrow3_3 = new Vector2d(44.719, -35.218);
+            Pose2d Ballrow1_3pose = new Pose2d(49.719, -35.218, Math.toRadians(180));
+            Vector2d Ballrow1_2 = new Vector2d(44.719, -35.218);
             //Middle of row
-            Pose2d Ballrow3_3pose = new Pose2d(44.719, -35.218, Math.toRadians(180));
-            Vector2d Ballrow3end = new Vector2d(39.719, -35.218);
+            Pose2d Ballrow1_2pose = new Pose2d(44.719, -35.218, Math.toRadians(180));
+            Vector2d Ballrow1 = new Vector2d(39.719, -35.218);
             //End of row
-            Pose2d Ballrow3endpose = new Pose2d(39.719, -35.218, Math.toRadians(180));
+            Pose2d Ballrow1pose = new Pose2d(39.719, -35.218, Math.toRadians(180));
 
             Vector2d Shootingpos = new Vector2d(50, 50);
             Pose2d Shootingpospose = new Pose2d(50, 50, Math.toRadians(45));
