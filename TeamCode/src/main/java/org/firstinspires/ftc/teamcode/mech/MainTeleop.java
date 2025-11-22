@@ -60,7 +60,7 @@ public class MainTeleop extends LinearOpMode{
                        // movement = new movement(lom, x, y, h);
 
                         if (gamepad1.y) {
-                                launcher.setPower(1);
+                                launcher.setPower(0.8);
                                 sleep(1000);
                                 leftFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
                                 leftFlywheel.setPower(1);
