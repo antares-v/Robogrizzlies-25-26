@@ -14,12 +14,17 @@ public class CV {
     Integer resolution_x = 320;
     Integer resolution_y = 240;
     LinearOpMode tele;
+    AprilTagDetectionPipeline pipeline;
+
+
 
     public CV(LinearOpMode l) {
         int cameraMonitorViewId = l.hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", l.hardwareMap.appContext.getPackageName());
         camera = OpenCvCameraFactory.getInstance().createWebcam(l.hardwareMap.get(WebcamName.class, "CV"), cameraMonitorViewId);
         tele = l;
+        pipeline = new AprilTagDetectionPipeline(tele.telemetry);
     }
+
     public void stream(){
         camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
         {
@@ -37,7 +42,10 @@ public class CV {
             }
         });
         camera.startStreaming(320, 420, OpenCvCameraRotation.UPRIGHT);
-        OpenCvPipeline pipeline = new AprilTagDetectionPipeline(tele.telemetry);
         camera.setPipeline(pipeline);
+
+    }
+    public int getPattern() {
+        return pipeline.getPattern();
     }
 }

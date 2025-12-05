@@ -14,14 +14,17 @@ import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import org.firstinspires.ftc.teamcode.mech.CV.CV;
 import com.qualcomm.robotcore.hardware.ColorSensor;
-
 import java.util.ArrayList;
 import java.util.List;
 
 @TeleOp
 public class MainTeleop extends LinearOpMode{
         private LinearOpMode lom;
+
+
+
         private movement movement;
         CRServo leftFlywheel, rightFlywheel;
         ColorSensor sensor;
@@ -46,6 +49,11 @@ public class MainTeleop extends LinearOpMode{
                 leftIntake = hardwareMap.get(DcMotor.class, "leftIntake");
                 rightIntake = hardwareMap.get(DcMotor.class, "rightIntake");
                 rightIntake.setDirection(DcMotorSimple.Direction.REVERSE);
+                List<String> ballcols = new ArrayList<>();
+                        ballcols.add("blank");
+                        ballcols.add("blank");
+                        ballcols.add("blank");
+                CV myCv = new CV(this);
                 sensor = hardwareMap.get(ColorSensor.class, "colorSensor");
                 ColorDetection colorSensor = new ColorDetection();
                 waitForStart();
@@ -58,6 +66,7 @@ public class MainTeleop extends LinearOpMode{
 
                         boolean aButton = gamepad1.a;
                         boolean bButton = gamepad1.b;
+                        boolean ybutton = gamepad1.y;
                         boolean dLeft = gamepad1.dpad_left;
                         boolean dRight = gamepad1.dpad_right;
                         boolean lB = gamepad1.left_bumper;
@@ -66,22 +75,96 @@ public class MainTeleop extends LinearOpMode{
                         double y = gamepad1.left_stick_y;
                         double h = gamepad1.right_stick_x;
                         movement.move(x,y,h);
+
                        // movement = new movement(lom, x, y, h);
 
-                        if (gamepad1.y) {
-                                launcher.setPower(0.8);
-                                sleep(1000);
-                                leftFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
-                                leftFlywheel.setPower(1);
-                                rightFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
-                                rightFlywheel.setPower(1);
-                        }
-                        if (gamepad1.a) {
-                                leftFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
-                                leftFlywheel.setPower(0);
-                                rightFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
-                                rightFlywheel.setPower(0);
-                                launcher.setPower(0);
+//                        if (gamepad1.y) {
+//                                launcher.setPower(1);
+//                                sleep(2000);
+//                                leftFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
+//                                leftFlywheel.setPower(1);
+//                                rightFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
+//                                rightFlywheel.setPower(1);
+//                        }
+//                        if (gamepad1.a) {
+//                                leftFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
+//                                leftFlywheel.setPower(0);
+//                                rightFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
+//                                rightFlywheel.setPower(0);
+//                                launcher.setPower(0);
+//                        }
+
+                        if (ybutton) {
+                                // y is basically green purple purple as a sequence
+                                telemetry.addData("check1", "This works");
+                                List<Integer> poslist = new ArrayList<>();
+                                        poslist.add(10);
+                                        poslist.add(10);
+                                        poslist.add(10);
+                                boolean green = false;
+                                int p = myCv.getPattern();
+
+                                for (int j = 0; j < 2; j++) {
+                                        telemetry.addData("j", "This works");
+                                        String color = ballcols.get(j);
+                                        if (color.equals("green") && !green) {
+                                                poslist.set(p,j);
+                                                poslist.set((p+1)%3,(j+1)%3);
+                                                poslist.set((p+2)%3,(j+2)%3);
+                                                green = true;
+                                        } else if ((color.equals("green") && green) || color.equals("blank")) {
+                                                telemetry.addData("blank", "This works");
+                                                poslist.set(0,67);
+                                        }
+
+
+                                }
+                                if (poslist.get(0) == 67){
+                                        randomrunner:
+                                        for (int j = 0; j < 3; j++){
+                                                spindexer.setPosition(spindexerPosOuttake[j]);
+                                                launcher.setPower(1);
+                                                if (j == 0){
+                                                        sleep(1500);
+                                                }
+                                                leftFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
+                                                leftFlywheel.setPower(1);
+                                                rightFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
+                                                rightFlywheel.setPower(1);
+                                                sleep(750);
+                                                leftFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
+                                                leftFlywheel.setPower(0);
+                                                rightFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
+                                                rightFlywheel.setPower(0);
+                                                launcher.setPower(0);
+                                                if(aButton){
+                                                        break randomrunner;
+                                                }
+                                        }
+                                }
+                                else{
+                                        properrunner:
+                                        for (int j = 0; j < 3; j++){
+                                                spindexer.setPosition(spindexerPosOuttake[poslist.get(j)]);
+                                                launcher.setPower(1);
+                                                if (j == 0){
+                                                        sleep(1500);
+                                                }
+                                                leftFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
+                                                leftFlywheel.setPower(1);
+                                                rightFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
+                                                rightFlywheel.setPower(1);
+                                                sleep(750);
+                                                leftFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
+                                                leftFlywheel.setPower(0);
+                                                rightFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
+                                                rightFlywheel.setPower(0);
+                                                launcher.setPower(0);
+                                                if(aButton){
+                                                        break properrunner;
+                                                }
+                                        }
+                                }
                         }
                         if (dLeft&&i<spindexerPosIntake.length-1) {
                                 i++;
@@ -113,6 +196,7 @@ public class MainTeleop extends LinearOpMode{
                         telemetry.addData("spindexerPosIntake", spindexerPosOuttake[i]);
                         if (intakeBool) {
                                 spindexer.setPosition(spindexerPosIntake[i]);
+//                                ballcols.set(i, Some kind of get color code from sensor);
                         }
                         else {
                                 spindexer.setPosition(spindexerPosOuttake[i]);
