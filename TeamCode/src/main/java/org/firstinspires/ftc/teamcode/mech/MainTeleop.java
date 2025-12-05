@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.mech;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 //import com.acmerobotics.dashboard.config.Config;
+import org.firstinspires.ftc.teamcode.mech.CV.ColorDetection;
 import org.firstinspires.ftc.teamcode.mech.movement.goBuildaPinPointDriver.GoBildaPinpointDriver;
 import org.firstinspires.ftc.teamcode.mech.movement.goBuildaPinPointDriver.Pose2D;
 import org.firstinspires.ftc.teamcode.mech.movement.movement;
@@ -13,9 +14,10 @@ import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import org.firstinspires.ftc.teamcode.mech.CV.CV;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import java.util.ArrayList;
 import java.util.List;
-import org.firstinspires.ftc.teamcode.mech.CV.CV;
 
 @TeleOp
 public class MainTeleop extends LinearOpMode{
@@ -25,11 +27,15 @@ public class MainTeleop extends LinearOpMode{
 
         private movement movement;
         CRServo leftFlywheel, rightFlywheel;
+        ColorSensor sensor;
         Servo spindexer;
         DcMotor leftIntake, rightIntake, launcher;
         double[] spindexerPosIntake = {0,0.38,0.79};
         double[] spindexerPosOuttake = {0.19,0.59,0.99};
         boolean intakeBool = true;
+        List<String> colorStack = new ArrayList<String>();
+        String[] colorOrder = {"green", "purple", "green"}; // CHANGE LATER
+        int colorIndex = 0;
         int i = 0;
         @Override
         public void runOpMode() {
@@ -48,6 +54,8 @@ public class MainTeleop extends LinearOpMode{
                         ballcols.add("blank");
                         ballcols.add("blank");
                 CV myCv = new CV(this);
+                sensor = hardwareMap.get(ColorSensor.class, "colorSensor");
+                ColorDetection colorSensor = new ColorDetection();
                 waitForStart();
 
                 //Code here will run only once when Start is pressed
@@ -169,16 +177,19 @@ public class MainTeleop extends LinearOpMode{
                         if (rB) {
                                 rightIntake.setPower(1);
                                 leftIntake.setPower(1);
+                                intakeBool = true;
                         }
-                        if (lB) {
+                        else if (lB) {
                                 rightIntake.setPower(-1);
                                 leftIntake.setPower(-1);
-                        }
-                        if (rB||lB) {
                                 intakeBool = true;
                         }
                         else {
                                 intakeBool = false;
+                                String color = colorSensor.getColor(sensor);
+                                if (color != null) {
+                                        colorStack.add(color);
+                                }
                         }
                         leftIntake.setPower(0);
                         rightIntake.setPower(0);
