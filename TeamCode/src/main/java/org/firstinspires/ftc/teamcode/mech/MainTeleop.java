@@ -18,6 +18,7 @@ import org.firstinspires.ftc.teamcode.mech.CV.CV;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import java.util.ArrayList;
 import java.util.List;
+import org.firstinspires.ftc.teamcode.mech.CV.ColorDetection;
 
 @TeleOp
 public class MainTeleop extends LinearOpMode{
@@ -55,6 +56,7 @@ public class MainTeleop extends LinearOpMode{
                         ballcols.add("blank");
                 CV myCv = new CV(this);
                 sensor = hardwareMap.get(ColorSensor.class, "colorSensor");
+                ColorSensor mySensor = hardwareMap.get(ColorSensor.class, "idkpleasefillitin"); //here gavin gavin
                 ColorDetection colorSensor = new ColorDetection();
                 waitForStart();
 
@@ -196,7 +198,7 @@ public class MainTeleop extends LinearOpMode{
                         telemetry.addData("spindexerPosIntake", spindexerPosOuttake[i]);
                         if (intakeBool) {
                                 spindexer.setPosition(spindexerPosIntake[i]);
-//                                ballcols.set(i, Some kind of get color code from sensor);
+                                ballcols.set(i, colorSensor.getColor(mySensor));
                         }
                         else {
                                 spindexer.setPosition(spindexerPosOuttake[i]);
