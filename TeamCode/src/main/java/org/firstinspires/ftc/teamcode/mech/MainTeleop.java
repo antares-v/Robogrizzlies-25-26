@@ -23,9 +23,6 @@ import org.firstinspires.ftc.teamcode.mech.CV.ColorDetection;
 @TeleOp
 public class MainTeleop extends LinearOpMode{
         private LinearOpMode lom;
-
-
-
         private movement movement;
         CRServo leftFlywheel, rightFlywheel;
         ColorSensor sensor;
@@ -34,9 +31,6 @@ public class MainTeleop extends LinearOpMode{
         double[] spindexerPosIntake = {0,0.38,0.79};
         double[] spindexerPosOuttake = {0.19,0.59,0.99};
         boolean intakeBool = true;
-        List<String> colorStack = new ArrayList<String>();
-        String[] colorOrder = {"green", "purple", "green"}; // CHANGE LATER
-        int colorIndex = 0;
         int i = 0;
         @Override
         public void runOpMode() {
@@ -56,19 +50,21 @@ public class MainTeleop extends LinearOpMode{
                         ballcols.add("blank");
                 CV myCv = new CV(this);
                 sensor = hardwareMap.get(ColorSensor.class, "colorSensor");
-                ColorSensor mySensor = hardwareMap.get(ColorSensor.class, "idkpleasefillitin"); //here gavin gavin
                 ColorDetection colorSensor = new ColorDetection();
+                boolean patternchecked = false;
+                int p = 2000000000;
+
                 waitForStart();
 
                 //Code here will run only once when Start is pressed
 
                 while (opModeIsActive()) {
 
-                        //Put any code here which should loop until Stop is pressed
-
+                        //Put any code here which should loop until Stop is presse
                         boolean aButton = gamepad1.a;
                         boolean bButton = gamepad1.b;
-                        boolean ybutton = gamepad1.y;
+                        boolean yButton = gamepad1.y;
+                        boolean xButton = gamepad1.x;
                         boolean dLeft = gamepad1.dpad_left;
                         boolean dRight = gamepad1.dpad_right;
                         boolean lB = gamepad1.left_bumper;
@@ -96,7 +92,20 @@ public class MainTeleop extends LinearOpMode{
 //                                launcher.setPower(0);
 //                        }
 
-                        if (ybutton) {
+                        if (xButton && !patternchecked) {
+                                p = 0;
+                                patternchecked=true;
+                        }
+                        if (yButton && !patternchecked) {
+                                p = 1;
+                                patternchecked=true;
+                        }
+                        if (bButton && !patternchecked) {
+                                p = 2;
+                                patternchecked=true;
+                        }
+
+                        if (yButton) {
                                 // y is basically green purple purple as a sequence
                                 telemetry.addData("check1", "This works");
                                 List<Integer> poslist = new ArrayList<>();
@@ -104,8 +113,6 @@ public class MainTeleop extends LinearOpMode{
                                         poslist.add(10);
                                         poslist.add(10);
                                 boolean green = false;
-                                int p = myCv.getPattern();
-
                                 for (int j = 0; j < 2; j++) {
                                         telemetry.addData("j", "This works");
                                         String color = ballcols.get(j);
@@ -186,19 +193,12 @@ public class MainTeleop extends LinearOpMode{
                                 leftIntake.setPower(-1);
                                 intakeBool = true;
                         }
-                        else {
-                                intakeBool = false;
-                                String color = colorSensor.getColor(sensor);
-                                if (color != null) {
-                                        colorStack.add(color);
-                                }
-                        }
                         leftIntake.setPower(0);
                         rightIntake.setPower(0);
                         telemetry.addData("spindexerPosIntake", spindexerPosOuttake[i]);
                         if (intakeBool) {
                                 spindexer.setPosition(spindexerPosIntake[i]);
-                                ballcols.set(i, colorSensor.getColor(mySensor));
+                                ballcols.set(i, colorSensor.getColor(sensor));
                         }
                         else {
                                 spindexer.setPosition(spindexerPosOuttake[i]);

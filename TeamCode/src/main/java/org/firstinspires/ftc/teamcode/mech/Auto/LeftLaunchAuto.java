@@ -16,12 +16,10 @@ import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import java.net.ProxySelector;
 
-
-@Autonomous(name="Right Auto")
+@Autonomous(name="Left Auto")
 //ts is the auto for one side you can prolly mirror for the other side
-public class RightAuto extends LinearOpMode{
+public class LeftLaunchAuto extends LinearOpMode{
     @Override
     public void runOpMode() throws InterruptedException {
         CRServo leftFlywheel, rightFlywheel;
@@ -41,41 +39,41 @@ public class RightAuto extends LinearOpMode{
         double farRowY = 26;
         double midRowY = -15;
         double closeRowY = -35;
-        double firstBallX = 65;
+        double firstBallX = 50;
         double ballWaiting = 0.5;
         TranslationalVelConstraint tvConstraint = new TranslationalVelConstraint(25.0);
 
         class RobotMechanisms {
             // 2. Define the method that returns an Action
 
-            Pose2d Startingpos = new Pose2d(75, 75, Math.toRadians(45));
-           //Pose2d Startingpos = new Pose2d(24,-60, Math.toRadians(45));
-            Pose2d shootLocation = new Pose2d(56,56, Math.toRadians(45));
-            Vector2d shootVector = new Vector2d(56,56);
-            Vector2d farRow1 = new Vector2d(24, farRowY);
-            Vector2d farRow2 = new Vector2d(42+1*interballDistance, farRowY);
-            Vector2d farRow3 = new Vector2d(42+2*interballDistance, farRowY);
-            Vector2d farRow4 = new Vector2d(42+3*interballDistance, farRowY);
-            Pose2d farRow1End = new Pose2d(24,27, Math.toRadians(0));
-            Pose2d farRow2End = new Pose2d(firstBallX+1*interballDistance, 30, Math.toRadians(0));
-            Pose2d farRow3End = new Pose2d(firstBallX+2*interballDistance, 30, Math.toRadians(0));
-            Pose2d farRow4End = new Pose2d(firstBallX+3*interballDistance, 30, Math.toRadians(0));
+            Pose2d Startingpos = new Pose2d(-75, 75, Math.toRadians(45));
+            //Pose2d Startingpos = new Pose2d(24,-60, Math.toRadians(45));
+            Pose2d shootLocation = new Pose2d(-56,56, Math.toRadians(45));
+            Vector2d shootVector = new Vector2d(-56,56);
+            Vector2d farRow1 = new Vector2d(-24, farRowY);
+            Vector2d farRow2 = new Vector2d((firstBallX-1*interballDistance), farRowY);
+            Vector2d farRow3 = new Vector2d(firstBallX-2*interballDistance, farRowY);
+            Vector2d farRow4 = new Vector2d(firstBallX-3*interballDistance, farRowY);
+            Pose2d farRow1End = new Pose2d(-24,27, Math.toRadians(0));
+            Pose2d farRow2End = new Pose2d(firstBallX-1*interballDistance, 30, Math.toRadians(0));
+            Pose2d farRow3End = new Pose2d(firstBallX-2*interballDistance, 30, Math.toRadians(0));
+            Pose2d farRow4End = new Pose2d(firstBallX-3*interballDistance, 30, Math.toRadians(0));
             Vector2d midRow1 = new Vector2d(0, -15);
-            Vector2d midRow2 = new Vector2d(firstBallX+1*interballDistance, -15);
-            Vector2d midRow3 = new Vector2d(firstBallX+2*interballDistance, -15);
-            Vector2d midRow4 = new Vector2d(firstBallX+3*interballDistance, -15);
+            Vector2d midRow2 = new Vector2d(firstBallX-1*interballDistance, -15);
+            Vector2d midRow3 = new Vector2d(firstBallX-2*interballDistance, -15);
+            Vector2d midRow4 = new Vector2d(firstBallX-3*interballDistance, -15);
             Pose2d midRow1End = new Pose2d(0,-15, Math.toRadians(0));
-            Pose2d midRow2End = new Pose2d(firstBallX+1*interballDistance, -15, Math.toRadians(0));
-            Pose2d midRow3End = new Pose2d(firstBallX+2*interballDistance, -15, Math.toRadians(0));
-            Pose2d midRow4End = new Pose2d(firstBallX+3*interballDistance, -15, Math.toRadians(0));
+            Pose2d midRow2End = new Pose2d(firstBallX-1*interballDistance, -15, Math.toRadians(0));
+            Pose2d midRow3End = new Pose2d(firstBallX-2*interballDistance, -15, Math.toRadians(0));
+            Pose2d midRow4End = new Pose2d(firstBallX-3*interballDistance, -15, Math.toRadians(0));
             Vector2d closeRow1 = new Vector2d(0, -35);
-            Vector2d closeRow2 = new Vector2d(firstBallX+1*interballDistance, -35);
-            Vector2d closeRow3 = new Vector2d(firstBallX+2*interballDistance, -35);
-            Vector2d closeRow4 = new Vector2d(firstBallX+3*interballDistance, -35);
+            Vector2d closeRow2 = new Vector2d(firstBallX-1*interballDistance, -35);
+            Vector2d closeRow3 = new Vector2d(firstBallX-2*interballDistance, -35);
+            Vector2d closeRow4 = new Vector2d(firstBallX-3*interballDistance, -35);
             Pose2d closeRow1End = new Pose2d(0,-35, Math.toRadians(0));
-            Pose2d closeRow2End = new Pose2d(firstBallX+1*interballDistance, -35, Math.toRadians(0));
-            Pose2d closeRow3End = new Pose2d(firstBallX+2*interballDistance, -35, Math.toRadians(0));
-            Pose2d closeRow4End = new Pose2d(firstBallX+3*interballDistance, -35, Math.toRadians(0));
+            Pose2d closeRow2End = new Pose2d(firstBallX-1*interballDistance, -35, Math.toRadians(0));
+            Pose2d closeRow3End = new Pose2d(firstBallX-2*interballDistance, -35, Math.toRadians(0));
+            Pose2d closeRow4End = new Pose2d(firstBallX-3*interballDistance, -35, Math.toRadians(0));
             MecanumDrive Drivetrain = new MecanumDrive(hardwareMap, Startingpos);
             public Action collectRowOfBalls(int spinpos) {
                 return new Action() {
@@ -170,11 +168,11 @@ public class RightAuto extends LinearOpMode{
             };
 
             Action trajectoryCollectRow1_1 = Drivetrain.actionBuilder(farRow1End)
-                   // .waitSeconds(ballWaiting)
+                    // .waitSeconds(ballWaiting)
                     .strafeToLinearHeading(farRow2, Math.toRadians(0), tvConstraint)
                     .build();
             Action trajectoryCollectRow1_2 = Drivetrain.actionBuilder(farRow2End)
-                   // .waitSeconds(ballWaiting)
+                    // .waitSeconds(ballWaiting)
                     .strafeTo(farRow3, tvConstraint)
                     .build();
             Action trajectoryCollectRow1_3 = Drivetrain.actionBuilder(farRow3End)
