@@ -53,8 +53,6 @@ public class MainTeleop extends LinearOpMode{
                 int p = 0;
                 String color = "blank";
                 String pattern_name = "random";
-                telemetry.addData("order", pattern_name);
-                telemetry.addData("colors", ballcols);
                 waitForStart();
 
 
@@ -228,7 +226,6 @@ public class MainTeleop extends LinearOpMode{
                                 telemetry.update();
                         }
                         else {
-                                intakeBool = false;
                                 rightIntake.setPower(0);
                                 leftIntake.setPower(0);
                         }
@@ -246,6 +243,8 @@ public class MainTeleop extends LinearOpMode{
                         telemetry.addData("i", i);
                         telemetry.addData("spindexerPos", spindexer.getPosition());
                         telemetry.addData("spindexerPosOuttake", spindexerPosOuttake[i]);
+                        telemetry.addData("order", pattern_name);
+                        telemetry.addData("colors", ballcols);
                         telemetry.update(); //OpMode does this for you
 
                 }
