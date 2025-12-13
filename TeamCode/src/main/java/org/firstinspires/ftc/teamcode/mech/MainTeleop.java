@@ -139,7 +139,10 @@ public class MainTeleop extends LinearOpMode{
                                                 spindexer.setPosition(spindexerPosOuttake[j]);
                                                 launcher.setPower(1);
                                                 if (j == 0){
-                                                        sleep(1500);
+                                                        sleep(2000);
+                                                }
+                                                else {
+                                                     sleep(250);
                                                 }
                                                 if(gamepad1.a){
                                                         break randomrunner;
