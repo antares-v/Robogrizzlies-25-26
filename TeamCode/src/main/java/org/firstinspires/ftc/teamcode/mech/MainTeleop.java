@@ -29,7 +29,7 @@ public class MainTeleop extends LinearOpMode{
         DcMotor leftIntake, rightIntake, launcher;
         double[] spindexerPosIntake = {0,0.38,0.79};
         double[] spindexerPosOuttake = {0.19,0.59,0.99};
-        boolean intakeBool = true;
+        boolean intakeBool = false;
         int i = 0;
         @Override
         public void runOpMode() {
@@ -214,8 +214,8 @@ public class MainTeleop extends LinearOpMode{
                                 ballcols.set(i, colorSensor.getColor(sensor));
                         }
                         else {
-                                rightIntake.setPower(-1);
-                                leftIntake.setPower(-1);
+                                rightIntake.setPower(0);
+                                leftIntake.setPower(0);
                         }
                         telemetry.addData("spindexerPosIntake", spindexerPosOuttake[i]);
                         if (intakeBool) {

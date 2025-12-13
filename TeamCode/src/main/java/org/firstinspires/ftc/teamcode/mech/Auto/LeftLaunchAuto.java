@@ -46,9 +46,9 @@ public class LeftLaunchAuto extends LinearOpMode{
         class RobotMechanisms {
             // 2. Define the method that returns an Action
 
-            Pose2d Startingpos = new Pose2d(-75, 75, Math.toRadians(45));
+            Pose2d Startingpos = new Pose2d(-75, 75, Math.toRadians(135));
             //Pose2d Startingpos = new Pose2d(24,-60, Math.toRadians(45));
-            Pose2d shootLocation = new Pose2d(-56,56, Math.toRadians(45));
+            Pose2d shootLocation = new Pose2d(-68,68, Math.toRadians(135));
             Vector2d shootVector = new Vector2d(-56,56);
             Vector2d farRow1 = new Vector2d(-24, farRowY);
             Vector2d farRow2 = new Vector2d((firstBallX-1*interballDistance), farRowY);
@@ -125,21 +125,18 @@ public class LeftLaunchAuto extends LinearOpMode{
                             spindexer.setPosition(spindexerPosOuttake[i]);
                             return true;
                         }
-                        if (timer.seconds() < 2.0){
-                            return true;
-                        }
                         if (timer2 == null) {
                             timer2 = new ElapsedTime();
                             return true;
                         }
-                        if (timer.seconds() > 2.0 && timer2.seconds() < 1.0) {
+                        if (timer.seconds() < 1.0){
+                            return true;
+                        }
+                        if (timer.seconds() > 1.0 && timer2.seconds() < 3.0) {
                             leftFlywheel.setDirection(CRServo.Direction.FORWARD);
                             leftFlywheel.setPower(1);
                             rightFlywheel.setDirection(CRServo.Direction.REVERSE);
                             rightFlywheel.setPower(1);
-                            return true;
-                        }
-                        if (timer.seconds() < 2.0){
                             return true;
                         }
                         if (i<2) {
@@ -264,7 +261,7 @@ public class LeftLaunchAuto extends LinearOpMode{
                     .splineToLinearHeading(new Pose2d(50,50, Math.toRadians(45)), Math.toRadians(45))
                     .build();
             Action TrajectoryInitial = Drivetrain.actionBuilder(Startingpos)
-                    .strafeTo(shootVector)
+                    .splineToLinearHeading(shootLocation, Math.toRadians(45))
                     .build();
             Action autonoumouschain = new SequentialAction(
                     TrajectoryInitial,
