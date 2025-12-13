@@ -53,8 +53,10 @@ public class MainTeleop extends LinearOpMode{
                 int p = 0;
                 String color = "blank";
                 String pattern_name = "random";
-
+                telemetry.addData("order", pattern_name);
+                telemetry.addData("colors", ballcols);
                 waitForStart();
+
 
                 //Code here will run only once when Start is pressed
 
@@ -87,7 +89,6 @@ public class MainTeleop extends LinearOpMode{
 //                                rightFlywheel.setPower(0);
 //                                launcher.setPower(0);
 //                        }
-                        telemetry.addData("order", pattern_name);
 
                         if (gamepad1.x && !patternchecked) {
                                 p = 0;
@@ -133,6 +134,7 @@ public class MainTeleop extends LinearOpMode{
                                         }
 
                                 }
+                                telemetry.update();
                                 if (poslist.get(0) == 67){
                                         randomrunner:
                                         for (int j = 0; j < 3; j++){
@@ -216,12 +218,14 @@ public class MainTeleop extends LinearOpMode{
                                 leftIntake.setPower(1);
                                 intakeBool = true;
                                 ballcols.set(i, colorSensor.getColor(sensor));
+                                telemetry.update();
                         }
                         else if (lB) {
                                 rightIntake.setPower(-1);
                                 leftIntake.setPower(-1);
                                 intakeBool = true;
                                 ballcols.set(i, colorSensor.getColor(sensor));
+                                telemetry.update();
                         }
                         else {
                                 intakeBool = false;
