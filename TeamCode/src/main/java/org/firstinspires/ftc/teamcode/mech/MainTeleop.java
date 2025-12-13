@@ -102,7 +102,8 @@ public class MainTeleop extends LinearOpMode{
 
                          if (gamepad1.y && patternchecked) {
                                 // y is basically green purple purple as a sequence
-                                List<Integer> poslist = new ArrayList<>();
+                                 ballcols.set(i, colorSensor.getColor(sensor));
+                                 List<Integer> poslist = new ArrayList<>();
                                         poslist.add(0);
                                         poslist.add(0);
                                         poslist.add(0);
@@ -194,12 +195,14 @@ public class MainTeleop extends LinearOpMode{
                                 }
                         }
                         if (dLeft&&i<spindexerPosIntake.length-1) {
+                                ballcols.set(i, colorSensor.getColor(sensor));
                                 i++;
-                                sleep(200);
+//                                sleep(200);
                         }
                         if (dRight&&i>0) {
+                                ballcols.set(i, colorSensor.getColor(sensor));
                                 i--;
-                                sleep(200);
+//                                sleep(200);
                         }
                         if (rB) {
                                 rightIntake.setPower(1);
