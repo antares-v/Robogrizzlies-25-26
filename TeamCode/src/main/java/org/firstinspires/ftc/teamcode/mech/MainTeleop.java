@@ -113,10 +113,6 @@ public class MainTeleop extends LinearOpMode{
                                 for (int j = 0; j < 2; j++) {
                                         telemetry.addData("j", "This works");
                                         String color = ballcols.get(j);
-                                        telemetry.addData("check1", color);
-                                        telemetry.addData("c", p);
-                                        telemetry.addData("boolean",patternchecked);
-                                        sleep(20000);
                                         if (color.equals("green") && !green) {
                                                 poslist.set(p,j);
                                                 poslist.set((p+1)%3,(j+1)%3);
@@ -203,6 +199,8 @@ public class MainTeleop extends LinearOpMode{
                         }
                         else {
                                 spindexer.setPosition(spindexerPosOuttake[i]);
+                                leftIntake.setPower(0);
+                                rightIntake.setPower(0);
                         }
                         idle(); //Give the system more time to do background tasks
                         //This shouldn't be necessary and isn't in the boilerplate template,
