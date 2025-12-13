@@ -157,9 +157,6 @@ public class MainTeleop extends LinearOpMode{
                                                 }
                                                 leftFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
                                                 leftFlywheel.setPower(0);
-                                                if(gamepad1.a){
-                                                        break randomrunner;
-                                                }
                                                 rightFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
                                                 rightFlywheel.setPower(0);
                                                 launcher.setPower(0);
@@ -167,6 +164,11 @@ public class MainTeleop extends LinearOpMode{
                                                         break randomrunner;
                                                 }
                                         }
+                                        leftFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
+                                        leftFlywheel.setPower(0);
+                                        rightFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
+                                        rightFlywheel.setPower(0);
+                                        launcher.setPower(0);
                                 }
                                 else{
                                         properrunner:
@@ -202,6 +204,11 @@ public class MainTeleop extends LinearOpMode{
                                                         break properrunner;
                                                 }
                                         }
+                                        leftFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
+                                        leftFlywheel.setPower(0);
+                                        rightFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
+                                        rightFlywheel.setPower(0);
+                                        launcher.setPower(0);
                                 }
                         }
                         if (dLeft&&i<spindexerPosIntake.length-1) {
