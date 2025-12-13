@@ -14,7 +14,7 @@ public class ColorDetection {
         int green = sensor.green();
         int blue = sensor.blue();
         if (red < 50 && green < 50 && blue < 50) {
-            return null;
+            return "blank";
         }
         if (green > red && green > blue) {
             return "green";
