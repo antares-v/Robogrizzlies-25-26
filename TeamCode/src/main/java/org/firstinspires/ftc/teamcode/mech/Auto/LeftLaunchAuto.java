@@ -48,8 +48,8 @@ public class LeftLaunchAuto extends LinearOpMode{
 
             Pose2d Startingpos = new Pose2d(-75, 75, Math.toRadians(135));
             //Pose2d Startingpos = new Pose2d(24,-60, Math.toRadians(45));
-            Pose2d shootLocation = new Pose2d(-68,68, Math.toRadians(135));
-            Vector2d shootVector = new Vector2d(-68,68);
+            Pose2d shootLocation = new Pose2d(-69,69, Math.toRadians(135));
+            Vector2d shootVector = new Vector2d(-69,69);
             Vector2d farRow1 = new Vector2d(-24, farRowY);
             Vector2d farRow2 = new Vector2d((firstBallX-1*interballDistance), farRowY);
             Vector2d farRow3 = new Vector2d(firstBallX-2*interballDistance, farRowY);
@@ -129,10 +129,10 @@ public class LeftLaunchAuto extends LinearOpMode{
                             timer2 = new ElapsedTime();
                             return true;
                         }
-                        if (timer.seconds() < 1.0){
+                        if (timer.seconds() < 1.5){
                             return true;
                         }
-                        if (timer.seconds() > 1.0 && timer2.seconds() < 3.0) {
+                        if (timer.seconds() > 1.5 && timer2.seconds() < 3.0) {
                             leftFlywheel.setDirection(CRServo.Direction.FORWARD);
                             leftFlywheel.setPower(1);
                             rightFlywheel.setDirection(CRServo.Direction.REVERSE);
@@ -265,25 +265,26 @@ public class LeftLaunchAuto extends LinearOpMode{
                     .build();
             Action autonoumouschain = new SequentialAction(
                     TrajectoryInitial,
-                    Shoot(),
-                    Trajectoryrow1,
-                    Pickup1_1,
-                    Pickup1_2,
-                    Pickup1_3,
-                    Shootingposa1,
-                    Shoot(),
-                    Trajectoryrow2,
-                    Pickup2_1,
-                    Pickup2_2,
-                    Pickup2_3,
-                    Shootingposa2,
-                    Shoot(),
-                    Trajectoryrow3,
-                    Pickup3_1,
-                    Pickup3_2,
-                    Pickup3_3,
-                    Shootingposa3,
                     Shoot()
+//                    ,
+//                    Trajectoryrow1,
+//                    Pickup1_1,
+//                    Pickup1_2,
+//                    Pickup1_3,
+//                    Shootingposa1,
+//                    Shoot(),
+//                    Trajectoryrow2,
+//                    Pickup2_1,
+//                    Pickup2_2,
+//                    Pickup2_3,
+//                    Shootingposa2,
+//                    Shoot(),
+//                    Trajectoryrow3,
+//                    Pickup3_1,
+//                    Pickup3_2,
+//                    Pickup3_3,
+//                    Shootingposa3,
+//                    Shoot()
             );
         }
         waitForStart();
