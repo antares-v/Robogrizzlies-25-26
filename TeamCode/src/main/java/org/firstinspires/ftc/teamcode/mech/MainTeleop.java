@@ -52,6 +52,7 @@ public class MainTeleop extends LinearOpMode{
                 boolean patternchecked = false;
                 int p = 0;
                 String color = "blank";
+                String pattern_name = "random";
 
                 waitForStart();
 
@@ -86,18 +87,25 @@ public class MainTeleop extends LinearOpMode{
 //                                rightFlywheel.setPower(0);
 //                                launcher.setPower(0);
 //                        }
+                        telemetry.addData("order", pattern_name);
 
                         if (gamepad1.x && !patternchecked) {
                                 p = 0;
                                 patternchecked=true;
+                                pattern_name = "g_first";
+                                telemetry.update();
                         }
                         if (gamepad1.y && !patternchecked) {
                                 p = 1;
+                                pattern_name = "g_second";
                                 patternchecked=true;
+                                telemetry.update();
                         }
                         if (gamepad1.b && !patternchecked) {
                                 p = 2;
                                 patternchecked=true;
+                                pattern_name = "g_third";
+                                telemetry.update();
                         }
 
                          if (gamepad1.y && patternchecked) {
@@ -109,8 +117,7 @@ public class MainTeleop extends LinearOpMode{
                                         poslist.add(0);
                                 boolean green = false;
                                 int purple = 0;
-                                for (int j = 0; j < 2; j++) {
-                                        telemetry.addData("j", "This works");
+                                for (int j = 0; j < 3; j++) {
                                         color = ballcols.get(j);
                                         if ("green".equals(color) && !green) {
                                                 poslist.set(p,j);
@@ -197,12 +204,12 @@ public class MainTeleop extends LinearOpMode{
                         if (dLeft&&i<spindexerPosIntake.length-1) {
                                 ballcols.set(i, colorSensor.getColor(sensor));
                                 i++;
-//                                sleep(200);
+                                sleep(200);
                         }
                         if (dRight&&i>0) {
                                 ballcols.set(i, colorSensor.getColor(sensor));
                                 i--;
-//                                sleep(200);
+                                sleep(200);
                         }
                         if (rB) {
                                 rightIntake.setPower(1);
@@ -217,6 +224,7 @@ public class MainTeleop extends LinearOpMode{
                                 ballcols.set(i, colorSensor.getColor(sensor));
                         }
                         else {
+                                intakeBool = false;
                                 rightIntake.setPower(0);
                                 leftIntake.setPower(0);
                         }
