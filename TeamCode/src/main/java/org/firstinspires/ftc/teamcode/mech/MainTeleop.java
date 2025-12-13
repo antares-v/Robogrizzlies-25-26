@@ -14,7 +14,6 @@ import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import org.firstinspires.ftc.teamcode.mech.CV.CV;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,7 +47,6 @@ public class MainTeleop extends LinearOpMode{
                         ballcols.add("blank");
                         ballcols.add("blank");
                         ballcols.add("blank");
-                CV myCv = new CV(this);
                 sensor = hardwareMap.get(ColorSensor.class, "colorSensor");
                 ColorDetection colorSensor = new ColorDetection();
                 boolean patternchecked = false;
@@ -105,9 +103,8 @@ public class MainTeleop extends LinearOpMode{
                                 patternchecked=true;
                         }
 
-                        if (yButton) {
+                         if (yButton && patternchecked) {
                                 // y is basically green purple purple as a sequence
-                                telemetry.addData("check1", "This works");
                                 List<Integer> poslist = new ArrayList<>();
                                         poslist.add(10);
                                         poslist.add(10);
@@ -116,6 +113,10 @@ public class MainTeleop extends LinearOpMode{
                                 for (int j = 0; j < 2; j++) {
                                         telemetry.addData("j", "This works");
                                         String color = ballcols.get(j);
+                                        telemetry.addData("check1", color);
+                                        telemetry.addData("c", p);
+                                        telemetry.addData("boolean",patternchecked);
+                                        sleep(20000);
                                         if (color.equals("green") && !green) {
                                                 poslist.set(p,j);
                                                 poslist.set((p+1)%3,(j+1)%3);
@@ -163,7 +164,7 @@ public class MainTeleop extends LinearOpMode{
                                                 leftFlywheel.setPower(1);
                                                 rightFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
                                                 rightFlywheel.setPower(1);
-                                                sleep(750);
+                                                sleep(500);
                                                 leftFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
                                                 leftFlywheel.setPower(0);
                                                 rightFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
