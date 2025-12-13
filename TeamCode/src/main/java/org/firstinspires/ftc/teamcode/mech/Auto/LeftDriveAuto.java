@@ -17,7 +17,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 
-@Autonomous(name="Left Auto")
+@Autonomous(name="Left Drive Auto")
 //ts is the auto for one side you can prolly mirror for the other side
 public class LeftDriveAuto extends LinearOpMode{
     @Override
@@ -215,8 +215,8 @@ public class LeftDriveAuto extends LinearOpMode{
             );
 
             Action Pickup1_3  = new ParallelAction(
-                    collectRowOfBalls(2),
-                    trajectoryCollectRow1_3
+                    trajectoryCollectRow1_3,
+                    collectRowOfBalls(2 )
             );
             Action Pickup2_1 = new ParallelAction(
                     trajectoryCollectRow2_1,

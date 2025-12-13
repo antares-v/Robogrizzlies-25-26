@@ -17,7 +17,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 
-@Autonomous(name="Right Auto")
+@Autonomous(name="Right Drive Auto")
 //ts is the auto for one side you can prolly mirror for the other side
 public class RightDriveAuto extends LinearOpMode{
     @Override

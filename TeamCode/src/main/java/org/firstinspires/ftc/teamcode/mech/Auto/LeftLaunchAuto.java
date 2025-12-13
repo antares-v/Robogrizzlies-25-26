@@ -17,7 +17,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 
-@Autonomous(name="Left Auto")
+@Autonomous(name="Left Launch Auto")
 //ts is the auto for one side you can prolly mirror for the other side
 public class LeftLaunchAuto extends LinearOpMode{
     @Override
