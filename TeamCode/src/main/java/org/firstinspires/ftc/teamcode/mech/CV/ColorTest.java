@@ -8,20 +8,23 @@ import com.qualcomm.hardware.rev.RevColorSensorV3;
 import org.firstinspires.ftc.teamcode.mech.movement.goBuildaPinPointDriver.GoBildaPinpointDriver;
 import org.firstinspires.ftc.teamcode.mech.movement.goBuildaPinPointDriver.Pose2D;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-public class ColorDetection {
-    public String getColor(RevColorSensorV3 sensor) {
-        int red = sensor.red();
-        int green = sensor.green();
-        int blue = sensor.blue();
-        if (red < 20 && green < 20 && blue < 20) {
-            return "blank";
-        }
-        if (green > red && green > blue) {
-            return "green";
-        }
-        else {
-            return "purple";
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+
+@TeleOp(name="Color Test")
+public class ColorTest extends LinearOpMode {
+    RevColorSensorV3 color;
+
+    @Override public void runOpMode() {
+        color = hardwareMap.get(RevColorSensorV3.class, "colorSensor");
+        color.enableLed(true);
+
+        waitForStart();
+
+        while (opModeIsActive()) {
+            telemetry.addData("R", color.red());
+            telemetry.addData("G", color.green());
+            telemetry.addData("B", color.blue());
+            telemetry.update();
         }
     }
-
 }

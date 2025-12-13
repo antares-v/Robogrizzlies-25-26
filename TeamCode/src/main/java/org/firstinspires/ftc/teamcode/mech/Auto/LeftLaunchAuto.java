@@ -35,7 +35,7 @@ public class LeftLaunchAuto extends LinearOpMode{
         launcher = hardwareMap.get(DcMotor.class, "launcher");
         double[] spindexerPosIntake = {0,0.38,0.79};
         double[] spindexerPosOuttake = {0.19,0.59,0.99};
-        double interballDistance = 10;
+        double interballDistance = 7;
         double farRowY = 26;
         double midRowY = -15;
         double closeRowY = -35;
@@ -49,7 +49,7 @@ public class LeftLaunchAuto extends LinearOpMode{
             Pose2d Startingpos = new Pose2d(-75, 75, Math.toRadians(135));
             //Pose2d Startingpos = new Pose2d(24,-60, Math.toRadians(45));
             Pose2d shootLocation = new Pose2d(-68,68, Math.toRadians(135));
-            Vector2d shootVector = new Vector2d(-56,56);
+            Vector2d shootVector = new Vector2d(-68,68);
             Vector2d farRow1 = new Vector2d(-24, farRowY);
             Vector2d farRow2 = new Vector2d((firstBallX-1*interballDistance), farRowY);
             Vector2d farRow3 = new Vector2d(firstBallX-2*interballDistance, farRowY);
@@ -252,13 +252,13 @@ public class LeftLaunchAuto extends LinearOpMode{
                     .strafeTo(closeRow1)
                     .build();
             Action Shootingposa1 = Drivetrain.actionBuilder(farRow4End)
-                    .splineToLinearHeading(new Pose2d(50,50, Math.toRadians(45)), Math.toRadians(45))
+                    .splineToLinearHeading(new Pose2d(-68,68, Math.toRadians(135)), Math.toRadians(135))
                     .build();
             Action Shootingposa2 = Drivetrain.actionBuilder(midRow4End)
-                    .splineToLinearHeading(new Pose2d(50,50, Math.toRadians(45)), Math.toRadians(45))
+                    .splineToLinearHeading(new Pose2d(-68,68, Math.toRadians(135)), Math.toRadians(135))
                     .build();
             Action Shootingposa3 = Drivetrain.actionBuilder(closeRow4End)
-                    .splineToLinearHeading(new Pose2d(50,50, Math.toRadians(45)), Math.toRadians(45))
+                    .splineToLinearHeading(new Pose2d(-68,68, Math.toRadians(135)), Math.toRadians(135))
                     .build();
             Action TrajectoryInitial = Drivetrain.actionBuilder(Startingpos)
                     .splineToLinearHeading(shootLocation, Math.toRadians(45))

@@ -7,6 +7,7 @@ import org.firstinspires.ftc.teamcode.mech.movement.goBuildaPinPointDriver.GoBil
 import org.firstinspires.ftc.teamcode.mech.movement.goBuildaPinPointDriver.Pose2D;
 import org.firstinspires.ftc.teamcode.mech.movement.movement;
 
+import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -14,7 +15,6 @@ import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.ColorSensor;
 import java.util.ArrayList;
 import java.util.List;
 import org.firstinspires.ftc.teamcode.mech.CV.ColorDetection;
@@ -24,7 +24,7 @@ public class MainTeleop extends LinearOpMode{
         private LinearOpMode lom;
         private movement movement;
         CRServo leftFlywheel, rightFlywheel;
-        ColorSensor sensor;
+        RevColorSensorV3 sensor;
         Servo spindexer;
         DcMotor leftIntake, rightIntake, launcher;
         double[] spindexerPosIntake = {0,0.38,0.79};
@@ -47,7 +47,7 @@ public class MainTeleop extends LinearOpMode{
                         ballcols.add("blank");
                         ballcols.add("blank");
                         ballcols.add("blank");
-                sensor = hardwareMap.get(ColorSensor.class, "colorSensor");
+                sensor = hardwareMap.get(RevColorSensorV3.class, "colorSensor");
                 ColorDetection colorSensor = new ColorDetection();
                 boolean patternchecked = false;
                 int p = 0;
@@ -144,7 +144,7 @@ public class MainTeleop extends LinearOpMode{
                                                 else {
                                                      sleep(400);
                                                 }
-                                                if(gamepad1.a){
+                                                       if(gamepad1.a){
                                                         break randomrunner;
                                                 }
                                                 leftFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
