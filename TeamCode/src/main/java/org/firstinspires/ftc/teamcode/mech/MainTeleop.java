@@ -205,21 +205,21 @@ public class MainTeleop extends LinearOpMode{
                                 rightIntake.setPower(1);
                                 leftIntake.setPower(1);
                                 intakeBool = true;
+                                ballcols.set(i, colorSensor.getColor(sensor));
                         }
                         else if (lB) {
                                 rightIntake.setPower(-1);
                                 leftIntake.setPower(-1);
                                 intakeBool = true;
+                                ballcols.set(i, colorSensor.getColor(sensor));
+                        }
+                        else {
+                                rightIntake.setPower(-1);
+                                leftIntake.setPower(-1);
                         }
                         telemetry.addData("spindexerPosIntake", spindexerPosOuttake[i]);
                         if (intakeBool) {
                                 spindexer.setPosition(spindexerPosIntake[i]);
-                                ballcols.set(i, colorSensor.getColor(sensor));
-                        }
-                        else {
-                                spindexer.setPosition(spindexerPosOuttake[i]);
-                                leftIntake.setPower(0);
-                                rightIntake.setPower(0);
                         }
                         idle(); //Give the system more time to do background tasks
                         //This shouldn't be necessary and isn't in the boilerplate template,
