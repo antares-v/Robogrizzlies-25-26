@@ -33,6 +33,9 @@ public class MainTeleop extends LinearOpMode{
         double[] spindexerPosOuttake = {0.19,0.59,0.99};
         boolean intakeBool = false;
         int i = 0;
+        long firstRevTime = 1500; // milliseconds to rev up for the first ball
+        long revTime = 200;  // milliseconds to wait between launching balls
+        long launchTime = 600;  // time it takes to launch the balls; use it to keep track of how long to wait between launches
 
         private ElapsedTime spintime;
 
@@ -150,11 +153,11 @@ public class MainTeleop extends LinearOpMode{
                                                 if(gamepad1.a){
                                                         break;
                                                 }
-                                                if (j == 0){
-                                                        sleep(1500);
+                                                if (j == 0){  // rev up for first ball
+                                                        sleep(firstRevTime);
                                                 }
-                                                else {
-                                                        sleep(400);
+                                                else {  // rev up for second ball
+                                                        sleep(revTime);
                                                 }
                                                 if(gamepad1.a){
                                                         break;
@@ -163,7 +166,7 @@ public class MainTeleop extends LinearOpMode{
                                                 leftFlywheel.setPower(1);
                                                 rightFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
                                                 rightFlywheel.setPower(1);
-                                                sleep(750);
+                                                sleep(launchTime);  // launch wait time
                                                 if(gamepad1.a){
                                                         break;
                                                 }
@@ -182,7 +185,7 @@ public class MainTeleop extends LinearOpMode{
                                         rightFlywheel.setPower(0);
                                         launcher.setPower(0);
                                 }
-                                else{
+                                else{   // for color sensor
                                         for (int j = 0; j < 3; j++){
                                                 spindexer.setPosition(spindexerPosOuttake[poslist.get(j)]);
                                                 launcher.setPower(1);
@@ -190,7 +193,7 @@ public class MainTeleop extends LinearOpMode{
                                                         break;
                                                 }
                                                 if (j == 0){
-                                                        sleep(1500);
+                                                        sleep(firstRevTime);   // launch time again
                                                 }
                                                 if(gamepad1.a){
                                                         break;
@@ -202,7 +205,7 @@ public class MainTeleop extends LinearOpMode{
                                                         break;
                                                 }
                                                 rightFlywheel.setPower(1);
-                                                sleep(500);
+                                                sleep(revTime);   // rev time
                                                 if(gamepad1.a){
                                                         break;
                                                 }
