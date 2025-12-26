@@ -34,7 +34,7 @@ public class MainTeleop extends LinearOpMode{
         boolean intakeBool = false;
         int i = 0;
         long firstRevTime = 1500; // milliseconds to rev up for the first ball
-        long revTime = 200;  // milliseconds to wait between launching balls
+        long revTime = 250;  // milliseconds to wait between launching balls
         long launchTime = 600;  // time it takes to launch the balls; use it to keep track of how long to wait between launches
 
         private ElapsedTime spintime;
@@ -226,14 +226,14 @@ public class MainTeleop extends LinearOpMode{
                                 }
                         }
                         if (dLeft&&i<spindexerPosIntake.length-1) {
-                                if(spintime.seconds()>0.1){
+                                if(spintime.seconds()>revTime){
                                         ballcols.set(i, colorSensor.getColor(sensor));
                                         spintime = new ElapsedTime();
                                         i++;}
                         }
 
                         if (dRight&&i>0) {
-                                if(spintime.seconds()>0.1){
+                                if(spintime.seconds()>revTime){
                                 ballcols.set(i, colorSensor.getColor(sensor));
                                 spintime = new ElapsedTime();
                                 i--;}
