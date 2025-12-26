@@ -61,6 +61,7 @@ public class MainTeleop extends LinearOpMode{
                 int p = 0;
                 String color = "blank";
                 String pattern_name = "random";
+                spintime = new ElapsedTime();
                 waitForStart();
 
 
