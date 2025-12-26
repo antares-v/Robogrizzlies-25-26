@@ -224,14 +224,16 @@ public class MainTeleop extends LinearOpMode{
                         }
                         if (dLeft&&i<spindexerPosIntake.length-1) {
                                 if(spintime.seconds()>0.1){
-                                        ballcols.set(i, colorSensor.getColor(sensor));}
-                                i++;
+                                        ballcols.set(i, colorSensor.getColor(sensor));
+                                        spintime = new ElapsedTime();
+                                        i++;}
                         }
 
                         if (dRight&&i>0) {
                                 if(spintime.seconds()>0.1){
-                                ballcols.set(i, colorSensor.getColor(sensor));}
-                                i--;
+                                ballcols.set(i, colorSensor.getColor(sensor));
+                                spintime = new ElapsedTime();
+                                i--;}
                         }
                         if (rB) {
                                 rightIntake.setPower(1);
@@ -254,7 +256,6 @@ public class MainTeleop extends LinearOpMode{
                         telemetry.addData("spindexerPosIntake", spindexerPosOuttake[i]);
                         if (intakeBool) {
                                 spindexer.setPosition(spindexerPosIntake[i]);
-                                spintime = new ElapsedTime();
                         }
                         idle(); //Give the system more time to do background tasks
                         //This shouldn't be necessary and isn't in the boilerplate template,
