@@ -65,7 +65,6 @@ public class MainTeleop extends LinearOpMode{
 
 
                 //Code here will run only once when Start is pressed
-                spintime = new ElapsedTime();
                 while (opModeIsActive()) {
 
                         //Put any code here which should loop until Stop is presses
