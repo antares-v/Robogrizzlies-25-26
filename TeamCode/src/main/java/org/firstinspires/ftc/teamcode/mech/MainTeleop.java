@@ -33,11 +33,18 @@ public class MainTeleop extends LinearOpMode{
         double[] spindexerPosOuttake = {0.19,0.59,0.99};
         boolean intakeBool = false;
         int i = 0;
+        long firstRevTime = 1500; // milliseconds to rev up for the first ball
+        long revTime = 250;  // milliseconds to wait between launching balls
+        long launchTime = 600;  // time it takes to launch the balls; use it to keep track of how long to wait between launches
 
         private ElapsedTime spintime;
-
-        boolean dLeftPrev=false, dRightPrev=false, yPrev=false;
-
+        private ElapsedTime motiftimer;
+        boolean isshooting = false;
+        ColorDetection colorSensor = new ColorDetection();
+        int patternchecked = 0;
+        int p = 0;
+        String color = "blank";
+        String pattern_name = "random";
         @Override
         public void runOpMode() {
                 //Initialize things here
@@ -55,41 +62,25 @@ public class MainTeleop extends LinearOpMode{
                         ballcols.add("blank");
                         ballcols.add("blank");
                 sensor = hardwareMap.get(RevColorSensorV3.class, "colorSensor");
-                ColorDetection colorSensor = new ColorDetection();
-                boolean patternchecked = false;
-                int p = 0;
-                String color = "blank";
-                String pattern_name = "random";
                 spintime = new ElapsedTime();
                 waitForStart();
 
 
                 //Code here will run only once when Start is pressed
-
                 while (opModeIsActive()) {
 
                         //Put any code here which should loop until Stop is presses
                         boolean dLeft = gamepad1.dpad_left;
                         boolean dRight = gamepad1.dpad_right;
-
-                        boolean dLeftPressed  = dLeft  && !dLeftPrev;
-                        boolean dRightPressed = dRight && !dRightPrev;
-
-                        dLeftPrev = dLeft;
-                        dRightPrev = dRight;
-
                         boolean lB = gamepad1.left_bumper;
                         boolean rB = gamepad1.right_bumper;
-
-                        CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
-                                double x = gamepad1.left_stick_x;
-                                double y = gamepad1.left_stick_y;
-                                double h = gamepad1.right_stick_x;
-                                movement.move(x,y,h);
-                                telemetry.addData("x", x);
-                                telemetry.addData("y", y);
-                                telemetry.addData("h", h);
-                        });
+                        double x = gamepad1.left_stick_x;
+                        double y = gamepad1.left_stick_y;
+                        double h = gamepad1.right_stick_x;
+                        movement.move(x,y,h);
+                        telemetry.addData("x", x);
+                        telemetry.addData("y", y);
+                        telemetry.addData("h", h);
 
                        // movement = new movement(lom, x, y, h);
 
@@ -109,161 +100,175 @@ public class MainTeleop extends LinearOpMode{
 //                                launcher.setPower(0);
 //                        }
 
-                        if (gamepad1.x && !patternchecked) {
+                        if (gamepad1.x && patternchecked == 0) {
                                 p = 0;
-                                patternchecked=true;
+                                patternchecked= 1;
                                 pattern_name = "g_first";
                                 telemetry.update();
                         }
-                        if (gamepad1.y && !patternchecked) {
+                        if (gamepad1.y && patternchecked == 0) {
                                 p = 1;
                                 pattern_name = "g_second";
-                                patternchecked=true;
-                                sleep(100);
+                                motiftimer = new ElapsedTime();
+                                patternchecked = 2;
                                 telemetry.update();
                         }
-                        if (gamepad1.b && !patternchecked) {
+                        if (gamepad1.b && patternchecked == 0) {
                                 p = 2;
-                                patternchecked=true;
+                                patternchecked= 1;
                                 pattern_name = "g_third";
                                 telemetry.update();
                         }
+                        telemetry.update();
 
-                        boolean yNow = gamepad1.y;
-                        boolean yPressed = yNow && !yPrev;
-                        yPrev = yNow;
+                        if ( !isshooting && (gamepad1.y && (patternchecked == 1 || (patternchecked == 2 && motiftimer.seconds() > 200)))) {
+                                isshooting = true;
+                                Thread thread = new Thread(new Runnable(){
+                                        @Override
+                                        public void run() {
+                                                try{
+                                                        List<Integer> poslist = new ArrayList<>();
+                                                        poslist.add(0);
+                                                        poslist.add(0);
+                                                        poslist.add(0);
+                                                        boolean green = false;
+                                                        int purple = 0;
+                                                        for (int j = 0; j < 3; j++) {
+                                                                color = ballcols.get(j);
+                                                                if ("green".equals(color) && !green) {
+                                                                        poslist.set(p,j);
+                                                                        poslist.set((p+1)%3,(j+1)%3);
+                                                                        poslist.set((p+2)%3,(j+2)%3);
+                                                                        green = true;
+                                                                } else if (("green".equals(color) && green) || "blank".equals(color) || "purple".equals(color) && purple > 2) {
+                                                                        telemetry.addData("blank", "oh no not correct sequence initiating randomiser");
+                                                                        poslist.set(0,67);
+                                                                }
+                                                                else {
+                                                                        purple = purple + 1;
+                                                                }
 
-                        if (yPressed && patternchecked) {
-                                // y is basically green purple purple as a sequence
-                                List<Integer> poslist = new ArrayList<>();
-                                poslist.add(0);
-                                poslist.add(0);
-                                poslist.add(0);
-                                boolean green = false;
-                                int purple = 0;
-                                for (int j = 0; j < 3; j++) {
-                                        color = ballcols.get(j);
-                                        if ("green".equals(color) && !green) {
-                                                poslist.set(p,j);
-                                                poslist.set((p+1)%3,(j+1)%3);
-                                                poslist.set((p+2)%3,(j+2)%3);
-                                                green = true;
-                                        } else if (("green".equals(color) && green) || "blank".equals(color) || "purple".equals(color) && purple > 2) {
-                                                telemetry.addData("blank", "oh no not correct sequence initiating randomiser");
-                                                poslist.set(0,67);
-                                        }
-                                        else {
-                                                purple = purple + 1;
-                                        }
-
-                                }
-                                telemetry.update();
-                                if (poslist.get(0) == 67){
-                                        for (int j = 0; j < 3; j++){
-                                                spindexer.setPosition(spindexerPosOuttake[j]);
-                                                launcher.setPower(1);
-                                                if(gamepad1.a){
-                                                        break;
+                                                        }
+                                                        if (poslist.get(0) == 67){
+                                                                for (int j = 0; j < 3; j++){
+                                                                        spindexer.setPosition(spindexerPosOuttake[j]);
+                                                                        launcher.setPower(1);
+                                                                        if(gamepad1.a){
+                                                                                break;
+                                                                        }
+                                                                        if (j == 0){  // rev up for first ball
+                                                                                sleep(firstRevTime);
+                                                                        }
+                                                                        else {  // rev up for second ball
+                                                                                sleep(revTime);
+                                                                        }
+                                                                        if(gamepad1.a){
+                                                                                break;
+                                                                        }
+                                                                        leftFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
+                                                                        leftFlywheel.setPower(1);
+                                                                        rightFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
+                                                                        rightFlywheel.setPower(1);
+                                                                        sleep(launchTime);  // launch wait time
+                                                                        if(gamepad1.a){
+                                                                                break;
+                                                                        }
+                                                                }
+                                                                leftFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
+                                                                leftFlywheel.setPower(0);
+                                                                rightFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
+                                                                rightFlywheel.setPower(0);
+                                                                launcher.setPower(0);
+                                                        }
+                                                        else {   // for color sensor
+                                                                for (int j = 0; j < 3; j++) {
+                                                                        spindexer.setPosition(spindexerPosOuttake[poslist.get(j)]);
+                                                                        launcher.setPower(1);
+                                                                        if(gamepad1.a){
+                                                                                break;
+                                                                        }
+                                                                        if (j == 0){  // rev up for first ball
+                                                                                sleep(firstRevTime);
+                                                                        }
+                                                                        else {  // rev up for second ball
+                                                                                sleep(revTime);
+                                                                        }
+                                                                        if(gamepad1.a){
+                                                                                break;
+                                                                        }
+                                                                        leftFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
+                                                                        leftFlywheel.setPower(1);
+                                                                        rightFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
+                                                                        rightFlywheel.setPower(1);
+                                                                        sleep(launchTime);  // launch wait time
+                                                                        if(gamepad1.a){
+                                                                                break;
+                                                                        }
+                                                                }
+                                                                leftFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
+                                                                leftFlywheel.setPower(0);
+                                                                rightFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
+                                                                rightFlywheel.setPower(0);
+                                                                launcher.setPower(0);
+                                                        }
                                                 }
-                                                if (j == 0){
-                                                        sleep(1500);
+                                                catch(RuntimeException e){
+                                                        System.err.println("error type shiii");
+                                                        leftFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
+                                                        leftFlywheel.setPower(0);
+                                                        rightFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
+                                                        rightFlywheel.setPower(0);
+                                                        launcher.setPower(0);
                                                 }
-                                                else {
-                                                        sleep(400);
-                                                }
-                                                if(gamepad1.a){
-                                                        break;
-                                                }
-                                                leftFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
-                                                leftFlywheel.setPower(1);
-                                                rightFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
-                                                rightFlywheel.setPower(1);
-                                                sleep(750);
-                                                if(gamepad1.a){
-                                                        break;
-                                                }
-                                                leftFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
-                                                leftFlywheel.setPower(0);
-                                                rightFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
-                                                rightFlywheel.setPower(0);
-                                                launcher.setPower(0);
-                                                if(gamepad1.a){
-                                                        break;
-                                                }
-                                        }
-                                        leftFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
-                                        leftFlywheel.setPower(0);
-                                        rightFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
-                                        rightFlywheel.setPower(0);
-                                        launcher.setPower(0);
-                                }
-                                else{
-                                        for (int j = 0; j < 3; j++){
-                                                spindexer.setPosition(spindexerPosOuttake[poslist.get(j)]);
-                                                launcher.setPower(1);
-                                                if(gamepad1.a){
-                                                        break;
-                                                }
-                                                if (j == 0){
-                                                        sleep(1500);
-                                                }
-                                                if(gamepad1.a){
-                                                        break;
-                                                }
-                                                leftFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
-                                                leftFlywheel.setPower(1);
-                                                rightFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
-                                                if(gamepad1.a){
-                                                        break;
-                                                }
-                                                rightFlywheel.setPower(1);
-                                                sleep(500);
-                                                if(gamepad1.a){
-                                                        break;
-                                                }
-                                                leftFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
-                                                leftFlywheel.setPower(0);
-                                                rightFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
-                                                rightFlywheel.setPower(0);
-                                                launcher.setPower(0);
-                                                if(gamepad1.a){
-                                                        break;
+                                                finally{
+                                                        leftFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
+                                                        leftFlywheel.setPower(0);
+                                                        rightFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
+                                                        rightFlywheel.setPower(0);
+                                                        launcher.setPower(0);
+                                                        isshooting = false;
                                                 }
                                         }
-                                        leftFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
-                                        leftFlywheel.setPower(0);
-                                        rightFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
-                                        rightFlywheel.setPower(0);
-                                        launcher.setPower(0);
-                                }
+                                });
+                                thread.start();
                         }
-                        if (dLeftPressed && i < spindexerPosIntake.length - 1) {
-                                if (spintime.seconds() > 0.1) ballcols.set(i, colorSensor.getColor(sensor));
+                        if (dLeft&&i<spindexerPosIntake.length-1) {
+                                if(spintime.milliseconds()>revTime){
+                                        ballcols.set(i, colorSensor.getColor(sensor));
+                                        spintime = new ElapsedTime();
+                                        }
                                 i++;
-                                spintime.reset();
-                                telemetry.update();
                         }
-                        if (dRightPressed && i > 0) {
-                                if (spintime.seconds() > 0.1) ballcols.set(i, colorSensor.getColor(sensor));
+
+                        if (dRight&&i>0) {
+                                if(spintime.milliseconds()>revTime){
+                                ballcols.set(i, colorSensor.getColor(sensor));
+                                spintime = new ElapsedTime();
+                                }
                                 i--;
-                                spintime.reset();
-                                telemetry.update();
                         }
                         if (rB) {
                                 rightIntake.setPower(1);
                                 leftIntake.setPower(1);
-                                // optional: sample occasionally, but don't reset timer here
-                        } else if (lB) {
+                                intakeBool = true;
+                                ballcols.set(i, colorSensor.getColor(sensor));
+                                telemetry.update();
+                        }
+                        else if (lB) {
                                 rightIntake.setPower(-1);
                                 leftIntake.setPower(-1);
-                        } else {
+                                intakeBool = true;
+                                ballcols.set(i, colorSensor.getColor(sensor));
+                                telemetry.update();
+                        }
+                        else {
                                 rightIntake.setPower(0);
                                 leftIntake.setPower(0);
+                                intakeBool = false;
                         }
                         telemetry.addData("spindexerPosIntake", spindexerPosOuttake[i]);
                         if (intakeBool) {
                                 spindexer.setPosition(spindexerPosIntake[i]);
-                                spintime = new ElapsedTime();
                         }
                         idle(); //Give the system more time to do background tasks
                         //This shouldn't be necessary and isn't in the boilerplate template,
