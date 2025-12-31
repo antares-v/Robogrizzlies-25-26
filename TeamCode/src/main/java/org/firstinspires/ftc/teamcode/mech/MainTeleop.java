@@ -38,6 +38,7 @@ public class MainTeleop extends LinearOpMode{
         long launchTime = 600;  // time it takes to launch the balls; use it to keep track of how long to wait between launches
 
         private ElapsedTime spintime;
+        private ElapsedTime motiftimer;
 
         @Override
         public void runOpMode() {
@@ -57,7 +58,7 @@ public class MainTeleop extends LinearOpMode{
                         ballcols.add("blank");
                 sensor = hardwareMap.get(RevColorSensorV3.class, "colorSensor");
                 ColorDetection colorSensor = new ColorDetection();
-                boolean patternchecked = false;
+                int patternchecked = 0;
                 int p = 0;
                 String color = "blank";
                 String pattern_name = "random";
@@ -102,26 +103,26 @@ public class MainTeleop extends LinearOpMode{
 //                                launcher.setPower(0);
 //                        }
 
-                        if (gamepad1.x && !patternchecked) {
+                        if (gamepad1.x && patternchecked == 0) {
                                 p = 0;
-                                patternchecked=true;
+                                patternchecked= 1;
                                 pattern_name = "g_first";
                                 telemetry.update();
                         }
-                        if (gamepad1.y && !patternchecked) {
+                        if (gamepad1.y && patternchecked == 0) {
                                 p = 1;
                                 pattern_name = "g_second";
-                                patternchecked=true;
-                                sleep(100);
+                                motiftimer = new ElapsedTime();
+                                patternchecked = 2;
                                 telemetry.update();
                         }
-                        if (gamepad1.b && !patternchecked) {
+                        if (gamepad1.b && patternchecked == 0) {
                                 p = 2;
-                                patternchecked=true;
+                                patternchecked= 1;
                                 pattern_name = "g_third";
                                 telemetry.update();
                         }
-                        if (gamepad1.y && patternchecked) {
+                        if (gamepad1.y && (patternchecked == 1 | (patternchecked == 2 | motiftimer.seconds() > 200))){
                                 // y is basically green purple purple as a sequence
                                 List<Integer> poslist = new ArrayList<>();
                                 poslist.add(0);
