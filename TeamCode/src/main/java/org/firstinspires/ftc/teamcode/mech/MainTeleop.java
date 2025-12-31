@@ -233,7 +233,7 @@ public class MainTeleop extends LinearOpMode{
                                 thread.start();
                         }
                         if (dLeft&&i<spindexerPosIntake.length-1) {
-                                if(spintime.seconds()>revTime){
+                                if(spintime.milliseconds()>revTime){
                                         ballcols.set(i, colorSensor.getColor(sensor));
                                         spintime = new ElapsedTime();
                                         }
@@ -241,7 +241,7 @@ public class MainTeleop extends LinearOpMode{
                         }
 
                         if (dRight&&i>0) {
-                                if(spintime.seconds()>revTime){
+                                if(spintime.milliseconds()>revTime){
                                 ballcols.set(i, colorSensor.getColor(sensor));
                                 spintime = new ElapsedTime();
                                 }
