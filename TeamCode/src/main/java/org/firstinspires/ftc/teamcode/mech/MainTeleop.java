@@ -190,24 +190,24 @@ public class MainTeleop extends LinearOpMode{
                                                         for (int j = 0; j < 3; j++) {
                                                                 spindexer.setPosition(spindexerPosOuttake[poslist.get(j)]);
                                                                 launcher.setPower(1);
-                                                                if (gamepad1.a) {
+                                                                if(gamepad1.a){
                                                                         break;
                                                                 }
-                                                                if (j == 0) {
-                                                                        sleep(firstRevTime);   // launch time again
+                                                                if (j == 0){  // rev up for first ball
+                                                                        sleep(firstRevTime);
                                                                 }
-                                                                if (gamepad1.a) {
+                                                                else {  // rev up for second ball
+                                                                        sleep(revTime);
+                                                                }
+                                                                if(gamepad1.a){
                                                                         break;
                                                                 }
                                                                 leftFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
                                                                 leftFlywheel.setPower(1);
                                                                 rightFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
-                                                                if (gamepad1.a) {
-                                                                        break;
-                                                                }
                                                                 rightFlywheel.setPower(1);
-                                                                sleep(revTime);   // rev time
-                                                                if (gamepad1.a) {
+                                                                sleep(launchTime);  // launch wait time
+                                                                if(gamepad1.a){
                                                                         break;
                                                                 }
                                                                 leftFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -215,11 +215,16 @@ public class MainTeleop extends LinearOpMode{
                                                                 rightFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
                                                                 rightFlywheel.setPower(0);
                                                                 launcher.setPower(0);
-                                                                if (gamepad1.a) {
+                                                                if(gamepad1.a){
                                                                         break;
                                                                 }
                                                         }
-                                                }
+                                                        leftFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
+                                                        leftFlywheel.setPower(0);
+                                                        rightFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
+                                                        rightFlywheel.setPower(0);
+                                                        launcher.setPower(0);
+                                                        }
                                         }
                                         catch(RuntimeException e){
                                                 System.err.println("error type shiii");
