@@ -33,12 +33,10 @@ public class MainTeleop extends LinearOpMode{
         double[] spindexerPosOuttake = {0.19,0.59,0.99};
         boolean intakeBool = false;
         int i = 0;
-        long firstRevTime = 1500; // milliseconds to rev up for the first ball
-        long revTime = 250;  // milliseconds to wait between launching balls
-        long launchTime = 600;  // time it takes to launch the balls; use it to keep track of how long to wait between launches
 
         private ElapsedTime spintime;
-        private ElapsedTime motiftimer;
+
+        boolean dLeftPrev=false, dRightPrev=false, yPrev=false;
 
         @Override
         public void runOpMode() {
@@ -58,7 +56,7 @@ public class MainTeleop extends LinearOpMode{
                         ballcols.add("blank");
                 sensor = hardwareMap.get(RevColorSensorV3.class, "colorSensor");
                 ColorDetection colorSensor = new ColorDetection();
-                int patternchecked = 0;
+                boolean patternchecked = false;
                 int p = 0;
                 String color = "blank";
                 String pattern_name = "random";
@@ -67,11 +65,19 @@ public class MainTeleop extends LinearOpMode{
 
 
                 //Code here will run only once when Start is pressed
+
                 while (opModeIsActive()) {
 
                         //Put any code here which should loop until Stop is presses
                         boolean dLeft = gamepad1.dpad_left;
                         boolean dRight = gamepad1.dpad_right;
+
+                        boolean dLeftPressed  = dLeft  && !dLeftPrev;
+                        boolean dRightPressed = dRight && !dRightPrev;
+
+                        dLeftPrev = dLeft;
+                        dRightPrev = dRight;
+
                         boolean lB = gamepad1.left_bumper;
                         boolean rB = gamepad1.right_bumper;
 
@@ -103,26 +109,31 @@ public class MainTeleop extends LinearOpMode{
 //                                launcher.setPower(0);
 //                        }
 
-                        if (gamepad1.x && patternchecked == 0) {
+                        if (gamepad1.x && !patternchecked) {
                                 p = 0;
-                                patternchecked= 1;
+                                patternchecked=true;
                                 pattern_name = "g_first";
                                 telemetry.update();
                         }
-                        if (gamepad1.y && patternchecked == 0) {
+                        if (gamepad1.y && !patternchecked) {
                                 p = 1;
                                 pattern_name = "g_second";
-                                motiftimer = new ElapsedTime();
-                                patternchecked = 2;
+                                patternchecked=true;
+                                sleep(100);
                                 telemetry.update();
                         }
-                        if (gamepad1.b && patternchecked == 0) {
+                        if (gamepad1.b && !patternchecked) {
                                 p = 2;
-                                patternchecked= 1;
+                                patternchecked=true;
                                 pattern_name = "g_third";
                                 telemetry.update();
                         }
-                        if (gamepad1.y && (patternchecked == 1 | (patternchecked == 2 | motiftimer.seconds() > 200))){
+
+                        boolean yNow = gamepad1.y;
+                        boolean yPressed = yNow && !yPrev;
+                        yPrev = yNow;
+
+                        if (yPressed && patternchecked) {
                                 // y is basically green purple purple as a sequence
                                 List<Integer> poslist = new ArrayList<>();
                                 poslist.add(0);
@@ -154,11 +165,11 @@ public class MainTeleop extends LinearOpMode{
                                                 if(gamepad1.a){
                                                         break;
                                                 }
-                                                if (j == 0){  // rev up for first ball
-                                                        sleep(firstRevTime);
+                                                if (j == 0){
+                                                        sleep(1500);
                                                 }
-                                                else {  // rev up for second ball
-                                                        sleep(revTime);
+                                                else {
+                                                        sleep(400);
                                                 }
                                                 if(gamepad1.a){
                                                         break;
@@ -167,7 +178,7 @@ public class MainTeleop extends LinearOpMode{
                                                 leftFlywheel.setPower(1);
                                                 rightFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
                                                 rightFlywheel.setPower(1);
-                                                sleep(launchTime);  // launch wait time
+                                                sleep(750);
                                                 if(gamepad1.a){
                                                         break;
                                                 }
@@ -186,7 +197,7 @@ public class MainTeleop extends LinearOpMode{
                                         rightFlywheel.setPower(0);
                                         launcher.setPower(0);
                                 }
-                                else{   // for color sensor
+                                else{
                                         for (int j = 0; j < 3; j++){
                                                 spindexer.setPosition(spindexerPosOuttake[poslist.get(j)]);
                                                 launcher.setPower(1);
@@ -194,7 +205,7 @@ public class MainTeleop extends LinearOpMode{
                                                         break;
                                                 }
                                                 if (j == 0){
-                                                        sleep(firstRevTime);   // launch time again
+                                                        sleep(1500);
                                                 }
                                                 if(gamepad1.a){
                                                         break;
@@ -206,7 +217,7 @@ public class MainTeleop extends LinearOpMode{
                                                         break;
                                                 }
                                                 rightFlywheel.setPower(1);
-                                                sleep(revTime);   // rev time
+                                                sleep(500);
                                                 if(gamepad1.a){
                                                         break;
                                                 }
@@ -226,40 +237,33 @@ public class MainTeleop extends LinearOpMode{
                                         launcher.setPower(0);
                                 }
                         }
-                        if (dLeft&&i<spindexerPosIntake.length-1) {
-                                if(spintime.seconds()>revTime){
-                                        ballcols.set(i, colorSensor.getColor(sensor));
-                                        spintime = new ElapsedTime();
-                                        i++;}
+                        if (dLeftPressed && i < spindexerPosIntake.length - 1) {
+                                if (spintime.seconds() > 0.1) ballcols.set(i, colorSensor.getColor(sensor));
+                                i++;
+                                spintime.reset();
+                                telemetry.update();
                         }
-
-                        if (dRight&&i>0) {
-                                if(spintime.seconds()>revTime){
-                                ballcols.set(i, colorSensor.getColor(sensor));
-                                spintime = new ElapsedTime();
-                                i--;}
+                        if (dRightPressed && i > 0) {
+                                if (spintime.seconds() > 0.1) ballcols.set(i, colorSensor.getColor(sensor));
+                                i--;
+                                spintime.reset();
+                                telemetry.update();
                         }
                         if (rB) {
                                 rightIntake.setPower(1);
                                 leftIntake.setPower(1);
-                                intakeBool = true;
-                                ballcols.set(i, colorSensor.getColor(sensor));
-                                telemetry.update();
-                        }
-                        else if (lB) {
+                                // optional: sample occasionally, but don't reset timer here
+                        } else if (lB) {
                                 rightIntake.setPower(-1);
                                 leftIntake.setPower(-1);
-                                intakeBool = true;
-                                ballcols.set(i, colorSensor.getColor(sensor));
-                                telemetry.update();
-                        }
-                        else {
+                        } else {
                                 rightIntake.setPower(0);
                                 leftIntake.setPower(0);
                         }
                         telemetry.addData("spindexerPosIntake", spindexerPosOuttake[i]);
                         if (intakeBool) {
                                 spindexer.setPosition(spindexerPosIntake[i]);
+                                spintime = new ElapsedTime();
                         }
                         idle(); //Give the system more time to do background tasks
                         //This shouldn't be necessary and isn't in the boilerplate template,

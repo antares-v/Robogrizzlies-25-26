@@ -35,10 +35,10 @@ public class RightLaunchAuto extends LinearOpMode{
         launcher = hardwareMap.get(DcMotor.class, "launcher");
         double[] spindexerPosIntake = {0,0.38,0.79};
         double[] spindexerPosOuttake = {0.19,0.59,0.99};
-        double interballDistance = 6;
-        double farRowY = 12;
-        double midRowY = -12;
-        double closeRowY = -36;
+        double interballDistance = 5.5;
+        double farRowY = 3;
+        double midRowY = -16;
+        double closeRowY = -38;
         double firstBallX = 38;
         double ballWaiting = 0.5;
         TranslationalVelConstraint tvConstraint = new TranslationalVelConstraint(25.0);
@@ -48,29 +48,29 @@ public class RightLaunchAuto extends LinearOpMode{
 
             Pose2d Startingpos = new Pose2d(48, 48, Math.toRadians(45));
             //Pose2d Startingpos = new Pose2d(24,-60, Math.toRadians(45));
-            Pose2d shootLocation = new Pose2d(40,40, Math.toRadians(45));
-            Vector2d shootVector = new Vector2d(40,40);
-            Vector2d farRow1 = new Vector2d(firstBallX-5*interballDistance, farRowY);
+            Pose2d shootLocation = new Pose2d(37,37, Math.toRadians(45));
+            Vector2d shootVector = new Vector2d(37 ,37);
+            Vector2d farRow1 = new Vector2d(firstBallX-3*interballDistance, farRowY);
             Vector2d farRow2 = new Vector2d((firstBallX+1*interballDistance), farRowY);
             Vector2d farRow3 = new Vector2d(firstBallX+2*interballDistance, farRowY);
             Vector2d farRow4 = new Vector2d(firstBallX+3*interballDistance, farRowY);
-            Pose2d farRow1End = new Pose2d(firstBallX-5*interballDistance,farRowY, Math.toRadians(0));
+            Pose2d farRow1End = new Pose2d(firstBallX-3*interballDistance,farRowY, Math.toRadians(0));
             Pose2d farRow2End = new Pose2d(firstBallX+1*interballDistance, farRowY, Math.toRadians(0));
             Pose2d farRow3End = new Pose2d(firstBallX+2*interballDistance, farRowY, Math.toRadians(0));
             Pose2d farRow4End = new Pose2d(firstBallX+3*interballDistance, farRowY, Math.toRadians(0));
-            Vector2d midRow1 = new Vector2d(firstBallX-5*interballDistance, -midRowY);
+            Vector2d midRow1 = new Vector2d(firstBallX-3*interballDistance, -midRowY);
             Vector2d midRow2 = new Vector2d(firstBallX+1*interballDistance, midRowY);
             Vector2d midRow3 = new Vector2d(firstBallX+2*interballDistance, midRowY);
             Vector2d midRow4 = new Vector2d(firstBallX+3*interballDistance, midRowY);
-            Pose2d midRow1End = new Pose2d(firstBallX-5*interballDistance,midRowY, Math.toRadians(0));
+            Pose2d midRow1End = new Pose2d(firstBallX-3*interballDistance,midRowY, Math.toRadians(0));
             Pose2d midRow2End = new Pose2d(firstBallX+1*interballDistance, midRowY, Math.toRadians(0));
             Pose2d midRow3End = new Pose2d(firstBallX+2*interballDistance, midRowY, Math.toRadians(0));
             Pose2d midRow4End = new Pose2d(firstBallX+3*interballDistance, midRowY, Math.toRadians(0));
-            Vector2d closeRow1 = new Vector2d(firstBallX-5*interballDistance, closeRowY);
+            Vector2d closeRow1 = new Vector2d(firstBallX-3*interballDistance, closeRowY);
             Vector2d closeRow2 = new Vector2d(firstBallX+1*interballDistance, closeRowY);
             Vector2d closeRow3 = new Vector2d(firstBallX+2*interballDistance, closeRowY);
             Vector2d closeRow4 = new Vector2d(firstBallX+3*interballDistance, closeRowY);
-            Pose2d closeRow1End = new Pose2d(firstBallX-5*interballDistance,closeRowY, Math.toRadians(0));
+            Pose2d closeRow1End = new Pose2d(firstBallX-3*interballDistance,closeRowY, Math.toRadians(0));
             Pose2d closeRow2End = new Pose2d(firstBallX+1*interballDistance, closeRowY, Math.toRadians(0));
             Pose2d closeRow3End = new Pose2d(firstBallX+2*interballDistance, closeRowY, Math.toRadians(0));
             Pose2d closeRow4End = new Pose2d(firstBallX+3*interballDistance, closeRowY, Math.toRadians(0));
@@ -86,8 +86,8 @@ public class RightLaunchAuto extends LinearOpMode{
                         // 1. Start the motors on the very first run
                         if (!initialized) {
                             spindexer.setPosition(spindexerPosIntake[spinpos]);
-                            rightIntake.setPower(-1);
-                            leftIntake.setPower(-1);
+                            rightIntake.setPower(1);
+                            leftIntake.setPower(1);
                             timer = new ElapsedTime();
                             initialized = true;
                         }
@@ -129,10 +129,10 @@ public class RightLaunchAuto extends LinearOpMode{
                             timer2 = new ElapsedTime();
                             return true;
                         }
-                        if (timer.seconds() < 1.0){
+                        if (timer.seconds() < 1.5){
                             return true;
                         }
-                        if (timer.seconds() > 1.0 && timer2.seconds() < 3.0) {
+                        if (timer.seconds() > 1.5 && timer2.seconds() < 2.5) {
                             leftFlywheel.setDirection(CRServo.Direction.FORWARD);
                             leftFlywheel.setPower(1);
                             rightFlywheel.setDirection(CRServo.Direction.REVERSE);
@@ -170,35 +170,35 @@ public class RightLaunchAuto extends LinearOpMode{
                     .build();
             Action trajectoryCollectRow1_2 = Drivetrain.actionBuilder(farRow2End)
                     // .waitSeconds(ballWaiting)
-                    .strafeTo(farRow3, tvConstraint)
+                    .strafeToLinearHeading(farRow3, Math.toRadians(0), tvConstraint)
                     .build();
             Action trajectoryCollectRow1_3 = Drivetrain.actionBuilder(farRow3End)
                     .waitSeconds(ballWaiting)
-                    .strafeTo(farRow4, tvConstraint)
+                    .strafeToLinearHeading(farRow4, Math.toRadians(0), tvConstraint)
                     .build();
             Action trajectoryCollectRow2_1 = Drivetrain.actionBuilder(midRow1End)
                     .waitSeconds(ballWaiting)
-                    .strafeTo(midRow2, tvConstraint)
+                    .strafeToLinearHeading(midRow2, Math.toRadians(0), tvConstraint)
                     .build();
             Action trajectoryCollectRow2_2 = Drivetrain.actionBuilder(midRow2End)
                     .waitSeconds(ballWaiting)
-                    .strafeTo(midRow3, tvConstraint)
+                    .strafeToLinearHeading(midRow3, Math.toRadians(0), tvConstraint)
                     .build();
             Action trajectoryCollectRow2_3 = Drivetrain.actionBuilder(midRow3End)
                     .waitSeconds(ballWaiting)
-                    .strafeTo(midRow4, tvConstraint)
+                    .strafeToLinearHeading(midRow4, Math.toRadians(180), tvConstraint)
                     .build();
             Action trajectoryCollectRow3_1 = Drivetrain.actionBuilder(closeRow1End)
                     .waitSeconds(ballWaiting)
-                    .strafeTo(closeRow2, tvConstraint)
+                    .strafeToLinearHeading(closeRow2, Math.toRadians(0), tvConstraint)
                     .build();
             Action trajectoryCollectRow3_2 = Drivetrain.actionBuilder(closeRow2End)
                     .waitSeconds(ballWaiting)
-                    .strafeTo(closeRow3, tvConstraint)
+                    .strafeToLinearHeading(closeRow3, Math.toRadians(0), tvConstraint)
                     .build();
             Action trajectoryCollectRow3_3 = Drivetrain.actionBuilder(closeRow3End)
                     .waitSeconds(ballWaiting)
-                    .strafeTo(closeRow4, tvConstraint)
+                    .strafeToLinearHeading(closeRow4, Math.toRadians(0), tvConstraint)
                     .build();
 
             // 2. Combine the trajectory and your intake action
@@ -242,23 +242,23 @@ public class RightLaunchAuto extends LinearOpMode{
             );
 
             Action Trajectoryrow1 = Drivetrain.actionBuilder(shootLocation)
-                    .strafeTo(farRow1)
+                    .strafeToLinearHeading(farRow1, Math.toRadians(0))
                     .build();
 
             Action Trajectoryrow2 = Drivetrain.actionBuilder(shootLocation)
-                    .strafeTo(midRow1)
+                    .strafeToLinearHeading(midRow1, Math.toRadians(0))
                     .build();
             Action Trajectoryrow3 = Drivetrain.actionBuilder(shootLocation)
-                    .strafeTo(closeRow1)
+                    .strafeToLinearHeading(closeRow1, Math.toRadians(0))
                     .build();
             Action Shootingposa1 = Drivetrain.actionBuilder(farRow4End)
-                    .splineToLinearHeading(shootLocation, Math.toRadians(135))
+                    .splineToLinearHeading(shootLocation, Math.toRadians(45))
                     .build();
             Action Shootingposa2 = Drivetrain.actionBuilder(midRow4End)
-                    .splineToLinearHeading(shootLocation, Math.toRadians(135))
+                    .splineToLinearHeading(shootLocation, Math.toRadians(45))
                     .build();
             Action Shootingposa3 = Drivetrain.actionBuilder(closeRow4End)
-                    .splineToLinearHeading(shootLocation, Math.toRadians(135))
+                    .splineToLinearHeading(shootLocation, Math.toRadians(45))
                     .build();
             Action TrajectoryInitial = Drivetrain.actionBuilder(Startingpos)
                     .splineToLinearHeading(shootLocation, Math.toRadians(45))
