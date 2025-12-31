@@ -264,6 +264,7 @@ public class MainTeleop extends LinearOpMode{
                         else {
                                 rightIntake.setPower(0);
                                 leftIntake.setPower(0);
+                                intakeBool = false;
                         }
                         telemetry.addData("spindexerPosIntake", spindexerPosOuttake[i]);
                         if (intakeBool) {
