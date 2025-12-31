@@ -40,6 +40,11 @@ public class MainTeleop extends LinearOpMode{
         private ElapsedTime spintime;
         private ElapsedTime motiftimer;
         boolean isshooting;
+        ColorDetection colorSensor = new ColorDetection();
+        int patternchecked = 0;
+        int p = 0;
+        String color = "blank";
+        String pattern_name = "random";
         @Override
         public void runOpMode() {
                 //Initialize things here
@@ -57,11 +62,6 @@ public class MainTeleop extends LinearOpMode{
                         ballcols.add("blank");
                         ballcols.add("blank");
                 sensor = hardwareMap.get(RevColorSensorV3.class, "colorSensor");
-                ColorDetection colorSensor = new ColorDetection();
-                int patternchecked = 0;
-                int p = 0;
-                String color = "blank";
-                String pattern_name = "random";
                 spintime = new ElapsedTime();
                 waitForStart();
 
