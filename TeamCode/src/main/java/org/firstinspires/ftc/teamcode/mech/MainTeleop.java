@@ -100,7 +100,7 @@ public class MainTeleop extends LinearOpMode {
         while (opModeIsActive()) {
             // 1) Drive
             double x = deadzone(gamepad1.left_stick_x, 0.05);   // strafe
-            double y = deadzone(-gamepad1.left_stick_y, 0.05);  // forward (invert)
+            double y = deadzone(gamepad1.left_stick_y, 0.05);  // forward
             double h = deadzone(gamepad1.right_stick_x, 0.05);  // turn
             drive.move(x, y, h);
 

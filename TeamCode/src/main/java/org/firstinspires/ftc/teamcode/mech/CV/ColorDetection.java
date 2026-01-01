@@ -1,27 +1,34 @@
 package org.firstinspires.ftc.teamcode.mech.CV;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-//import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
-import org.firstinspires.ftc.teamcode.mech.movement.goBuildaPinPointDriver.GoBildaPinpointDriver;
-import org.firstinspires.ftc.teamcode.mech.movement.goBuildaPinPointDriver.Pose2D;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+
 public class ColorDetection {
+
+    // Tune values
+    private static final int MIN_ALPHA = 60;     // blank threshold
+    private static final int DOMINANCE_MARGIN = 15; // channel must exceed others by this much
+
     public String getColor(RevColorSensorV3 sensor) {
-        int red = sensor.red();
-        int green = sensor.green();
-        int blue = sensor.blue();
-        if (red < 20 && green < 20 && blue < 20) {
-            return "blank";
-        }
-        if (green > red && green > blue) {
+        sensor.enableLed(true);
+
+        int r = sensor.red();
+        int g = sensor.green();
+        int b = sensor.blue();
+        int a = sensor.alpha(); // overall intensity
+
+        // Blank / nothing in front
+        if (a < MIN_ALPHA) return "blank";
+
+        // Green dominant
+        if (g > r + DOMINANCE_MARGIN && g > b + DOMINANCE_MARGIN) {
             return "green";
         }
-        else {
+
+        // Purple, red+blue dominant
+        if ((r + b) > g + DOMINANCE_MARGIN) {
             return "purple";
         }
-    }
 
+        return "blank";
+    }
 }
