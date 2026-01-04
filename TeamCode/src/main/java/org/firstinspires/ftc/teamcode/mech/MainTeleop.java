@@ -143,7 +143,7 @@ public class MainTeleop extends LinearOpMode {
             } else if (lB) {
                 rightIntake.setPower(-1);
                 leftIntake.setPower(-1);
-                spindexer.setPosition(spindexerPosOuttake[i]);
+                spindexer.setPosition(spindexerPosIntake[i]);
             } else {
                 rightIntake.setPower(0);
                 leftIntake.setPower(0);
@@ -154,11 +154,13 @@ public class MainTeleop extends LinearOpMode {
                 if (spintime.seconds() > 0.1) ballcols.set(i, colorSensor.getColor(sensor));
                 i++;
                 spintime.reset();
+                spindexer.setPosition(spindexerPosIntake[i]);
             }
             if (dRightPressed && i > 0) {
                 if (spintime.seconds() > 0.1) ballcols.set(i, colorSensor.getColor(sensor));
                 i--;
                 spintime.reset();
+                spindexer.setPosition(spindexerPosIntake[i]);
             }
 
             // 5) Pattern selection (one-time at the start or round) (X, Y, B)
