@@ -191,7 +191,6 @@ public class MainTeleop extends LinearOpMode {
 
             // 7) Start firing (Y)
             if (patternChecked && yPressed && !consumedYThisLoop && shootState == ShootState.IDLE) {
-                int[] fallback = new int[] {0, 1, 2};
                 int[] order = computeShotOrder(ballcols, p);
                 stype = Arrays.toString(order);
                 telemetry.update();
