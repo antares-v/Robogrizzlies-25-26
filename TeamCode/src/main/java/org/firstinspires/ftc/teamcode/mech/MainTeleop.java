@@ -57,7 +57,7 @@ public class MainTeleop extends LinearOpMode {
     // Timing knobs (ms)
     private static final long FIRST_SPINUP_MS = 1700;
     private static final long NEXT_SPINUP_MS  = 200;
-    private static final long FIRE_MS         = 550;
+    private static final long FIRE_MS         = 600;
     private static final long RECOVER_MS      = 120;
 
     // Helpers
@@ -276,6 +276,9 @@ public class MainTeleop extends LinearOpMode {
             case SET_SERVO: {
                 // Move servo to the next desired outtake position
                 int posIdx = shotOrder[shotIndex];
+
+                posIdx = (posIdx + 1) % 3; // Spindexer Outtake is offsetted by 1.
+
                 posIdx = Math.max(0, Math.min(posIdx, spindexerPosOuttake.length - 1));
 
                 spindexer.setPosition(spindexerPosOuttake[posIdx]);
