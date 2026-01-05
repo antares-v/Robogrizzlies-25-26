@@ -56,13 +56,13 @@ public class MainTeleop extends LinearOpMode {
 
     // Timing knobs (ms)
     private static final long FIRST_SPINUP_MS = 1700;
-    private static final long NEXT_SPINUP_MS  = 200;
-    private static final long FIRE_MS         = 600;
+    private static final long NEXT_SPINUP_MS  = 500;
+    private static final long FIRE_MS         = 700;
     private static final long RECOVER_MS      = 120;
 
     // Helpers
     private static double deadzone(double v, double dz) {
-        return (Math.abs(v) < dz) ? 0.0 : v;
+        return (Math.abs(v) < dz) ? 0.0 : v * 1.5;
     }
 
     @Override
@@ -101,9 +101,9 @@ public class MainTeleop extends LinearOpMode {
         // main loop
         while (opModeIsActive()) {
             // 1) Drive
-            double x = deadzone(gamepad1.left_stick_x, 0.05);   // strafe
-            double y = deadzone(gamepad1.left_stick_y, 0.05);  // forward
-            double h = deadzone(gamepad1.right_stick_x, 0.05);  // turn
+            double x = deadzone(gamepad1.left_stick_x, 0.1);   // strafe
+            double y = deadzone(gamepad1.left_stick_y, 0.1);  // forward
+            double h = deadzone(gamepad1.right_stick_x, 0.1);  // turn
             drive.move(x, y, h);
 
             // 2) Edge detection
@@ -309,7 +309,6 @@ public class MainTeleop extends LinearOpMode {
                     // Stop everything for a moment (matches your old behavior)
                     leftFlywheel.setPower(0);
                     rightFlywheel.setPower(0);
-                    launcher.setPower(0);
                     shootTimer.reset();
                     shootState = ShootState.RECOVER;
                 }
