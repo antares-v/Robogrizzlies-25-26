@@ -57,7 +57,7 @@ public class MainTeleop extends LinearOpMode {
 
     // Timing knobs (ms)
     private static final long FIRST_SPINUP_MS = 1500;
-    private static final long NEXT_SPINUP_MS  = 400;
+    private static final long NEXT_SPINUP_MS  = 500;
     private static final long FIRE_MS         = 650;
     private static final long RECOVER_MS      = 120;
 
@@ -155,12 +155,14 @@ public class MainTeleop extends LinearOpMode {
                 i++;
                 spintime.reset();
                 spindexer.setPosition(spindexerPosIntake[i]);
+                telemetry.update();
             }
             if (dRightPressed && i > 0) {
                 if (spintime.seconds() > 0.1) ballcols.set(i, colorSensor.getColor(sensor));
                 i--;
                 spintime.reset();
                 spindexer.setPosition(spindexerPosIntake[i]);
+                telemetry.update();
             }
 
             // 5) Pattern selection (one-time at the start or round) (X, Y, B)
@@ -312,7 +314,6 @@ public class MainTeleop extends LinearOpMode {
                     leftFlywheel.setPower(0);
                     rightFlywheel.setPower(0);
                     launcher.setPower(0);
-
                     shootTimer.reset();
                     shootState = ShootState.RECOVER;
                 }
