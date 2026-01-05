@@ -13,7 +13,9 @@ import org.firstinspires.ftc.teamcode.mech.CV.ColorDetection;
 import org.firstinspires.ftc.teamcode.mech.movement.movement;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 @TeleOp
 public class MainTeleop extends LinearOpMode {
@@ -43,7 +45,7 @@ public class MainTeleop extends LinearOpMode {
     private boolean patternChecked = false;
     private int p = 0;                    // where green should end up (0/1/2)
     private String patternName = "random";
-
+    private String stype = "none";
     // Shooter states
     private enum ShootState { IDLE, SET_SERVO, SPINUP, FIRE, RECOVER }
     private ShootState shootState = ShootState.IDLE;
@@ -53,9 +55,9 @@ public class MainTeleop extends LinearOpMode {
     private int shotIndex = 0;
 
     // Timing knobs (ms)
-    private static final long FIRST_SPINUP_MS = 1500;
-    private static final long NEXT_SPINUP_MS  = 400;
-    private static final long FIRE_MS         = 650;
+    private static final long FIRST_SPINUP_MS = 1700;
+    private static final long NEXT_SPINUP_MS  = 200;
+    private static final long FIRE_MS         = 550;
     private static final long RECOVER_MS      = 120;
 
     // Helpers
@@ -152,12 +154,14 @@ public class MainTeleop extends LinearOpMode {
                 i++;
                 spintime.reset();
                 spindexer.setPosition(spindexerPosIntake[i]);
+                telemetry.update();
             }
             if (dRightPressed && i > 0) {
                 if (spintime.seconds() > 0.1) ballcols.set(i, colorSensor.getColor(sensor));
                 i--;
                 spintime.reset();
                 spindexer.setPosition(spindexerPosIntake[i]);
+                telemetry.update();
             }
 
             // 5) Pattern selection (one-time at the start or round) (X, Y, B)
@@ -187,7 +191,10 @@ public class MainTeleop extends LinearOpMode {
 
             // 7) Start firing (Y)
             if (patternChecked && yPressed && !consumedYThisLoop && shootState == ShootState.IDLE) {
+                int[] fallback = new int[] {0, 1, 2};
                 int[] order = computeShotOrder(ballcols, p);
+                stype = Arrays.toString(order);
+                telemetry.update();
                 startShooting(order);
             }
 
@@ -201,6 +208,7 @@ public class MainTeleop extends LinearOpMode {
             telemetry.addData("i", i);
             telemetry.addData("shootState", shootState);
             telemetry.addData("shotIndex", shotIndex);
+            telemetry.addData("typeofshot", stype);
             telemetry.update();
 
             idle();
@@ -237,9 +245,8 @@ public class MainTeleop extends LinearOpMode {
             } else {
                 return fallback; // unknown color string
             }
-            if (!greenFound) return fallback;
         }
-
+        if (!greenFound) return fallback;
         // Convert to int[]
         int[] order = new int[3];
         for (int k = 0; k < 3; k++) order[k] = poslist.get(k);
@@ -301,7 +308,6 @@ public class MainTeleop extends LinearOpMode {
                     leftFlywheel.setPower(0);
                     rightFlywheel.setPower(0);
                     launcher.setPower(0);
-
                     shootTimer.reset();
                     shootState = ShootState.RECOVER;
                 }
