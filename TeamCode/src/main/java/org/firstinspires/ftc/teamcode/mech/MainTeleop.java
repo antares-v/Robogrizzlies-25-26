@@ -227,6 +227,7 @@ public class MainTeleop extends LinearOpMode {
                 poslist.set((p + 1) % 3, (j + 1) % 3);
                 poslist.set((p + 2) % 3, (j + 2) % 3);
                 greenFound = true;
+                break;
             } else if (("green".equals(color) && greenFound)) {
                 // randomizer condition
                 return fallback;

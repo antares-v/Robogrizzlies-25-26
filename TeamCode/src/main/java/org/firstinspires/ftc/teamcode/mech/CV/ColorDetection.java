@@ -5,7 +5,7 @@ import com.qualcomm.hardware.rev.RevColorSensorV3;
 public class ColorDetection {
 
     // Tune values
-    private static final int MIN_ALPHA = 60;     // blank threshold
+    private static final int MIN_ALPHA = 30;     // blank threshold
     private static final int DOMINANCE_MARGIN = 15; // channel must exceed others by this much
 
     public String getColor(RevColorSensorV3 sensor) {
