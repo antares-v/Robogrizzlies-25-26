@@ -5,8 +5,7 @@ import com.qualcomm.hardware.rev.RevColorSensorV3;
 public class ColorDetection {
 
     // Tune values
-    private static final int MIN_ALPHA = 30;     // blank threshold
-    private static final int DOMINANCE_MARGIN = 30; // channel must exceed others by this much
+    private static final int MIN_ALPHA = 350;     // blank threshold
 
     public String getColor(RevColorSensorV3 sensor) {
         sensor.enableLed(true);
@@ -20,15 +19,16 @@ public class ColorDetection {
         if (a < MIN_ALPHA) return "blank";
 
         // Green dominant
-        if (g > r + DOMINANCE_MARGIN && g > b + DOMINANCE_MARGIN) {
+        if (g > r && g > b) {
             return "green";
         }
 
         // Purple, red+blue dominant
-        if ((r + b) > g + DOMINANCE_MARGIN) {
+        else {
             return "purple";
         }
-
-        return "blank";
     }
 }
+// Blank - R:96 G:123 B:88 A:102
+// Purple - R:785 G:925 B:1466 A:1061
+// Green - R:289 G:1161 B:837 A:764
