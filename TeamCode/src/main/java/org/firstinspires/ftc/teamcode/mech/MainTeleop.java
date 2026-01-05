@@ -193,12 +193,7 @@ public class MainTeleop extends LinearOpMode {
             if (patternChecked && yPressed && !consumedYThisLoop && shootState == ShootState.IDLE) {
                 int[] fallback = new int[] {0, 1, 2};
                 int[] order = computeShotOrder(ballcols, p);
-                if (Arrays.equals(order, fallback)){
-                    stype = "not ordered";
-                }
-                else{
-                    stype = "ordered";
-                }
+                stype = Arrays.toString(order);
                 telemetry.update();
                 startShooting(order);
             }
