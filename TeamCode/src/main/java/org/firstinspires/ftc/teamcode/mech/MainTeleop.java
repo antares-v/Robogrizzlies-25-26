@@ -62,7 +62,7 @@ public class MainTeleop extends LinearOpMode {
 
     // Helpers
     private static double deadzone(double v, double dz) {
-        return (Math.abs(v) < dz) ? 0.0 : v * 1.5;
+        return (Math.abs(v) < dz) ? -v * 0.75 : v;
     }
 
     @Override
@@ -101,9 +101,9 @@ public class MainTeleop extends LinearOpMode {
         // main loop
         while (opModeIsActive()) {
             // 1) Drive
-            double x = deadzone(gamepad1.left_stick_x, 0.1);   // strafe
-            double y = deadzone(gamepad1.left_stick_y, 0.1);  // forward
-            double h = deadzone(gamepad1.right_stick_x, 0.1);  // turn
+            double x = deadzone(gamepad1.left_stick_x, 0.25);   // strafe
+            double y = deadzone(gamepad1.left_stick_y, 0.25);  // forward
+            double h = deadzone(gamepad1.right_stick_x, 0.25);  // turn
             drive.move(x, y, h);
 
             // 2) Edge detection
@@ -155,7 +155,7 @@ public class MainTeleop extends LinearOpMode {
                 ballDetected = true;
             }
             // 4) Indexer and sample color
-            if (dLeftPressed && i < spindexerPosIntake.length - 1) {
+            if (dLeftPressed && i < spindexerPosIntake.length - 1 && ballDetected) {
 
                 ballDetected = false;
                 i++;
@@ -163,7 +163,7 @@ public class MainTeleop extends LinearOpMode {
                 spindexer.setPosition(spindexerPosIntake[i]);
                 telemetry.update();
             }
-            if (dRightPressed && i > 0) {
+            if (dRightPressed && i > 0 && ballDetected) {
                 ballDetected = false;
                 i--;
                 spintime.reset();
