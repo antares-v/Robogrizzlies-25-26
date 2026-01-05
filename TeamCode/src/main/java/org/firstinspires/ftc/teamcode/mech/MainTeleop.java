@@ -62,7 +62,7 @@ public class MainTeleop extends LinearOpMode {
 
     // Helpers
     private static double deadzone(double v, double dz) {
-        return (Math.abs(v) < dz) ? -v * 0.75 : v;
+        return (Math.abs(v) < dz) ? -v : v;
     }
 
     @Override
@@ -101,9 +101,9 @@ public class MainTeleop extends LinearOpMode {
         // main loop
         while (opModeIsActive()) {
             // 1) Drive
-            double x = deadzone(gamepad1.left_stick_x, 0.25);   // strafe
-            double y = deadzone(gamepad1.left_stick_y, 0.25);  // forward
-            double h = deadzone(gamepad1.right_stick_x, 0.25);  // turn
+            double x = deadzone(gamepad1.left_stick_x, 0.5);   // strafe
+            double y = deadzone(gamepad1.left_stick_y, 0.5);  // forward
+            double h = deadzone(gamepad1.right_stick_x, 0.5);  // turn
             drive.move(x, y, h);
 
             // 2) Edge detection
