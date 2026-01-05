@@ -131,6 +131,8 @@ public class MainTeleop extends LinearOpMode {
             bPrev = bNow;
             aPrev = aNow;
 
+            boolean ballDetected = false;
+
             // 3) Intake
             boolean lB = gamepad1.left_bumper;
             boolean rB = gamepad1.right_bumper;
@@ -148,16 +150,21 @@ public class MainTeleop extends LinearOpMode {
                 leftIntake.setPower(0);
             }
 
+            if (spintime.seconds() > 0.15 && !ballDetected) {
+                ballcols.set(i, colorSensor.getColor(sensor));
+                ballDetected = true;
+            }
             // 4) Indexer and sample color
             if (dLeftPressed && i < spindexerPosIntake.length - 1) {
-                if (spintime.seconds() > 0.1) ballcols.set(i, colorSensor.getColor(sensor));
+
+                ballDetected = false;
                 i++;
                 spintime.reset();
                 spindexer.setPosition(spindexerPosIntake[i]);
                 telemetry.update();
             }
             if (dRightPressed && i > 0) {
-                if (spintime.seconds() > 0.1) ballcols.set(i, colorSensor.getColor(sensor));
+                ballDetected = false;
                 i--;
                 spintime.reset();
                 spindexer.setPosition(spindexerPosIntake[i]);
