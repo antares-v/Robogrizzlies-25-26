@@ -13,9 +13,7 @@ import org.firstinspires.ftc.teamcode.mech.CV.ColorDetection;
 import org.firstinspires.ftc.teamcode.mech.movement.movement;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 @TeleOp
 public class MainTeleop extends LinearOpMode {
@@ -45,7 +43,6 @@ public class MainTeleop extends LinearOpMode {
     private boolean patternChecked = false;
     private int p = 0;                    // where green should end up (0/1/2)
     private String patternName = "random";
-    private String stype = "none";
 
     // Shooter states
     private enum ShootState { IDLE, SET_SERVO, SPINUP, FIRE, RECOVER }
@@ -192,15 +189,7 @@ public class MainTeleop extends LinearOpMode {
 
             // 7) Start firing (Y)
             if (patternChecked && yPressed && !consumedYThisLoop && shootState == ShootState.IDLE) {
-                int[] fallback = new int[] {0, 1, 2, 1000};
                 int[] order = computeShotOrder(ballcols, p);
-                if (Arrays.equals(order, fallback)){
-                    stype = "not ordered";
-                }
-                else{
-                    stype = "ordered";
-                }
-                telemetry.update();
                 startShooting(order);
             }
 
@@ -214,7 +203,6 @@ public class MainTeleop extends LinearOpMode {
             telemetry.addData("i", i);
             telemetry.addData("shootState", shootState);
             telemetry.addData("shotIndex", shotIndex);
-            telemetry.addData("typeofshot", stype);
             telemetry.update();
 
             idle();
@@ -225,7 +213,7 @@ public class MainTeleop extends LinearOpMode {
     // fallback to [0,1,2]
     private int[] computeShotOrder(List<String> ballcols, int p) {
         // Default fallback
-        int[] fallback = new int[] {0, 1, 2, 1000};
+        int[] fallback = new int[] {0, 1, 2};
 
         List<Integer> poslist = new ArrayList<>();
         poslist.add(0); poslist.add(0); poslist.add(0);
@@ -324,7 +312,7 @@ public class MainTeleop extends LinearOpMode {
                 if (shootTimer.milliseconds() >= RECOVER_MS) {
                     shotIndex++;
 
-                    if (shotIndex >= (shotOrder.length - 1)) {
+                    if (shotIndex >= shotOrder.length) {
                         shootState = ShootState.IDLE;
                         stopShooter();
                     } else {
