@@ -162,7 +162,6 @@ public class MainTeleop extends LinearOpMode {
             // 4) Indexer and sample color
             if (dLeftPressed && i < spindexerPosIntake.length - 1 && !rotated) {
                 rotated = true;
-                outtaking = false;
                 i++;
                 spintime.reset();
                 spindexer.setPosition(spindexerPosIntake[i]);
@@ -284,9 +283,11 @@ public class MainTeleop extends LinearOpMode {
     private void updateShooting() {
         switch (shootState) {
             case IDLE:
+                outtaking = false;
                 return;
 
             case SET_SERVO: {
+                outtaking = true;
                 // Move servo to the next desired outtake position
                 int posIdx = shotOrder[shotIndex];
 
@@ -295,7 +296,6 @@ public class MainTeleop extends LinearOpMode {
                 posIdx = Math.max(0, Math.min(posIdx, spindexerPosOuttake.length - 1));
 
                 spindexer.setPosition(spindexerPosOuttake[posIdx]);
-                outtaking = true;
 
                 // Start launcher motor
                 launcher.setPower(1);
