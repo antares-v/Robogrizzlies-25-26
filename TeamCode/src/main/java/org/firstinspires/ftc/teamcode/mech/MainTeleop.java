@@ -154,19 +154,19 @@ public class MainTeleop extends LinearOpMode {
                 ballcols.set(i, colorSensor.getColor(sensor));
             }
 
-            if (spintime.milliseconds() > 50 && rotated) {
+            if (spintime.milliseconds() > 100 && rotated) {
                 rotated = false;
             }
 
             // 4) Indexer and sample color
-            if (dLeftPressed && i < spindexerPosIntake.length - 1) {
+            if (dLeftPressed && i < spindexerPosIntake.length - 1 && !rotated) {
                 rotated = true;
                 i++;
                 spintime.reset();
                 spindexer.setPosition(spindexerPosIntake[i]);
                 telemetry.update();
             }
-            if (dRightPressed && i > 0) {
+            if (dRightPressed && i > 0 && !rotated) {
                 rotated = true;
                 i--;
                 spintime.reset();
