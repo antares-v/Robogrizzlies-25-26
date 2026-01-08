@@ -60,6 +60,8 @@ public class MainTeleop extends LinearOpMode {
     private static final long FIRE_MS         = 700;
     private static final long RECOVER_MS      = 120;
 
+    boolean rotated = false;
+
     // Helpers
     private static double deadzone(double v, double dz) {
         return (Math.abs(v) < dz) ? 0 : v;
@@ -97,7 +99,7 @@ public class MainTeleop extends LinearOpMode {
         telemetry.update();
 
         waitForStart();
-
+        colorSensor.enableLed(sensor);
         // main loop
         while (opModeIsActive()) {
             // 1) Drive
@@ -131,7 +133,6 @@ public class MainTeleop extends LinearOpMode {
             bPrev = bNow;
             aPrev = aNow;
 
-            boolean ballDetected = false;
 
             // 3) Intake
             boolean lB = gamepad1.left_bumper;
@@ -149,22 +150,24 @@ public class MainTeleop extends LinearOpMode {
                 rightIntake.setPower(0);
                 leftIntake.setPower(0);
             }
-
-            if (spintime.seconds() > 0.15 && !ballDetected) {
+            if (!rotated) {
                 ballcols.set(i, colorSensor.getColor(sensor));
-                ballDetected = true;
             }
-            // 4) Indexer and sample color
-            if (dLeftPressed && i < spindexerPosIntake.length - 1 && ballDetected) {
 
-                ballDetected = false;
+            if (spintime.milliseconds() > 50 && rotated) {
+                rotated = false;
+            }
+
+            // 4) Indexer and sample color
+            if (dLeftPressed && i < spindexerPosIntake.length - 1) {
+                rotated = true;
                 i++;
                 spintime.reset();
                 spindexer.setPosition(spindexerPosIntake[i]);
                 telemetry.update();
             }
-            if (dRightPressed && i > 0 && ballDetected) {
-                ballDetected = false;
+            if (dRightPressed && i > 0) {
+                rotated = true;
                 i--;
                 spintime.reset();
                 spindexer.setPosition(spindexerPosIntake[i]);

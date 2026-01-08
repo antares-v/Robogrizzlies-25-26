@@ -3,13 +3,11 @@ package org.firstinspires.ftc.teamcode.mech.CV;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 
 public class ColorDetection {
-
     // Tune values
-    private static final int MIN_ALPHA = 350;     // blank threshold
+    private static final int MIN_ALPHA = 200;     // blank threshold
+    public void enableLed(RevColorSensorV3 sensor) {sensor.enableLed(true);}
 
     public String getColor(RevColorSensorV3 sensor) {
-        sensor.enableLed(true);
-
         int r = sensor.red();
         int g = sensor.green();
         int b = sensor.blue();
