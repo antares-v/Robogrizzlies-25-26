@@ -62,6 +62,7 @@ public class MainTeleop extends LinearOpMode {
 
     boolean rotated = false;
 
+    boolean outtaking = false;
     // Helpers
     private static double deadzone(double v, double dz) {
         return (Math.abs(v) < dz) ? 0 : v;
@@ -150,7 +151,7 @@ public class MainTeleop extends LinearOpMode {
                 rightIntake.setPower(0);
                 leftIntake.setPower(0);
             }
-            if (!rotated) {
+            if (!rotated && !outtaking) {
                 ballcols.set(i, colorSensor.getColor(sensor));
             }
 
@@ -161,6 +162,7 @@ public class MainTeleop extends LinearOpMode {
             // 4) Indexer and sample color
             if (dLeftPressed && i < spindexerPosIntake.length - 1 && !rotated) {
                 rotated = true;
+                outtaking = false;
                 i++;
                 spintime.reset();
                 spindexer.setPosition(spindexerPosIntake[i]);
@@ -168,6 +170,7 @@ public class MainTeleop extends LinearOpMode {
             }
             if (dRightPressed && i > 0 && !rotated) {
                 rotated = true;
+                outtaking = false;
                 i--;
                 spintime.reset();
                 spindexer.setPosition(spindexerPosIntake[i]);
@@ -292,6 +295,7 @@ public class MainTeleop extends LinearOpMode {
                 posIdx = Math.max(0, Math.min(posIdx, spindexerPosOuttake.length - 1));
 
                 spindexer.setPosition(spindexerPosOuttake[posIdx]);
+                outtaking = true;
 
                 // Start launcher motor
                 launcher.setPower(1);
@@ -335,6 +339,7 @@ public class MainTeleop extends LinearOpMode {
                     } else {
                         shootState = ShootState.SET_SERVO;
                     }
+                    outtaking = false;
                 }
                 break;
             }
