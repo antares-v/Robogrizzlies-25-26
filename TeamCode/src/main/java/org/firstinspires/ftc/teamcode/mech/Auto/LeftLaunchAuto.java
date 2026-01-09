@@ -24,8 +24,9 @@ public class LeftLaunchAuto extends LinearOpMode {
         static final double[] SPINDEX_OUTTAKE = {0.19, 0.59, 0.99};
 
         // Ball layout
-        static final double BALL_SPACING = 8.0;
-        static final double FIRST_BALL_X = -43 + BALL_SPACING;
+        static final double BALL_SPACING = 6.0;
+        static final double FIRST_BALL_X = -43;
+        static final double ROBOT_OFFSET = 8.0;
 
         // Row Ys
         static final double FAR_ROW_Y   = 12;
@@ -36,7 +37,8 @@ public class LeftLaunchAuto extends LinearOpMode {
         static final double BALL_WAIT_SEC = 0.5;
 
         // Motion constraint
-        static final double COLLECT_VEL = 25.0;
+        static final double MOTION_VEL = 30.0;
+        static final double COLLECT_VEL = 10.0;
 
         // Poses
         static final Pose2d START_POSE  = new Pose2d(-48, 48, Math.toRadians(135));
@@ -51,7 +53,7 @@ public class LeftLaunchAuto extends LinearOpMode {
         static final double FIRE_WINDOW_SEC     = 2.5;
 
         // Row X offsets
-        static final int[] ROW_X_MULTS = { +3, -1, -2, -3 };
+        static final float[] ROW_X_MULTS = { +2.0f, -0.5f, -1.5f, -2.5f };
     }
 
     private static final class RowSpec {
@@ -107,6 +109,7 @@ public class LeftLaunchAuto extends LinearOpMode {
 
         RobotHW hw = new RobotHW(this);
 
+        TranslationalVelConstraint motionVel = new TranslationalVelConstraint(Config.MOTION_VEL);
         TranslationalVelConstraint collectVel = new TranslationalVelConstraint(Config.COLLECT_VEL);
 
         // Define row behaviors
@@ -118,8 +121,6 @@ public class LeftLaunchAuto extends LinearOpMode {
         MecanumDrive drive = new MecanumDrive(hardwareMap, Config.START_POSE);
 
         // Actions
-        Action intakeSlotAction = intakeForSlot(hw, 0); // not used directly; built per slot below
-
         Action shoot3 = shootThreeBalls(hw);
 
         // Build paths
@@ -133,20 +134,20 @@ public class LeftLaunchAuto extends LinearOpMode {
 
         // start => shoot
         Action toShootInitially = drive.actionBuilder(Config.START_POSE)
-                .splineToLinearHeading(Config.SHOOT_POSE, Math.toRadians(135))
+                .splineToLinearHeading(Config.SHOOT_POSE, Math.toRadians(135), motionVel)
                 .build();
 
         // shoot => start of each row
         Action toFarRowStart = drive.actionBuilder(Config.SHOOT_POSE)
-                .strafeToLinearHeading(farPts[0], Config.COLLECT_HEADING_RAD)
+                .strafeToLinearHeading(farPts[0], Config.COLLECT_HEADING_RAD, motionVel)
                 .build();
 
         Action toMidRowStart = drive.actionBuilder(Config.SHOOT_POSE)
-                .strafeToLinearHeading(midPts[0], Config.COLLECT_HEADING_RAD)
+                .strafeToLinearHeading(midPts[0], Config.COLLECT_HEADING_RAD, motionVel)
                 .build();
 
         Action toCloseRowStart = drive.actionBuilder(Config.SHOOT_POSE)
-                .strafeToLinearHeading(closePts[0], Config.COLLECT_HEADING_RAD)
+                .strafeToLinearHeading(closePts[0], Config.COLLECT_HEADING_RAD, motionVel)
                 .build();
 
         // Collect across each row
@@ -162,15 +163,15 @@ public class LeftLaunchAuto extends LinearOpMode {
 
         // From end of each row -> shoot
         Action farEndToShoot = drive.actionBuilder(farEnds[3])
-                .splineToLinearHeading(Config.SHOOT_POSE, Math.toRadians(135))
+                .splineToLinearHeading(Config.SHOOT_POSE, Math.toRadians(135), motionVel)
                 .build();
 
         Action midEndToShoot = drive.actionBuilder(midEnds[3])
-                .splineToLinearHeading(Config.SHOOT_POSE, Math.toRadians(135))
+                .splineToLinearHeading(Config.SHOOT_POSE, Math.toRadians(135), motionVel)
                 .build();
 
         Action closeEndToShoot = drive.actionBuilder(closeEnds[3])
-                .splineToLinearHeading(Config.SHOOT_POSE, Math.toRadians(135))
+                .splineToLinearHeading(Config.SHOOT_POSE, Math.toRadians(135), motionVel)
                 .build();
 
         // auto chain
@@ -202,7 +203,7 @@ public class LeftLaunchAuto extends LinearOpMode {
     private static Vector2d[] makeRowPoints(double rowY) {
         Vector2d[] pts = new Vector2d[4];
         for (int i = 0; i < 4; i++) {
-            double x = Config.FIRST_BALL_X + Config.ROW_X_MULTS[i] * Config.BALL_SPACING;
+            double x = Config.FIRST_BALL_X + Config.ROW_X_MULTS[i] * Config.BALL_SPACING + Config.ROBOT_OFFSET;
             pts[i] = new Vector2d(x, rowY);
         }
         return pts;
