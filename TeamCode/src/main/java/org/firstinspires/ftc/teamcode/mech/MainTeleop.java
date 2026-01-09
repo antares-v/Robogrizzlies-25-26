@@ -48,7 +48,7 @@ public class MainTeleop extends LinearOpMode {
     private String stype = "none";
     // Shooter states
     private enum ShootState { IDLE, SET_SERVO, SPINUP, FIRE, RECOVER }
-    private ShootState shootState = ShootState.IDLE;
+    private ShootState shootState = ShootState.IDLE; //initial shootstate
 
     private final ElapsedTime shootTimer = new ElapsedTime();
     private int[] shotOrder = new int[] {0, 1, 2}; // indices into spindexerPosOuttake
@@ -281,6 +281,7 @@ public class MainTeleop extends LinearOpMode {
     }
 
     private void updateShooting() {
+        //basically a switch system each switch triggers the next one with cases.
         switch (shootState) {
             case IDLE:
                 outtaking = false;
