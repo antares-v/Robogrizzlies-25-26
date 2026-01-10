@@ -26,15 +26,15 @@ public class LeftDriveAuto extends LinearOpMode {
 
         static final double LAUNCHER_TICKS_PER_REV = 28.0;
         // target RPMs (tune these)
-        static final double TARGET_RPM_FIRST = 1700.0; // example, tune to match desired shot power
-        static final double TARGET_RPM_NEXT  = 1800.0; // often same as first, tune as needed
+        static final double TARGET_RPM_FIRST = 1900.0; // example, tune to match desired shot power
+        static final double TARGET_RPM_NEXT  = 2100.0; // often same as first, tune as needed
 
         // computed velocity targets (ticks per second)
         static final double TARGET_VEL_FIRST = TARGET_RPM_FIRST * LAUNCHER_TICKS_PER_REV / 60.0;
         static final double TARGET_VEL_NEXT  = TARGET_RPM_NEXT  * LAUNCHER_TICKS_PER_REV / 60.0;
 
         // when this fraction of target is reached we consider it spun up
-        static final double VEL_THRESHOLD_FRAC = 0.90;
+        static final double VEL_THRESHOLD_FRAC = 0.95;
 
         // Ball layout
         static final double BALL_SPACING = 6.0;
@@ -42,16 +42,16 @@ public class LeftDriveAuto extends LinearOpMode {
         static final double ROBOT_OFFSET = 8.0;
 
         // Row Ys
-        static final double FAR_ROW_Y   = 12;
-        static final double MID_ROW_Y   = -12;
-        static final double CLOSE_ROW_Y = -36;
+        static final double FAR_ROW_Y   = 5;
+        static final double MID_ROW_Y   = -19;
+        static final double CLOSE_ROW_Y = -43;
 
         // Wait before some strafes
         static final double BALL_WAIT_SEC = 0.5;
 
         // Motion constraint
-        static final double MOTION_VEL = 50.0;
-        static final double COLLECT_VEL = 20.0;
+        static final double MOTION_VEL = 70.0;
+        static final double COLLECT_VEL = 30.0;
 
         // Poses
         static final Pose2d START_POSE  = new Pose2d(-12, -60, Math.toRadians(90));

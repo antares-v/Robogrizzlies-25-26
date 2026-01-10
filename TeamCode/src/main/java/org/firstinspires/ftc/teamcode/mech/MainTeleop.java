@@ -22,7 +22,7 @@ public class MainTeleop extends LinearOpMode {
 
     // Hardware maps
     private movement drive;
-    private CRServo leftFlywheel, rightFlywheel;
+    private CRServo leftOuttake, rightOuttake;
     private RevColorSensorV3 sensor;
     private Servo spindexer;
     private DcMotorEx leftIntake, rightIntake, launcher;
@@ -55,15 +55,16 @@ public class MainTeleop extends LinearOpMode {
     private int shotIndex = 0;
 
     // Timing knobs (ms)
-    private static final long FIRST_SPINUP_MS = 3000;
-    private static final long NEXT_SPINUP_MS  = 700;
-    private static final long FIRE_MS         = 1000;
-    private static final long RECOVER_MS      = 220;
+    private static final long FIRST_SPINUP_MS = 2000;
+    private static final long NEXT_SPINUP_MS  = 1000;
+    private static
+    final long FIRE_MS = 500;
+    private static final long RECOVER_MS = 500;
     // Launcher encoder/velocity tuning
     private static final double LAUNCHER_TICKS_PER_REV = 28.0;
     // target RPMs (tune these)
     private static final double TARGET_RPM_FIRST = 800.0; // example, tune to match desired shot power
-    private static final double TARGET_RPM_NEXT  = 900.0; // often same as first, tune as needed
+    private static final double TARGET_RPM_NEXT  = 800.0; // often same as first, tune as needed
 
     // computed velocity targets (ticks per second)
     private final double TARGET_VEL_FIRST = TARGET_RPM_FIRST * LAUNCHER_TICKS_PER_REV / 60.0;
@@ -87,8 +88,8 @@ public class MainTeleop extends LinearOpMode {
         // Init
         drive = new movement(this, 0, 0, 0);
 
-        leftFlywheel = hardwareMap.get(CRServo.class, "leftFlywheel");
-        rightFlywheel = hardwareMap.get(CRServo.class, "rightFlywheel");
+        leftOuttake = hardwareMap.get(CRServo.class, "leftFlywheel");
+        rightOuttake = hardwareMap.get(CRServo.class, "rightFlywheel");
         spindexer = hardwareMap.get(Servo.class, "spindexer");
         launcher = hardwareMap.get(DcMotorEx.class, "launcher");
         leftIntake = hardwareMap.get(DcMotorEx.class, "leftIntake");
@@ -99,8 +100,8 @@ public class MainTeleop extends LinearOpMode {
 
         rightIntake.setDirection(DcMotorEx.Direction.REVERSE);
 
-        leftFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
-        rightFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftOuttake.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightOuttake.setDirection(DcMotorSimple.Direction.REVERSE);
 
         // init ball list
         ballcols.clear();
@@ -169,17 +170,17 @@ public class MainTeleop extends LinearOpMode {
             }
             if (!rotated && !outtaking) {
                 ballcols.set(i, colorSensor.getColor(sensor));
-                if(!(ballcols.get(i)).equals("blank")){
-                    for (int j = 0; j < 3; j++) {
-                        if((ballcols.get(j)).equals("blank")){
-                            i = j;
-                            spindexer.setPosition(spindexerPosIntake[i]);
-                            spintime.reset();
-                            rotated = true;
-                            break;
-                        }
-                    }
-                }
+//                if(!(ballcols.get(i)).equals("blank")){
+//                    for (int j = 0; j < 3; j++) {
+//                        if((ballcols.get(j)).equals("blank")){
+//                            i = j;
+//                            spindexer.setPosition(spindexerPosIntake[i]);
+//                            spintime.reset();
+//                            rotated = true;
+//                            break;
+//                        }
+//                    }
+//                }
             }
 
             if (spintime.milliseconds() > 100 && rotated) {
@@ -269,9 +270,10 @@ public class MainTeleop extends LinearOpMode {
             String color = ballcols.get(j);
 
             if ("green".equals(color) && !greenFound) {
-                poslist.set(p, j);
+                poslist.set(p%3, j%3);
                 poslist.set((p + 1) % 3, (j + 1) % 3);
                 poslist.set((p + 2) % 3, (j + 2) % 3);
+
                 greenFound = true;
                 break;
             } else if (("green".equals(color) && greenFound)) {
@@ -344,8 +346,8 @@ public class MainTeleop extends LinearOpMode {
                 // allow either spin-up by reaching velocity OR a hard timeout
                 if (spunUp || shootTimer.milliseconds() >= needed) {
                     // Flywheels (CRServos) on
-                    leftFlywheel.setPower(1);
-                    rightFlywheel.setPower(1);
+                    leftOuttake.setPower(1);
+                    rightOuttake.setPower(1);
 
                     shootTimer.reset();
                     shootState = ShootState.FIRE;
@@ -359,9 +361,6 @@ public class MainTeleop extends LinearOpMode {
             case FIRE: {
                 if (shootTimer.milliseconds() >= FIRE_MS) {
                     // keep launcher velocity running but stop the CRServos only after firing
-                    leftFlywheel.setPower(0);
-                    rightFlywheel.setPower(0);
-
                     shootTimer.reset();
                     shootState = ShootState.RECOVER;
                 }
@@ -371,11 +370,14 @@ public class MainTeleop extends LinearOpMode {
             case RECOVER: {
                 if (shootTimer.milliseconds() >= RECOVER_MS) {
                     shotIndex++;
-
                     if (shotIndex >= shotOrder.length) {
+                        leftOuttake.setPower(0);
+                        rightOuttake.setPower(0);
                         shootState = ShootState.IDLE;
                         stopShooter();
                     } else {
+                        leftOuttake.setPower(0);
+                        rightOuttake.setPower(0);
                         shootState = ShootState.SET_SERVO;
                     }
                     outtaking = false;
@@ -386,8 +388,8 @@ public class MainTeleop extends LinearOpMode {
     }
 
     private void stopShooter() {
-        leftFlywheel.setPower(0);
-        rightFlywheel.setPower(0);
+        leftOuttake.setPower(0);
+        rightOuttake.setPower(0);
         launcher.setVelocity(0.0);
     }
 
