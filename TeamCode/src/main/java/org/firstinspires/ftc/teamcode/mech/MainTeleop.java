@@ -75,9 +75,6 @@ public class MainTeleop extends LinearOpMode {
 
     // runtime fields
     private double currentTargetVel = 0.0;
-
-    boolean shootswitch = true;
-
     boolean rotated = false;
 
     boolean outtaking = false;
@@ -311,7 +308,6 @@ public class MainTeleop extends LinearOpMode {
         switch (shootState) {
             case IDLE:
                 outtaking = false;
-                shootswitch = true;
                 return;
 
             case SET_SERVO: {
