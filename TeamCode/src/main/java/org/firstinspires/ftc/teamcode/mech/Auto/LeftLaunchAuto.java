@@ -37,8 +37,8 @@ public class LeftLaunchAuto extends LinearOpMode {
         static final double BALL_WAIT_SEC = 0.5;
 
         // Motion constraint
-        static final double MOTION_VEL = 30.0;
-        static final double COLLECT_VEL = 10.0;
+        static final double MOTION_VEL = 50.0;
+        static final double COLLECT_VEL = 20.0;
 
         // Poses
         static final Pose2d START_POSE  = new Pose2d(-48, 48, Math.toRadians(135));
@@ -120,9 +120,6 @@ public class LeftLaunchAuto extends LinearOpMode {
         // RoadRunner drive
         MecanumDrive drive = new MecanumDrive(hardwareMap, Config.START_POSE);
 
-        // Actions
-        Action shoot3 = shootThreeBalls(hw);
-
         // Build paths
         Vector2d[] farPts   = makeRowPoints(FAR.y);
         Vector2d[] midPts   = makeRowPoints(MID.y);
@@ -177,22 +174,22 @@ public class LeftLaunchAuto extends LinearOpMode {
         // auto chain
         Action autonomousChain = new SequentialAction(
                 toShootInitially,
-                shoot3,
+                shootThreeBalls(hw),
 
                 toFarRowStart,
                 farCollect[0], farCollect[1], farCollect[2],
                 farEndToShoot,
-                shoot3,
+                shootThreeBalls(hw),
 
                 toMidRowStart,
                 midCollect[0], midCollect[1], midCollect[2],
                 midEndToShoot,
-                shoot3,
+                shootThreeBalls(hw),
 
                 toCloseRowStart,
                 closeCollect[0], closeCollect[1], closeCollect[2],
                 closeEndToShoot,
-                shoot3
+                shootThreeBalls(hw)
         );
 
         waitForStart();
@@ -291,7 +288,7 @@ public class LeftLaunchAuto extends LinearOpMode {
 
                     case START_BALL: {
                         // Start launcher and set initial spindex position for this ball
-                        hw.launcher.setPower(1);
+                        hw.launcher.setPower(0.8f);
                         hw.spindexer.setPosition(Config.SPINDEX_OUTTAKE[ballIndex]);
                         hw.stopFlywheels();
 

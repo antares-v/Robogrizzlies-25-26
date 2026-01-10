@@ -18,7 +18,7 @@ public class movement {
     public static double BR_PERCENT = 1;
     public static double FL_PERCENT = 1.0;
     public static double BL_PERCENT = 1;
-    public double power = 1.0;
+    public double power = 100.0;
     public static double x0;
     public static double y0;
     public static double h0;

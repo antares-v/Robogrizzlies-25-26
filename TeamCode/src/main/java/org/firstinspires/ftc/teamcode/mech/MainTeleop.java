@@ -55,12 +55,12 @@ public class MainTeleop extends LinearOpMode {
     private int shotIndex = 0;
 
     // Timing knobs (ms)
-    private static final long FIRST_SPINUP_MS = 1700;
+    private static final long FIRST_SPINUP_MS = 3000;
     private static final long NEXT_SPINUP_MS  = 700;
     private static final long FIRE_MS         = 1000;
     private static final long RECOVER_MS      = 220;
 
-    private static final long LAUNCH_PWR = 2200;
+    private static final long LAUNCH_PWR = 60;
 
     boolean rotated = false;
 
@@ -84,8 +84,6 @@ public class MainTeleop extends LinearOpMode {
         sensor = hardwareMap.get(RevColorSensorV3.class, "colorSensor");
 
         launcher.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
-        rightIntake.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
-        leftIntake.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
 
         rightIntake.setDirection(DcMotorEx.Direction.REVERSE);
 
@@ -305,7 +303,7 @@ public class MainTeleop extends LinearOpMode {
                 spindexer.setPosition(spindexerPosOuttake[posIdx]);
 
                 // Start launcher motor
-                launcher.setVelocity(LAUNCH_PWR);
+                launcher.setPower(1);
 
                 shootTimer.reset();
                 shootState = ShootState.SPINUP;
@@ -314,7 +312,10 @@ public class MainTeleop extends LinearOpMode {
 
             case SPINUP: {
                 long needed = (shotIndex == 0) ? FIRST_SPINUP_MS : NEXT_SPINUP_MS;
-                if (shootTimer.milliseconds() >= needed) {
+                if (shootTimer.milliseconds() >= needed/2){
+                    launcher.setVelocity(LAUNCH_PWR);
+                }
+                else if ((shootTimer.milliseconds() >= needed)) {
                     // Flywheels on
                     leftFlywheel.setPower(1);
                     rightFlywheel.setPower(1);
