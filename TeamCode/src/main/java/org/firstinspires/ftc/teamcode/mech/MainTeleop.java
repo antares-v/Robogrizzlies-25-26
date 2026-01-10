@@ -60,6 +60,7 @@ public class MainTeleop extends LinearOpMode {
     private static final long FIRE_MS         = 1000;
     private static final long RECOVER_MS      = 220;
 
+    boolean shootswitch = true;
     private static final long LAUNCH_PWR = 60;
 
     boolean rotated = false;
@@ -289,8 +290,8 @@ public class MainTeleop extends LinearOpMode {
         switch (shootState) {
             case IDLE:
                 outtaking = false;
+                shootswitch = true;
                 return;
-
             case SET_SERVO: {
                 outtaking = true;
                 // Move servo to the next desired outtake position
@@ -312,10 +313,11 @@ public class MainTeleop extends LinearOpMode {
 
             case SPINUP: {
                 long needed = (shotIndex == 0) ? FIRST_SPINUP_MS : NEXT_SPINUP_MS;
-                if (shootTimer.milliseconds() >= needed/2){
+                if (shootTimer.milliseconds() >= needed/2 && shootswitch){
                     launcher.setVelocity(LAUNCH_PWR);
+                    shootswitch = false;
                 }
-                else if ((shootTimer.milliseconds() >= needed)) {
+                if ((shootTimer.milliseconds() >= needed)) {
                     // Flywheels on
                     leftFlywheel.setPower(1);
                     rightFlywheel.setPower(1);
