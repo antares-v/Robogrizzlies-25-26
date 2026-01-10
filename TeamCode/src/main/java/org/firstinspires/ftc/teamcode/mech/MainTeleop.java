@@ -11,7 +11,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.mech.CV.ColorDetection;
 import org.firstinspires.ftc.teamcode.mech.movement.movement;
-import org.firstinspires.ftc.teamcode.mech.mainIntakeOuttake.launcher;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,8 +25,7 @@ public class MainTeleop extends LinearOpMode {
     private CRServo leftFlywheel, rightFlywheel;
     private RevColorSensorV3 sensor;
     private Servo spindexer;
-    private DcMotor leftIntake, rightIntake;
-    private launcher launcherCtrl;
+    private DcMotor leftIntake, rightIntake, launcher;
 
     // Spindexer positions
     private final double[] spindexerPosIntake  = {0.00, 0.38, 0.79};
@@ -62,8 +60,7 @@ public class MainTeleop extends LinearOpMode {
     private static final long FIRE_MS         = 700;
     private static final long RECOVER_MS      = 120;
 
-    // Launcher speed is now closed-loop (PID on encoder velocity) via launcherCtrl.
-    // Tune launcher.SPEED_FRACTION and PID values from FTC Dashboard.
+    private static final float LAUNCH_POWER = 0.1f;
 
     boolean rotated = false;
 
@@ -81,8 +78,7 @@ public class MainTeleop extends LinearOpMode {
         leftFlywheel = hardwareMap.get(CRServo.class, "leftFlywheel");
         rightFlywheel = hardwareMap.get(CRServo.class, "rightFlywheel");
         spindexer = hardwareMap.get(Servo.class, "spindexer");
-        // Launcher uses encoder-based PID (see launcher.java) to hold a constant wheel speed
-        launcherCtrl = new launcher(this, "launcher");
+        launcher = hardwareMap.get(DcMotor.class, "launcher");
         leftIntake = hardwareMap.get(DcMotor.class, "leftIntake");
         rightIntake = hardwareMap.get(DcMotor.class, "rightIntake");
         sensor = hardwareMap.get(RevColorSensorV3.class, "colorSensor");
@@ -218,9 +214,6 @@ public class MainTeleop extends LinearOpMode {
             // 8) Update shooter states
             updateShooting();
 
-            // 9) Keep launcher PID running
-            launcherCtrl.update();
-
             // Telemetry updates
             telemetry.addData("drive", "x=%.2f y=%.2f h=%.2f", x, y, h);
             telemetry.addData("pattern", patternName);
@@ -229,10 +222,6 @@ public class MainTeleop extends LinearOpMode {
             telemetry.addData("shootState", shootState);
             telemetry.addData("shotIndex", shotIndex);
             telemetry.addData("typeofshot", stype);
-            telemetry.addData("launcher", "vel=%.0f tps  target=%.0f tps  pwr=%.2f",
-                    launcherCtrl.getVelocityTicksPerSec(),
-                    launcherCtrl.getTargetTicksPerSec(),
-                    launcherCtrl.getLastPowerCmd());
             telemetry.update();
 
             idle();
@@ -311,8 +300,8 @@ public class MainTeleop extends LinearOpMode {
 
                 spindexer.setPosition(spindexerPosOuttake[posIdx]);
 
-                // Start launcher wheel and hold speed with encoder PID
-                launcherCtrl.revDefault();
+                // Start launcher motor
+                launcher.setPower(LAUNCH_POWER);
 
                 shootTimer.reset();
                 shootState = ShootState.SPINUP;
@@ -321,8 +310,7 @@ public class MainTeleop extends LinearOpMode {
 
             case SPINUP: {
                 long needed = (shotIndex == 0) ? FIRST_SPINUP_MS : NEXT_SPINUP_MS;
-                // Wait for both time AND stable wheel speed (battery independent)
-                if (shootTimer.milliseconds() >= needed && launcherCtrl.atSpeed()) {
+                if (shootTimer.milliseconds() >= needed) {
                     // Flywheels on
                     leftFlywheel.setPower(1);
                     rightFlywheel.setPower(1);
@@ -364,6 +352,6 @@ public class MainTeleop extends LinearOpMode {
     private void stopShooter() {
         leftFlywheel.setPower(0);
         rightFlywheel.setPower(0);
-        if (launcherCtrl != null) launcherCtrl.stop();
+        launcher.setPower(0);
     }
 }
