@@ -315,8 +315,8 @@ public class LeftLaunchAuto extends LinearOpMode {
                     }
 
                     case SPINUP: {
-                        if (phaseTimer.seconds() < Config.LAUNCHER_SPINUP_SEC) return true;
-
+                        double vT = (ballIndex == 0) ? Config.TARGET_VEL_FIRST : Config.TARGET_VEL_NEXT;
+                        if (hw.launcher.getVelocity() < vT * Config.VEL_THRESHOLD_FRAC && phaseTimer.seconds() < Config.LAUNCHER_SPINUP_SEC) return true;
                         phase = Phase.FIRE;
                         resetTimer();
                         return true;
