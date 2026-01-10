@@ -157,22 +157,26 @@ public class MainTeleop extends LinearOpMode {
 
             if (rB) {
                 spindexer.setPosition(spindexerPosIntake[i]);
-                rightIntake.setVelocity(1);
-                leftIntake.setVelocity(1);
+                rightIntake.setPower(1);
+                leftIntake.setPower(1);
             } else if (lB) {
                 spindexer.setPosition(spindexerPosIntake[i]);
-                rightIntake.setVelocity(-1);
-                leftIntake.setVelocity(-1);
+                rightIntake.setPower(-1);
+                leftIntake.setPower(-1);
             } else {
-                rightIntake.setVelocity(0);
-                leftIntake.setVelocity(0);
+                rightIntake.setPower(0);
+                leftIntake.setPower(0);
             }
             if (!rotated && !outtaking) {
                 ballcols.set(i, colorSensor.getColor(sensor));
-                if(ballcols.get(i) != "blank"){
+                if(!(ballcols.get(i)).equals("blank")){
                     for (int j = 0; j < 3; j++) {
                         if((ballcols.get(j)).equals("blank")){
                             i = j;
+                            spindexer.setPosition(spindexerPosIntake[i]);
+                            spintime.reset();
+                            rotated = true;
+                            break;
                         }
                     }
                 }
