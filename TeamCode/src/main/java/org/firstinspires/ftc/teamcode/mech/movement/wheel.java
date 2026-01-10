@@ -5,21 +5,22 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 public class wheel {
     //Define our motor for the wheel
-    private DcMotor motor;
+    private DcMotorEx motor;
     //Constructor For Wheel:
     private Servo servo;
     public wheel(HardwareMap map, String s, boolean reverse){
-        motor = map.get(DcMotor.class, s);
-        motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motor = map.get(DcMotorEx.class, s);
+        motor.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        motor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
         if(reverse){
-            motor.setDirection(DcMotor.Direction.REVERSE);
+            motor.setDirection(DcMotorEx.Direction.REVERSE);
         }else{
-            motor.setDirection(DcMotor.Direction.FORWARD);
+            motor.setDirection(DcMotorEx.Direction.FORWARD);
         }
     }
     /*public servoV2(HardwareMap map, String s){
@@ -27,9 +28,9 @@ public class wheel {
     }*/
     public void setPower(double power){
         //if above 1
-        motor.setPower(power);
+        motor.setVelocity(power);
     }
     public double getPower(){
-        return motor.getPower();
+        return motor.getVelocity();
     }
 }
