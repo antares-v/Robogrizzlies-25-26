@@ -26,15 +26,15 @@ public class LeftDriveAuto extends LinearOpMode {
 
         static final double LAUNCHER_TICKS_PER_REV = 28.0;
         // target RPMs (tune these)
-        static final double TARGET_RPM_FIRST = 1500.0; // example, tune to match desired shot power
-        static final double TARGET_RPM_NEXT  = 1700.0; // often same as first, tune as needed
+        static final double TARGET_RPM_FIRST = 1700.0; // example, tune to match desired shot power
+        static final double TARGET_RPM_NEXT  = 1800.0; // often same as first, tune as needed
 
         // computed velocity targets (ticks per second)
         static final double TARGET_VEL_FIRST = TARGET_RPM_FIRST * LAUNCHER_TICKS_PER_REV / 60.0;
         static final double TARGET_VEL_NEXT  = TARGET_RPM_NEXT  * LAUNCHER_TICKS_PER_REV / 60.0;
 
         // when this fraction of target is reached we consider it spun up
-        static final double VEL_THRESHOLD_FRAC = 0.95;
+        static final double VEL_THRESHOLD_FRAC = 0.90;
 
         // Ball layout
         static final double BALL_SPACING = 6.0;
@@ -55,15 +55,15 @@ public class LeftDriveAuto extends LinearOpMode {
 
         // Poses
         static final Pose2d START_POSE  = new Pose2d(-12, -60, Math.toRadians(90));
-        static final Pose2d SHOOT_POSE  = new Pose2d(-12, -25, Math.toRadians(105));
+        static final Pose2d SHOOT_POSE  = new Pose2d(-12, -25, Math.toRadians(110));
         static final double COLLECT_HEADING_RAD = Math.toRadians(180);
 
         // Intake timing
         static final double INTAKE_RUN_SEC = 3.0;
 
         // Shooter timing
-        static final double LAUNCHER_SPINUP_SEC = 1.5;
-        static final double FIRE_WINDOW_SEC     = 2.5;
+        static final double LAUNCHER_SPINUP_SEC = 1.0;
+        static final double FIRE_WINDOW_SEC     = 0.5;
 
         // Row X offsets
         static final float[] ROW_X_MULTS = { +2.0f, -0.5f, -1.5f, -2.5f };
@@ -305,8 +305,8 @@ public class LeftDriveAuto extends LinearOpMode {
 
                     case SPINUP: {
                         double vT = (ballIndex == 0) ? Config.TARGET_VEL_FIRST : Config.TARGET_VEL_NEXT;
-                        if (hw.launcher.getVelocity() < vT * Config.VEL_THRESHOLD_FRAC && phaseTimer.seconds() < Config.LAUNCHER_SPINUP_SEC) return true;
-
+                        if (hw.launcher.getVelocity() < vT * Config.VEL_THRESHOLD_FRAC && phaseTimer.seconds() < Config.LAUNCHER_SPINUP_SEC) {
+                           return true;}
                         phase = Phase.FIRE;
                         resetTimer();
                         return true;

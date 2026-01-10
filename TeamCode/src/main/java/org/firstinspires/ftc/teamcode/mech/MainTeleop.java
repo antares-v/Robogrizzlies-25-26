@@ -59,19 +59,18 @@ public class MainTeleop extends LinearOpMode {
     private static final long NEXT_SPINUP_MS  = 700;
     private static final long FIRE_MS         = 1000;
     private static final long RECOVER_MS      = 220;
-
     // Launcher encoder/velocity tuning
     private static final double LAUNCHER_TICKS_PER_REV = 28.0;
     // target RPMs (tune these)
-    private static final double TARGET_RPM_FIRST = 1500.0; // example, tune to match desired shot power
-    private static final double TARGET_RPM_NEXT  = 1700.0; // often same as first, tune as needed
+    private static final double TARGET_RPM_FIRST = 800.0; // example, tune to match desired shot power
+    private static final double TARGET_RPM_NEXT  = 900.0; // often same as first, tune as needed
 
     // computed velocity targets (ticks per second)
     private final double TARGET_VEL_FIRST = TARGET_RPM_FIRST * LAUNCHER_TICKS_PER_REV / 60.0;
     private final double TARGET_VEL_NEXT  = TARGET_RPM_NEXT  * LAUNCHER_TICKS_PER_REV / 60.0;
 
     // when this fraction of target is reached we consider it spun up
-    private static final double VEL_THRESHOLD_FRAC = 0.95;
+    private static final double VEL_THRESHOLD_FRAC = 0.90;
 
     // runtime fields
     private double currentTargetVel = 0.0;
@@ -157,13 +156,13 @@ public class MainTeleop extends LinearOpMode {
             boolean rB = gamepad1.right_bumper;
 
             if (rB) {
+                spindexer.setPosition(spindexerPosIntake[i]);
                 rightIntake.setVelocity(1);
                 leftIntake.setVelocity(1);
-                spindexer.setPosition(spindexerPosIntake[i]);
             } else if (lB) {
+                spindexer.setPosition(spindexerPosIntake[i]);
                 rightIntake.setVelocity(-1);
                 leftIntake.setVelocity(-1);
-                spindexer.setPosition(spindexerPosIntake[i]);
             } else {
                 rightIntake.setVelocity(0);
                 leftIntake.setVelocity(0);
@@ -172,7 +171,7 @@ public class MainTeleop extends LinearOpMode {
                 ballcols.set(i, colorSensor.getColor(sensor));
                 if(ballcols.get(i) != "blank"){
                     for (int j = 0; j < 3; j++) {
-                        if(ballcols.get(j) == "blank"){
+                        if((ballcols.get(j)).equals("blank")){
                             i = j;
                         }
                     }

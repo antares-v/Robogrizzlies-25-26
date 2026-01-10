@@ -50,19 +50,19 @@ public class LeftLaunchAuto extends LinearOpMode {
         static final double INTAKE_RUN_SEC = 3.0;
 
         // Shooter timing
-        static final double LAUNCHER_SPINUP_SEC = 1.5;
-        static final double FIRE_WINDOW_SEC     = 2.5;
+        static final double LAUNCHER_SPINUP_SEC = 1.0;
+        static final double FIRE_WINDOW_SEC     = 0.5;
          static final double LAUNCHER_TICKS_PER_REV = 28.0;
         // target RPMs (tune these)
-         static final double TARGET_RPM_FIRST = 1500.0; // example, tune to match desired shot power
-         static final double TARGET_RPM_NEXT  = 1700.0; // often same as first, tune as needed
+         static final double TARGET_RPM_FIRST = 1000.0; // example, tune to match desired shot power
+         static final double TARGET_RPM_NEXT  = 1100.0; // often same as first, tune as needed
 
         // computed velocity targets (ticks per second)
         static final double TARGET_VEL_FIRST = TARGET_RPM_FIRST * LAUNCHER_TICKS_PER_REV / 60.0;
         static final double TARGET_VEL_NEXT  = TARGET_RPM_NEXT  * LAUNCHER_TICKS_PER_REV / 60.0;
 
         // when this fraction of target is reached we consider it spun up
-         static final double VEL_THRESHOLD_FRAC = 0.95;
+         static final double VEL_THRESHOLD_FRAC = 0.90;
 
         // runtime fields
         static double currentTargetVel = 0.0;
@@ -316,7 +316,9 @@ public class LeftLaunchAuto extends LinearOpMode {
 
                     case SPINUP: {
                         double vT = (ballIndex == 0) ? Config.TARGET_VEL_FIRST : Config.TARGET_VEL_NEXT;
-                        if (hw.launcher.getVelocity() < vT * Config.VEL_THRESHOLD_FRAC && phaseTimer.seconds() < Config.LAUNCHER_SPINUP_SEC) return true;
+
+                        if (hw.launcher.getVelocity() < vT * Config.VEL_THRESHOLD_FRAC && phaseTimer.seconds() < Config.LAUNCHER_SPINUP_SEC ){
+                             return true;}
                         phase = Phase.FIRE;
                         resetTimer();
                         return true;
