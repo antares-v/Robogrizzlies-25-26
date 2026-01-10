@@ -42,7 +42,7 @@ public class LeftDriveAuto extends LinearOpMode {
 
         // Poses
         static final Pose2d START_POSE  = new Pose2d(-12, -60, Math.toRadians(90));
-        static final Pose2d SHOOT_POSE  = new Pose2d(-23, -30, Math.toRadians(105));
+        static final Pose2d SHOOT_POSE  = new Pose2d(-12, -25, Math.toRadians(105));
         static final double COLLECT_HEADING_RAD = Math.toRadians(180);
 
         // Intake timing
