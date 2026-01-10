@@ -194,7 +194,6 @@ public class LeftDriveAuto extends LinearOpMode {
         // auto chain
         Action autonomousChain = new SequentialAction(
                 toShootInitially,
-                shootThreeBalls(hw),
                 goBackToWhereYouCameFrom
         );
 
