@@ -10,17 +10,16 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 public class wheel {
     //Define our motor for the wheel
-    private DcMotorEx motor;
+    private DcMotor motor;
     //Constructor For Wheel:
     private Servo servo;
     public wheel(HardwareMap map, String s, boolean reverse){
-        motor = map.get(DcMotorEx.class, s);
-        motor.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
-        motor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
+        motor = map.get(DcMotor.class, s);
+        motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         if(reverse){
-            motor.setDirection(DcMotorEx.Direction.REVERSE);
+            motor.setDirection(DcMotor.Direction.REVERSE);
         }else{
-            motor.setDirection(DcMotorEx.Direction.FORWARD);
+            motor.setDirection(DcMotor.Direction.FORWARD);
         }
     }
     /*public servoV2(HardwareMap map, String s){
@@ -28,9 +27,9 @@ public class wheel {
     }*/
     public void setPower(double power){
         //if above 1
-        motor.setVelocity(power);
+        motor.setPower(power);
     }
     public double getPower(){
-        return motor.getVelocity();
+        return motor.getPower();
     }
 }

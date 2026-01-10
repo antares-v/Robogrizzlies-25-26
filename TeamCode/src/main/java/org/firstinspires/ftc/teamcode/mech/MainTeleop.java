@@ -60,6 +60,22 @@ public class MainTeleop extends LinearOpMode {
     private static final long FIRE_MS         = 1000;
     private static final long RECOVER_MS      = 220;
 
+    // Launcher encoder/velocity tuning
+    private static final double LAUNCHER_TICKS_PER_REV = 28.0;
+    // target RPMs (tune these)
+    private static final double TARGET_RPM_FIRST = 2200.0; // example, tune to match desired shot power
+    private static final double TARGET_RPM_NEXT  = 2200.0; // often same as first, tune as needed
+
+    // computed velocity targets (ticks per second)
+    private final double TARGET_VEL_FIRST = TARGET_RPM_FIRST * LAUNCHER_TICKS_PER_REV / 60.0;
+    private final double TARGET_VEL_NEXT  = TARGET_RPM_NEXT  * LAUNCHER_TICKS_PER_REV / 60.0;
+
+    // when this fraction of target is reached we consider it spun up
+    private static final double VEL_THRESHOLD_FRAC = 0.90;
+
+    // runtime fields
+    private double currentTargetVel = 0.0;
+
     boolean shootswitch = true;
     private static final long LAUNCH_PWR = 60;
 
@@ -286,26 +302,28 @@ public class MainTeleop extends LinearOpMode {
     }
 
     private void updateShooting() {
-        //basically a switch system each switch triggers the next one with cases.
         switch (shootState) {
             case IDLE:
                 outtaking = false;
                 shootswitch = true;
                 return;
+
             case SET_SERVO: {
                 outtaking = true;
                 // Move servo to the next desired outtake position
                 int posIdx = shotOrder[shotIndex];
 
-                posIdx = (posIdx + 1) % 3; // Spindexer Outtake is offsetted by 1.
-
+                posIdx = (posIdx + 1) % 3; // Spindexer Outtake is offset by 1.
                 posIdx = Math.max(0, Math.min(posIdx, spindexerPosOuttake.length - 1));
-
                 spindexer.setPosition(spindexerPosOuttake[posIdx]);
 
-                // Start launcher motor
-                launcher.setPower(1);
+                // choose target velocity depending on whether this is the first shot
+                currentTargetVel = (shotIndex == 0) ? TARGET_VEL_FIRST : TARGET_VEL_NEXT;
 
+                // start launcher via velocity (RUN_USING_ENCODER must be set)
+                launcher.setVelocity(currentTargetVel);
+
+                // reset timer and go spinup
                 shootTimer.reset();
                 shootState = ShootState.SPINUP;
                 break;
@@ -313,26 +331,32 @@ public class MainTeleop extends LinearOpMode {
 
             case SPINUP: {
                 long needed = (shotIndex == 0) ? FIRST_SPINUP_MS : NEXT_SPINUP_MS;
-                if (shootTimer.milliseconds() >= needed/2 && shootswitch){
-                    launcher.setVelocity(LAUNCH_PWR);
-                    shootswitch = false;
-                }
-                if ((shootTimer.milliseconds() >= needed)) {
-                    // Flywheels on
+
+                // check if velocity reached threshold
+                double currentVel = launcher.getVelocity(); // ticks/sec
+                boolean spunUp = currentVel >= (VEL_THRESHOLD_FRAC * currentTargetVel);
+
+                // allow either spin-up by reaching velocity OR a hard timeout
+                if (spunUp || shootTimer.milliseconds() >= needed) {
+                    // Flywheels (CRServos) on
                     leftFlywheel.setPower(1);
                     rightFlywheel.setPower(1);
 
                     shootTimer.reset();
                     shootState = ShootState.FIRE;
                 }
+
+                // optional: telemetry for tuning
+                telemetry.addData("launcherVel", "%.1f / %.1f", currentVel, currentTargetVel);
                 break;
             }
 
             case FIRE: {
                 if (shootTimer.milliseconds() >= FIRE_MS) {
-                    // Stop everything for a moment (matches your old behavior)
+                    // keep launcher velocity running but stop the CRServos only after firing
                     leftFlywheel.setPower(0);
                     rightFlywheel.setPower(0);
+
                     shootTimer.reset();
                     shootState = ShootState.RECOVER;
                 }
@@ -359,6 +383,7 @@ public class MainTeleop extends LinearOpMode {
     private void stopShooter() {
         leftFlywheel.setPower(0);
         rightFlywheel.setPower(0);
-        launcher.setVelocity(0);
+        launcher.setVelocity(0.0);
     }
+
 }
