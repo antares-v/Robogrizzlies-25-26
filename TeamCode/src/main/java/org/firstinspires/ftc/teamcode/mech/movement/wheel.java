@@ -14,7 +14,6 @@ public class wheel {
     private Servo servo;
     public wheel(HardwareMap map, String s, boolean reverse){
         motor = map.get(DcMotor.class, s);
-        motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         if(reverse){
             motor.setDirection(DcMotor.Direction.REVERSE);

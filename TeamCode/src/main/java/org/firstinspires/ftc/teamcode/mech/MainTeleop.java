@@ -4,7 +4,7 @@ import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
-import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -25,7 +25,7 @@ public class MainTeleop extends LinearOpMode {
     private CRServo leftFlywheel, rightFlywheel;
     private RevColorSensorV3 sensor;
     private Servo spindexer;
-    private DcMotor leftIntake, rightIntake, launcher;
+    private DcMotorEx leftIntake, rightIntake, launcher;
 
     // Spindexer positions
     private final double[] spindexerPosIntake  = {0.00, 0.38, 0.79};
@@ -56,9 +56,9 @@ public class MainTeleop extends LinearOpMode {
 
     // Timing knobs (ms)
     private static final long FIRST_SPINUP_MS = 1700;
-    private static final long NEXT_SPINUP_MS  = 500;
-    private static final long FIRE_MS         = 700;
-    private static final long RECOVER_MS      = 120;
+    private static final long NEXT_SPINUP_MS  = 700;
+    private static final long FIRE_MS         = 1000;
+    private static final long RECOVER_MS      = 220;
 
     private static final float LAUNCH_POWER = 0.1f;
 
@@ -78,10 +78,12 @@ public class MainTeleop extends LinearOpMode {
         leftFlywheel = hardwareMap.get(CRServo.class, "leftFlywheel");
         rightFlywheel = hardwareMap.get(CRServo.class, "rightFlywheel");
         spindexer = hardwareMap.get(Servo.class, "spindexer");
-        launcher = hardwareMap.get(DcMotor.class, "launcher");
-        leftIntake = hardwareMap.get(DcMotor.class, "leftIntake");
-        rightIntake = hardwareMap.get(DcMotor.class, "rightIntake");
+        launcher = hardwareMap.get(DcMotorEx.class, "launcher");
+        leftIntake = hardwareMap.get(DcMotorEx.class, "leftIntake");
+        rightIntake = hardwareMap.get(DcMotorEx.class, "rightIntake");
         sensor = hardwareMap.get(RevColorSensorV3.class, "colorSensor");
+
+        rightIntake.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
 
         rightIntake.setDirection(DcMotorSimple.Direction.REVERSE);
 
@@ -142,16 +144,16 @@ public class MainTeleop extends LinearOpMode {
             boolean rB = gamepad1.right_bumper;
 
             if (rB) {
-                rightIntake.setPower(1);
-                leftIntake.setPower(1);
+                rightIntake.setVelocity(1);
+                leftIntake.setVelocity(1);
                 spindexer.setPosition(spindexerPosIntake[i]);
             } else if (lB) {
-                rightIntake.setPower(-1);
-                leftIntake.setPower(-1);
+                rightIntake.setVelocity(-1);
+                leftIntake.setVelocity(-1);
                 spindexer.setPosition(spindexerPosIntake[i]);
             } else {
-                rightIntake.setPower(0);
-                leftIntake.setPower(0);
+                rightIntake.setVelocity(0);
+                leftIntake.setVelocity(0);
             }
             if (!rotated && !outtaking) {
                 ballcols.set(i, colorSensor.getColor(sensor));
@@ -301,7 +303,7 @@ public class MainTeleop extends LinearOpMode {
                 spindexer.setPosition(spindexerPosOuttake[posIdx]);
 
                 // Start launcher motor
-                launcher.setPower(LAUNCH_POWER);
+                launcher.setVelocity(LAUNCH_POWER);
 
                 shootTimer.reset();
                 shootState = ShootState.SPINUP;
@@ -352,6 +354,6 @@ public class MainTeleop extends LinearOpMode {
     private void stopShooter() {
         leftFlywheel.setPower(0);
         rightFlywheel.setPower(0);
-        launcher.setPower(0);
+        launcher.setVelocity(0);
     }
 }
