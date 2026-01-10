@@ -305,7 +305,7 @@ public class LeftLaunchAuto extends LinearOpMode {
 
                     case START_BALL: {
                         // Start launcher and set initial spindex position for this ball
-                        hw.launcher.setPower(0.8f);
+                        hw.launcher.setVelocity((ballIndex == 0) ? Config.TARGET_VEL_FIRST : Config.TARGET_VEL_NEXT);
                         hw.spindexer.setPosition(Config.SPINDEX_OUTTAKE[ballIndex]);
                         hw.stopFlywheels();
 

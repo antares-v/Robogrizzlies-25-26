@@ -24,6 +24,18 @@ public class LeftDriveAuto extends LinearOpMode {
         static final double[] SPINDEX_INTAKE  = {0.00, 0.38, 0.79};
         static final double[] SPINDEX_OUTTAKE = {0.19, 0.59, 0.99};
 
+        static final double LAUNCHER_TICKS_PER_REV = 28.0;
+        // target RPMs (tune these)
+        static final double TARGET_RPM_FIRST = 1500.0; // example, tune to match desired shot power
+        static final double TARGET_RPM_NEXT  = 1700.0; // often same as first, tune as needed
+
+        // computed velocity targets (ticks per second)
+        static final double TARGET_VEL_FIRST = TARGET_RPM_FIRST * LAUNCHER_TICKS_PER_REV / 60.0;
+        static final double TARGET_VEL_NEXT  = TARGET_RPM_NEXT  * LAUNCHER_TICKS_PER_REV / 60.0;
+
+        // when this fraction of target is reached we consider it spun up
+        static final double VEL_THRESHOLD_FRAC = 0.95;
+
         // Ball layout
         static final double BALL_SPACING = 6.0;
         static final double FIRST_BALL_X = -43;
@@ -71,17 +83,6 @@ public class LeftDriveAuto extends LinearOpMode {
     private static final class RobotHW {
         final CRServo leftFlywheel, rightFlywheel;
         final Servo spindexer;
-         static final double LAUNCHER_TICKS_PER_REV = 28.0;
-        // target RPMs (tune these)
-         static final double TARGET_RPM_FIRST = 1500.0; // example, tune to match desired shot power
-         static final double TARGET_RPM_NEXT  = 1700.0; // often same as first, tune as needed
-
-        // computed velocity targets (ticks per second)
-        static final double TARGET_VEL_FIRST = TARGET_RPM_FIRST * LAUNCHER_TICKS_PER_REV / 60.0;
-        static final double TARGET_VEL_NEXT  = TARGET_RPM_NEXT  * LAUNCHER_TICKS_PER_REV / 60.0;
-
-        // when this fraction of target is reached we consider it spun up
-         static final double VEL_THRESHOLD_FRAC = 0.95;
 
         // runtime fields
         static double currentTargetVel = 0.0;
@@ -293,7 +294,7 @@ public class LeftDriveAuto extends LinearOpMode {
 
                     case START_BALL: {
                         // Start launcher and set initial spindex position for this ball
-                        hw.launcher.setPower(0.8f);
+                        hw.launcher.setVelocity((ballIndex == 0) ? Config.TARGET_VEL_FIRST : Config.TARGET_VEL_NEXT);
                         hw.spindexer.setPosition(Config.SPINDEX_OUTTAKE[ballIndex]);
                         hw.stopFlywheels();
 
