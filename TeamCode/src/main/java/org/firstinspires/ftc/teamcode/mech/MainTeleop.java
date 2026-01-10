@@ -60,7 +60,7 @@ public class MainTeleop extends LinearOpMode {
     private static final long FIRE_MS         = 1000;
     private static final long RECOVER_MS      = 220;
 
-    private static final float LAUNCH_POWER = 0.1f;
+    private static final float LAUNCH_POWER = 0.8f;
 
     boolean rotated = false;
 
@@ -83,9 +83,11 @@ public class MainTeleop extends LinearOpMode {
         rightIntake = hardwareMap.get(DcMotorEx.class, "rightIntake");
         sensor = hardwareMap.get(RevColorSensorV3.class, "colorSensor");
 
+        launcher.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         rightIntake.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        leftIntake.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
 
-        rightIntake.setDirection(DcMotorSimple.Direction.REVERSE);
+        rightIntake.setDirection(DcMotorEx.Direction.REVERSE);
 
         leftFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
         rightFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
