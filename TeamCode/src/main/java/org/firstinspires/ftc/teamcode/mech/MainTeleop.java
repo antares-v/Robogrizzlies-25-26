@@ -60,8 +60,7 @@ public class MainTeleop extends LinearOpMode {
     private static final long FIRE_MS         = 700;
     private static final long RECOVER_MS      = 120;
 
-    private static final float LAUNCH_POWER = 0.2f;
-
+    private static final float LAUNCH_POWER = 0.1f;
 
     boolean rotated = false;
 
