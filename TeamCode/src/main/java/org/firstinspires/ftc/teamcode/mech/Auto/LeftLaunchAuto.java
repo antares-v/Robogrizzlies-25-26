@@ -12,6 +12,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -51,20 +52,20 @@ public class LeftLaunchAuto extends LinearOpMode {
         // Shooter timing
         static final double LAUNCHER_SPINUP_SEC = 1.5;
         static final double FIRE_WINDOW_SEC     = 2.5;
-        private static final double LAUNCHER_TICKS_PER_REV = 28.0;
+         static final double LAUNCHER_TICKS_PER_REV = 28.0;
         // target RPMs (tune these)
-        private static final double TARGET_RPM_FIRST = 1500.0; // example, tune to match desired shot power
-        private static final double TARGET_RPM_NEXT  = 1700.0; // often same as first, tune as needed
+         static final double TARGET_RPM_FIRST = 1500.0; // example, tune to match desired shot power
+         static final double TARGET_RPM_NEXT  = 1700.0; // often same as first, tune as needed
 
         // computed velocity targets (ticks per second)
-        private final double TARGET_VEL_FIRST = TARGET_RPM_FIRST * LAUNCHER_TICKS_PER_REV / 60.0;
-        private final double TARGET_VEL_NEXT  = TARGET_RPM_NEXT  * LAUNCHER_TICKS_PER_REV / 60.0;
+        static final double TARGET_VEL_FIRST = TARGET_RPM_FIRST * LAUNCHER_TICKS_PER_REV / 60.0;
+        static final double TARGET_VEL_NEXT  = TARGET_RPM_NEXT  * LAUNCHER_TICKS_PER_REV / 60.0;
 
         // when this fraction of target is reached we consider it spun up
-        private static final double VEL_THRESHOLD_FRAC = 0.95;
+         static final double VEL_THRESHOLD_FRAC = 0.95;
 
         // runtime fields
-        private double currentTargetVel = 0.0;
+        static double currentTargetVel = 0.0;
 
         // Row X offsets
         static final float[] ROW_X_MULTS = { +2.0f, -0.5f, -1.5f, -2.5f };
@@ -84,12 +85,14 @@ public class LeftLaunchAuto extends LinearOpMode {
     private static final class RobotHW {
         final CRServo leftFlywheel, rightFlywheel;
         final Servo spindexer;
-        final DcMotor leftIntake, rightIntake, launcher;
+        final DcMotor leftIntake, rightIntake;
+        final DcMotorEx launcher;
 
         RobotHW(LinearOpMode opMode) {
             leftIntake = opMode.hardwareMap.get(DcMotor.class, "leftIntake");
             rightIntake = opMode.hardwareMap.get(DcMotor.class, "rightIntake");
-            launcher = opMode.hardwareMap.get(DcMotor.class, "launcher");
+            launcher = opMode.hardwareMap.get(DcMotorEx.class, "launcher");
+            launcher.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
             rightIntake.setDirection(DcMotorSimple.Direction.REVERSE);
 
