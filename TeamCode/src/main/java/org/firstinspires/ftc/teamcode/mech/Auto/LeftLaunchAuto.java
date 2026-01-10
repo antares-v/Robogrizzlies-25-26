@@ -284,7 +284,7 @@ public class LeftLaunchAuto extends LinearOpMode {
             }
         };
     }
-    private enum Phase { START_BALL, SPINUP, FIRE, ADVANCE, DONE }
+    private enum Phase { START_BALL, SPINUP, FIRE, ALIGN, ADVANCE, DONE }
 
     private static Action shootThreeBalls(RobotHW hw) {
         return new Action() {
@@ -313,7 +313,6 @@ public class LeftLaunchAuto extends LinearOpMode {
                         resetTimer();
                         return true;
                     }
-
                     case SPINUP: {
                         double vT = (ballIndex == 0) ? Config.TARGET_VEL_FIRST : Config.TARGET_VEL_NEXT;
 
@@ -330,11 +329,18 @@ public class LeftLaunchAuto extends LinearOpMode {
 
                         if (phaseTimer.seconds() < Config.FIRE_WINDOW_SEC) return true;
 
+                        phase = Phase.ALIGN;
+                        resetTimer();
+                        return true;
+                    }
+                    case ALIGN: {
+                        // Wait 0.5 seconds for the servo to physically move
+                        if (phaseTimer.seconds() < 0.5) return true;
+
                         phase = Phase.ADVANCE;
                         resetTimer();
                         return true;
                     }
-
                     case ADVANCE: {
                         hw.stopFlywheels();
 
