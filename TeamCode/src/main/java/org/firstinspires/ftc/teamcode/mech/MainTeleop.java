@@ -60,7 +60,7 @@ public class MainTeleop extends LinearOpMode {
     private static final long FIRE_MS         = 1000;
     private static final long RECOVER_MS      = 220;
 
-    private static final float LAUNCH_POWER = 0.8f;
+    private static final long LAUNCH_PWR = 2200;
 
     boolean rotated = false;
 
@@ -305,7 +305,7 @@ public class MainTeleop extends LinearOpMode {
                 spindexer.setPosition(spindexerPosOuttake[posIdx]);
 
                 // Start launcher motor
-                launcher.setVelocity(LAUNCH_POWER);
+                launcher.setVelocity(LAUNCH_PWR);
 
                 shootTimer.reset();
                 shootState = ShootState.SPINUP;
