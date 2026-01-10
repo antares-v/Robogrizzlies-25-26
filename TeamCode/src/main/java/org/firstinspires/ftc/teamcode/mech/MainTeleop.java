@@ -63,21 +63,20 @@ public class MainTeleop extends LinearOpMode {
     // Launcher encoder/velocity tuning
     private static final double LAUNCHER_TICKS_PER_REV = 28.0;
     // target RPMs (tune these)
-    private static final double TARGET_RPM_FIRST = 2200.0; // example, tune to match desired shot power
-    private static final double TARGET_RPM_NEXT  = 2200.0; // often same as first, tune as needed
+    private static final double TARGET_RPM_FIRST = 1500.0; // example, tune to match desired shot power
+    private static final double TARGET_RPM_NEXT  = 1700.0; // often same as first, tune as needed
 
     // computed velocity targets (ticks per second)
     private final double TARGET_VEL_FIRST = TARGET_RPM_FIRST * LAUNCHER_TICKS_PER_REV / 60.0;
     private final double TARGET_VEL_NEXT  = TARGET_RPM_NEXT  * LAUNCHER_TICKS_PER_REV / 60.0;
 
     // when this fraction of target is reached we consider it spun up
-    private static final double VEL_THRESHOLD_FRAC = 0.90;
+    private static final double VEL_THRESHOLD_FRAC = 0.95;
 
     // runtime fields
     private double currentTargetVel = 0.0;
 
     boolean shootswitch = true;
-    private static final long LAUNCH_PWR = 60;
 
     boolean rotated = false;
 
@@ -174,6 +173,13 @@ public class MainTeleop extends LinearOpMode {
             }
             if (!rotated && !outtaking) {
                 ballcols.set(i, colorSensor.getColor(sensor));
+                if(ballcols.get(i) != "blank"){
+                    for (int j = 0; j < 3; j++) {
+                        if(ballcols.get(j) == "blank"){
+                            i = j;
+                        }
+                    }
+                }
             }
 
             if (spintime.milliseconds() > 100 && rotated) {
