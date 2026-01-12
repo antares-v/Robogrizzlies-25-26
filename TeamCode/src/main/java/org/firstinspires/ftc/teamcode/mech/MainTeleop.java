@@ -67,12 +67,12 @@ public class MainTeleop extends LinearOpMode {
     private static final long FIRST_SPINUP_MS = 3000;
     private static final long NEXT_SPINUP_MS  = 700;
     private static final long FIRE_MS         = 1000;
-    private static final long RECOVER_MS      = 220;
+    private static final long RECOVER_MS      = 5000;
     // Launcher encoder/velocity tuning
     private static final double LAUNCHER_TICKS_PER_REV = 28.0;
     // target RPMs (tune these)
-    private static final double TARGET_RPM_FIRST = 800.0;
-    private static final double TARGET_RPM_NEXT  = 900.0;
+    private static final double TARGET_RPM_FIRST = 500.0;
+    private static final double TARGET_RPM_NEXT  = 600.0;
 
     // Battery + launcher velocity compensation
     private static final double NOMINAL_VOLTAGE = 12.0;
@@ -82,7 +82,7 @@ public class MainTeleop extends LinearOpMode {
     // "At speed" logic
     private final ElapsedTime rpmStableTimer = new ElapsedTime();
     private static final long STABLE_MS = 100;           // must be at speed this long before feeding
-    private static final double RPM_TOL_FRAC = 0.03;     // +/-3% window around target
+    private static final double RPM_TOL_FRAC = 0.05;     // +/-3% window around target
 
     // Feeder behavior (CRServos that push ball into launcher)
     private static final double FEED_POWER = 1.0;       // tune (0.6–1.0)
@@ -466,7 +466,7 @@ public class MainTeleop extends LinearOpMode {
 
                 // Prefer RPM recovery; also keep a minimum delay
                 boolean recovered = launcherAtSpeed(targetRpm);
-                if ((shootTimer.milliseconds() >= RECOVER_MS) && recovered) {
+                if ((shootTimer.milliseconds() >= RECOVER_MS) || recovered) {
                     shotIndex++;
 
                     if (shotIndex >= shotOrder.length) {
