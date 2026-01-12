@@ -50,6 +50,11 @@ public class MainTeleop extends LinearOpMode {
     private int p = 0;                    // where green should end up (0/1/2)
     private String patternName = "random";
     private String stype = "none";
+
+    // Auto-index
+    private boolean autoIndexLockout = false;          // true = don't auto-move spindexer
+    private boolean autoIndexedSinceLastBall = false;  // true = auto moved since last ball was detected
+
     // Shooter states
     private enum ShootState { IDLE, SET_SERVO, SPINUP, FIRE, RECOVER }
     private ShootState shootState = ShootState.IDLE; //initial shootstate
@@ -189,20 +194,35 @@ public class MainTeleop extends LinearOpMode {
                 rightIntake.setPower(0);
                 leftIntake.setPower(0);
             }
-            if (!rotated && !outtaking) {
-                ballcols.set(i, colorSensor.getColor(sensor));
-                if(!(ballcols.get(i)).equals("blank")){
+
+            // Only do auto-indexing when not shooting
+            if (!rotated && shootState == ShootState.IDLE && !outtaking) {
+                String prev = ballcols.get(i);
+                String now  = colorSensor.getColor(sensor);
+                ballcols.set(i, now);
+
+                boolean newBallArrived = prev.equals("blank") && !now.equals("blank");
+                if (newBallArrived) {
+                    // Re-enable auto-indexing after a new ball is intaken/detected
+                    autoIndexLockout = false;
+                    autoIndexedSinceLastBall = false;
+                }
+
+                if (!autoIndexLockout && !ballcols.get(i).equals("blank")) {
                     for (int j = 0; j < 3; j++) {
-                        if((ballcols.get(j)).equals("blank")){
+                        if (ballcols.get(j).equals("blank")) {
                             i = j;
                             spindexer.setPosition(spindexerPosIntake[i]);
                             spintime.reset();
                             rotated = true;
+
+                            autoIndexedSinceLastBall = true; // remember that auto moved
                             break;
                         }
                     }
                 }
             }
+
 
             if (spintime.milliseconds() > 100 && rotated) {
                 rotated = false;
@@ -211,17 +231,23 @@ public class MainTeleop extends LinearOpMode {
             // 4) Indexer and sample color
             if (dLeftPressed && i < spindexerPosIntake.length - 1 && !rotated) {
                 rotated = true;
+                outtaking = false;
                 i++;
                 spintime.reset();
                 spindexer.setPosition(spindexerPosIntake[i]);
+
+                if (autoIndexedSinceLastBall) autoIndexLockout = true; // driver override after auto
                 telemetry.update();
             }
+
             if (dRightPressed && i > 0 && !rotated) {
                 rotated = true;
                 outtaking = false;
                 i--;
                 spintime.reset();
                 spindexer.setPosition(spindexerPosIntake[i]);
+
+                if (autoIndexedSinceLastBall) autoIndexLockout = true; // driver override after auto
                 telemetry.update();
             }
 
