@@ -8,6 +8,10 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
+import com.qualcomm.robotcore.util.Range;
+
 
 import org.firstinspires.ftc.teamcode.mech.CV.ColorDetection;
 import org.firstinspires.ftc.teamcode.mech.movement.movement;
@@ -22,7 +26,7 @@ public class MainTeleop extends LinearOpMode {
 
     // Hardware maps
     private movement drive;
-    private CRServo leftOuttake, rightOuttake;
+    private CRServo leftFlywheel, rightFlywheel;
     private RevColorSensorV3 sensor;
     private Servo spindexer;
     private DcMotorEx leftIntake, rightIntake, launcher;
@@ -46,6 +50,11 @@ public class MainTeleop extends LinearOpMode {
     private int p = 0;                    // where green should end up (0/1/2)
     private String patternName = "random";
     private String stype = "none";
+
+    // Auto-index
+    private boolean autoIndexLockout = false;          // true = don't auto-move spindexer
+    private boolean autoIndexedSinceLastBall = false;  // true = auto moved since last ball was detected
+
     // Shooter states
     private enum ShootState { IDLE, SET_SERVO, SPINUP, FIRE, RECOVER }
     private ShootState shootState = ShootState.IDLE; //initial shootstate
@@ -55,16 +64,29 @@ public class MainTeleop extends LinearOpMode {
     private int shotIndex = 0;
 
     // Timing knobs (ms)
-    private static final long FIRST_SPINUP_MS = 2000;
-    private static final long NEXT_SPINUP_MS  = 1000;
-    private static
-    final long FIRE_MS = 500;
-    private static final long RECOVER_MS = 500;
+    private static final long FIRST_SPINUP_MS = 3000;
+    private static final long NEXT_SPINUP_MS  = 700;
+    private static final long FIRE_MS         = 1000;
+    private static final long RECOVER_MS      = 5000;
     // Launcher encoder/velocity tuning
     private static final double LAUNCHER_TICKS_PER_REV = 28.0;
     // target RPMs (tune these)
-    private static final double TARGET_RPM_FIRST = 800.0; // example, tune to match desired shot power
-    private static final double TARGET_RPM_NEXT  = 800.0; // often same as first, tune as needed
+    private static final double TARGET_RPM_FIRST = 500.0;
+    private static final double TARGET_RPM_NEXT  = 600.0;
+
+    // Battery + launcher velocity compensation
+    private static final double NOMINAL_VOLTAGE = 12.0;
+    private PIDFCoefficients baseLauncherPIDF;
+    private double launcherTicksPerRev;
+
+    // "At speed" logic
+    private final ElapsedTime rpmStableTimer = new ElapsedTime();
+    private static final long STABLE_MS = 100;           // must be at speed this long before feeding
+    private static final double RPM_TOL_FRAC = 0.05;     // +/-3% window around target
+
+    // Feeder behavior (CRServos that push ball into launcher)
+    private static final double FEED_POWER = 1.0;       // tune (0.6–1.0)
+    private static final long FEED_MS = 500;
 
     // computed velocity targets (ticks per second)
     private final double TARGET_VEL_FIRST = TARGET_RPM_FIRST * LAUNCHER_TICKS_PER_REV / 60.0;
@@ -88,8 +110,8 @@ public class MainTeleop extends LinearOpMode {
         // Init
         drive = new movement(this, 0, 0, 0);
 
-        leftOuttake = hardwareMap.get(CRServo.class, "leftFlywheel");
-        rightOuttake = hardwareMap.get(CRServo.class, "rightFlywheel");
+        leftFlywheel = hardwareMap.get(CRServo.class, "leftFlywheel");
+        rightFlywheel = hardwareMap.get(CRServo.class, "rightFlywheel");
         spindexer = hardwareMap.get(Servo.class, "spindexer");
         launcher = hardwareMap.get(DcMotorEx.class, "launcher");
         leftIntake = hardwareMap.get(DcMotorEx.class, "leftIntake");
@@ -100,8 +122,8 @@ public class MainTeleop extends LinearOpMode {
 
         rightIntake.setDirection(DcMotorEx.Direction.REVERSE);
 
-        leftOuttake.setDirection(DcMotorSimple.Direction.FORWARD);
-        rightOuttake.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
 
         // init ball list
         ballcols.clear();
@@ -118,6 +140,10 @@ public class MainTeleop extends LinearOpMode {
 
         waitForStart();
         colorSensor.enableLed(sensor);
+
+        launcherTicksPerRev = launcher.getMotorType().getTicksPerRev();
+        baseLauncherPIDF = launcher.getPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER);
+
         // main loop
         while (opModeIsActive()) {
             // 1) Drive
@@ -168,20 +194,35 @@ public class MainTeleop extends LinearOpMode {
                 rightIntake.setPower(0);
                 leftIntake.setPower(0);
             }
-            if (!rotated && !outtaking) {
-                ballcols.set(i, colorSensor.getColor(sensor));
-//                if(!(ballcols.get(i)).equals("blank")){
-//                    for (int j = 0; j < 3; j++) {
-//                        if((ballcols.get(j)).equals("blank")){
-//                            i = j;
-//                            spindexer.setPosition(spindexerPosIntake[i]);
-//                            spintime.reset();
-//                            rotated = true;
-//                            break;
-//                        }
-//                    }
-//                }
+
+            // Only do auto-indexing when not shooting
+            if (!rotated && shootState == ShootState.IDLE && !outtaking) {
+                String prev = ballcols.get(i);
+                String now  = colorSensor.getColor(sensor);
+                ballcols.set(i, now);
+
+                boolean newBallArrived = prev.equals("blank") && !now.equals("blank");
+                if (newBallArrived) {
+                    // Re-enable auto-indexing after a new ball is intaken/detected
+                    autoIndexLockout = false;
+                    autoIndexedSinceLastBall = false;
+                }
+
+                if (!autoIndexLockout && !ballcols.get(i).equals("blank")) {
+                    for (int j = 0; j < 3; j++) {
+                        if (ballcols.get(j).equals("blank")) {
+                            i = j;
+                            spindexer.setPosition(spindexerPosIntake[i]);
+                            spintime.reset();
+                            rotated = true;
+
+                            autoIndexedSinceLastBall = true; // remember that auto moved
+                            break;
+                        }
+                    }
+                }
             }
+
 
             if (spintime.milliseconds() > 100 && rotated) {
                 rotated = false;
@@ -190,17 +231,23 @@ public class MainTeleop extends LinearOpMode {
             // 4) Indexer and sample color
             if (dLeftPressed && i < spindexerPosIntake.length - 1 && !rotated) {
                 rotated = true;
+                outtaking = false;
                 i++;
                 spintime.reset();
                 spindexer.setPosition(spindexerPosIntake[i]);
+
+                if (autoIndexedSinceLastBall) autoIndexLockout = true; // driver override after auto
                 telemetry.update();
             }
+
             if (dRightPressed && i > 0 && !rotated) {
                 rotated = true;
                 outtaking = false;
                 i--;
                 spintime.reset();
                 spindexer.setPosition(spindexerPosIntake[i]);
+
+                if (autoIndexedSinceLastBall) autoIndexLockout = true; // driver override after auto
                 telemetry.update();
             }
 
@@ -270,10 +317,9 @@ public class MainTeleop extends LinearOpMode {
             String color = ballcols.get(j);
 
             if ("green".equals(color) && !greenFound) {
-                poslist.set(p%3, j%3);
+                poslist.set(p, j);
                 poslist.set((p + 1) % 3, (j + 1) % 3);
                 poslist.set((p + 2) % 3, (j + 2) % 3);
-
                 greenFound = true;
                 break;
             } else if (("green".equals(color) && greenFound)) {
@@ -309,6 +355,47 @@ public class MainTeleop extends LinearOpMode {
         stopShooter();
     }
 
+    private double batteryVoltage() {
+        double minV = 99.0;
+        for (VoltageSensor vs : hardwareMap.voltageSensor) {
+            double v = vs.getVoltage();
+            if (v > 0) minV = Math.min(minV, v);
+        }
+        return (minV < 99.0) ? minV : NOMINAL_VOLTAGE;
+    }
+
+    // Voltage compensation for CRServo power (keeps feed speed more consistent)
+    private double vcPower(double pwr) {
+        double scale = NOMINAL_VOLTAGE / batteryVoltage();
+        return Range.clip(pwr * scale, -1.0, 1.0);
+    }
+
+    // Compensate launcher F term so velocity loop behaves similarly as voltage changes
+    private void applyLauncherVoltageCompToF() {
+        double scale = NOMINAL_VOLTAGE / batteryVoltage();
+        launcher.setPIDFCoefficients(
+                DcMotorEx.RunMode.RUN_USING_ENCODER,
+                new PIDFCoefficients(baseLauncherPIDF.p, baseLauncherPIDF.i, baseLauncherPIDF.d, baseLauncherPIDF.f * scale)
+        );
+    }
+
+    private void setLauncherRPM(double rpm) {
+        applyLauncherVoltageCompToF();
+        double ticksPerSecond = rpm * launcherTicksPerRev / 60.0;
+        launcher.setVelocity(ticksPerSecond);
+    }
+
+    private double getLauncherRPM() {
+        return launcher.getVelocity() * 60.0 / launcherTicksPerRev;
+    }
+
+    private boolean launcherAtSpeed(double targetRpm) {
+        double rpm = getLauncherRPM();
+        double err = Math.abs(rpm - targetRpm);
+        return err <= (RPM_TOL_FRAC * targetRpm);
+    }
+
+
     private void updateShooting() {
         switch (shootState) {
             case IDLE:
@@ -325,71 +412,80 @@ public class MainTeleop extends LinearOpMode {
                 spindexer.setPosition(spindexerPosOuttake[posIdx]);
 
                 // choose target velocity depending on whether this is the first shot
-                currentTargetVel = (shotIndex == 0) ? TARGET_VEL_FIRST : TARGET_VEL_NEXT;
+                double targetRpm = (shotIndex == 0) ? TARGET_RPM_FIRST : TARGET_RPM_NEXT;
+                setLauncherRPM(targetRpm);
 
-                // start launcher via velocity (RUN_USING_ENCODER must be set)
-                launcher.setVelocity(currentTargetVel);
-
-                // reset timer and go spinup
+                rpmStableTimer.reset();
                 shootTimer.reset();
                 shootState = ShootState.SPINUP;
                 break;
             }
 
             case SPINUP: {
+                double targetRpm = (shotIndex == 0) ? TARGET_RPM_FIRST : TARGET_RPM_NEXT;
                 long needed = (shotIndex == 0) ? FIRST_SPINUP_MS : NEXT_SPINUP_MS;
 
-                // check if velocity reached threshold
-                double currentVel = launcher.getVelocity(); // ticks/sec
-                boolean spunUp = currentVel >= (VEL_THRESHOLD_FRAC * currentTargetVel);
+                boolean atSpeed = launcherAtSpeed(targetRpm);
 
-                // allow either spin-up by reaching velocity OR a hard timeout
-                if (spunUp || shootTimer.milliseconds() >= needed) {
-                    // Flywheels (CRServos) on
-                    leftOuttake.setPower(1);
-                    rightOuttake.setPower(1);
+                if (!atSpeed) {
+                    rpmStableTimer.reset(); // must be continuously stable
+                }
+
+                boolean stableEnough = atSpeed && rpmStableTimer.milliseconds() >= STABLE_MS;
+                boolean timedOut = shootTimer.milliseconds() >= needed;
+
+                if (stableEnough || timedOut) {
+                    // Feed one ball into the launcher
+                    leftFlywheel.setPower(vcPower(FEED_POWER));
+                    rightFlywheel.setPower(vcPower(FEED_POWER));
 
                     shootTimer.reset();
                     shootState = ShootState.FIRE;
                 }
 
-                // optional: telemetry for tuning
-                telemetry.addData("launcherVel", "%.1f / %.1f", currentVel, currentTargetVel);
+                telemetry.addData("launcherRPM", "%.0f / %.0f", getLauncherRPM(), targetRpm);
+                telemetry.addData("stableMs", "%.0f", rpmStableTimer.milliseconds());
                 break;
             }
 
+
             case FIRE: {
-                if (shootTimer.milliseconds() >= FIRE_MS) {
-                    // keep launcher velocity running but stop the CRServos only after firing
+                if (shootTimer.milliseconds() >= FEED_MS) {
+                    leftFlywheel.setPower(0);
+                    rightFlywheel.setPower(0);
+
                     shootTimer.reset();
                     shootState = ShootState.RECOVER;
                 }
                 break;
             }
 
+
             case RECOVER: {
-                if (shootTimer.milliseconds() >= RECOVER_MS) {
+                double targetRpm = (shotIndex == 0) ? TARGET_RPM_FIRST : TARGET_RPM_NEXT;
+
+                // Prefer RPM recovery; also keep a minimum delay
+                boolean recovered = launcherAtSpeed(targetRpm);
+                if ((shootTimer.milliseconds() >= RECOVER_MS) || recovered) {
                     shotIndex++;
+
                     if (shotIndex >= shotOrder.length) {
-                        leftOuttake.setPower(0);
-                        rightOuttake.setPower(0);
                         shootState = ShootState.IDLE;
                         stopShooter();
                     } else {
-                        leftOuttake.setPower(0);
-                        rightOuttake.setPower(0);
                         shootState = ShootState.SET_SERVO;
                     }
                     outtaking = false;
                 }
                 break;
             }
+
         }
     }
 
     private void stopShooter() {
-        leftOuttake.setPower(0);
-        rightOuttake.setPower(0);
+        leftFlywheel.setPower(0);
+        rightFlywheel.setPower(0);
         launcher.setVelocity(0.0);
     }
 
