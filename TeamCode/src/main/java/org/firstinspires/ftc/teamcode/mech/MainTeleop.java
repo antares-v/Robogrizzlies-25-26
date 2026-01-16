@@ -64,15 +64,15 @@ public class MainTeleop extends LinearOpMode {
     private int shotIndex = 0;
 
     // Timing knobs (ms)
-    private static final long FIRST_SPINUP_MS = 2000;
-    private static final long NEXT_SPINUP_MS  = 1500;
+    private static final long FIRST_SPINUP_MS = 3000;
+    private static final long NEXT_SPINUP_MS  = 700;
     private static final long FIRE_MS         = 1000;
-    private static final long RECOVER_MS      = 300;
+    private static final long RECOVER_MS      = 5000;
     // Launcher encoder/velocity tuning
     private static final double LAUNCHER_TICKS_PER_REV = 28.0;
     // target RPMs (tune these)
-    private static final double TARGET_RPM_FIRST = 1500.0;
-    private static final double TARGET_RPM_NEXT  = 1500.0;
+    private static final double TARGET_RPM_FIRST = 500.0;
+    private static final double TARGET_RPM_NEXT  = 600.0;
 
     // Battery + launcher velocity compensation
     private static final double NOMINAL_VOLTAGE = 12.0;
@@ -81,21 +81,25 @@ public class MainTeleop extends LinearOpMode {
 
     // "At speed" logic
     private final ElapsedTime rpmStableTimer = new ElapsedTime();
-    private static final long STABLE_MS = 250;           // must be at speed this long before feeding
-    private static final double RPM_TOL_FRAC = 0.08;     // +/-8% window around target
+    private static final long STABLE_MS = 100;           // must be at speed this long before feeding
+    private static final double RPM_TOL_FRAC = 0.05;     // +/-3% window around target
 
     // Feeder behavior (CRServos that push ball into launcher)
     private static final double FEED_POWER = 1.0;       // tune (0.6–1.0)
     private static final long FEED_MS = 500;
+
+    // computed velocity targets (ticks per second)
+    private final double TARGET_VEL_FIRST = TARGET_RPM_FIRST * LAUNCHER_TICKS_PER_REV / 60.0;
+    private final double TARGET_VEL_NEXT  = TARGET_RPM_NEXT  * LAUNCHER_TICKS_PER_REV / 60.0;
+
+    // when this fraction of target is reached we consider it spun up
+    private static final double VEL_THRESHOLD_FRAC = 0.90;
 
     // runtime fields
     private double currentTargetVel = 0.0;
     boolean rotated = false;
 
     boolean outtaking = false;
-
-    private final ElapsedTime senseTimer = new ElapsedTime();
-
     // Helpers
     private static double deadzone(double v, double dz) {
         return (Math.abs(v) < dz) ? 0 : v;
@@ -114,6 +118,7 @@ public class MainTeleop extends LinearOpMode {
         rightIntake = hardwareMap.get(DcMotorEx.class, "rightIntake");
         sensor = hardwareMap.get(RevColorSensorV3.class, "colorSensor");
 
+        launcher.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
         launcher.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
 
         rightIntake.setDirection(DcMotorEx.Direction.REVERSE);
@@ -137,7 +142,7 @@ public class MainTeleop extends LinearOpMode {
         waitForStart();
         colorSensor.enableLed(sensor);
 
-        launcherTicksPerRev = 28;
+        launcherTicksPerRev = launcher.getMotorType().getTicksPerRev();
         baseLauncherPIDF = launcher.getPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER);
 
         // main loop
@@ -192,13 +197,10 @@ public class MainTeleop extends LinearOpMode {
             }
 
             // Only do auto-indexing when not shooting
-            if (!rotated && shootState == ShootState.IDLE && !outtaking && senseTimer.seconds() > 0.1f) {
-                senseTimer.reset();
+            if (!rotated && shootState == ShootState.IDLE && !outtaking) {
                 String prev = ballcols.get(i);
                 String now  = colorSensor.getColor(sensor);
-                if(prev.equals("blank")){
-                    ballcols.set(i, now);
-                }
+                ballcols.set(i, now);
 
                 boolean newBallArrived = prev.equals("blank") && !now.equals("blank");
                 if (newBallArrived) {
@@ -294,7 +296,8 @@ public class MainTeleop extends LinearOpMode {
             telemetry.addData("shootState", shootState);
             telemetry.addData("shotIndex", shotIndex);
             telemetry.addData("typeofshot", stype);
-            telemetry.addData("launcherRPM", "%.0f / %.0f", getLauncherRPM(), getLauncherRPM());
+            telemetry.addData("pos", launcher.getCurrentPosition());
+            telemetry.addData("vel", launcher.getVelocity());
             telemetry.update();
 
             idle();
@@ -364,7 +367,7 @@ public class MainTeleop extends LinearOpMode {
         return (minV < 99.0) ? minV : NOMINAL_VOLTAGE;
     }
 
-    // Voltage compensation for CRServo power
+    // Voltage compensation for CRServo power (keeps feed speed more consistent)
     private double vcPower(double pwr) {
         double scale = NOMINAL_VOLTAGE / batteryVoltage();
         return Range.clip(pwr * scale, -1.0, 1.0);
@@ -435,7 +438,6 @@ public class MainTeleop extends LinearOpMode {
                 boolean timedOut = shootTimer.milliseconds() >= needed;
 
                 if (stableEnough || timedOut) {
-                    telemetry.addData("launcherUpToSpeed",getLauncherRPM());
                     // Feed one ball into the launcher
                     leftFlywheel.setPower(vcPower(FEED_POWER));
                     rightFlywheel.setPower(vcPower(FEED_POWER));
@@ -443,8 +445,9 @@ public class MainTeleop extends LinearOpMode {
                     shootTimer.reset();
                     shootState = ShootState.FIRE;
                 }
+
+                telemetry.addData("launcherRPM", "%.0f / %.0f", getLauncherRPM(), targetRpm);
                 telemetry.addData("stableMs", "%.0f", rpmStableTimer.milliseconds());
-                telemetry.addData("launcherTicksPerRev",launcher.getMotorType().getTicksPerRev());
                 break;
             }
 
@@ -464,16 +467,13 @@ public class MainTeleop extends LinearOpMode {
             case RECOVER: {
                 double targetRpm = (shotIndex == 0) ? TARGET_RPM_FIRST : TARGET_RPM_NEXT;
 
-                // Prefer RPM recovery; also keep a max delay
+                // Prefer RPM recovery; also keep a minimum delay
                 boolean recovered = launcherAtSpeed(targetRpm);
                 if ((shootTimer.milliseconds() >= RECOVER_MS) || recovered) {
                     shotIndex++;
 
                     if (shotIndex >= shotOrder.length) {
                         shootState = ShootState.IDLE;
-                        ballcols.set(0,"blank");
-                        ballcols.set(1,"blank");
-                        ballcols.set(2,"blank");
                         stopShooter();
                     } else {
                         shootState = ShootState.SET_SERVO;
