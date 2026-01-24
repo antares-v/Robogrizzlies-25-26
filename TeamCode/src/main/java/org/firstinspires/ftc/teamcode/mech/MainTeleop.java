@@ -15,6 +15,8 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.mech.CV.ColorDetection;
 import org.firstinspires.ftc.teamcode.mech.movement.movement;
+import org.firstinspires.ftc.teamcode.mech.control.CustomPIDF;
+
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -100,6 +102,22 @@ public class MainTeleop extends LinearOpMode {
     boolean rotated = false;
 
     boolean outtaking = false;
+
+    // launcher velocity control
+    private CustomPIDF launcherPIDF;
+    private final ElapsedTime launcherLoopTimer = new ElapsedTime();
+    private double launcherTargetTicksPerSec = 0.0;
+    private boolean launcherControlEnabled = false;
+
+    // tune values
+    private static double LAUNCH_kP = 0.00025;
+    private static double LAUNCH_kI = 0.0000008;
+    private static double LAUNCH_kD = 0.00001;
+
+    // kF will be computed from motor max speed at init, but you can override if you want:
+    private static double LAUNCH_kF = -1.0; // -1 = auto compute
+
+
     // Helpers
     private static double deadzone(double v, double dz) {
         return (Math.abs(v) < dz) ? 0 : v;
@@ -119,7 +137,11 @@ public class MainTeleop extends LinearOpMode {
         sensor = hardwareMap.get(RevColorSensorV3.class, "colorSensor");
 
         launcher.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-        launcher.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+
+        launcher.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+
+        launcher.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
+
 
         rightIntake.setDirection(DcMotorEx.Direction.REVERSE);
 
@@ -144,6 +166,21 @@ public class MainTeleop extends LinearOpMode {
 
         launcherTicksPerRev = launcher.getMotorType().getTicksPerRev();
         baseLauncherPIDF = launcher.getPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER);
+
+        // Max ticks/sec = maxRPM * ticksPerRev / 60
+        double maxRpm = launcher.getMotorType().getMaxRPM();
+        double maxTicksPerSec = (maxRpm * launcherTicksPerRev) / 60.0;
+
+        double kF = (LAUNCH_kF > 0) ? LAUNCH_kF : (1.0 / maxTicksPerSec);
+
+        launcherPIDF = new CustomPIDF(LAUNCH_kP, LAUNCH_kI, LAUNCH_kD, kF);
+        launcherPIDF.iMax = 0.35; // clamp integral contribution (power units)
+        launcherPIDF.reset();
+
+        launcherLoopTimer.reset();
+        launcherControlEnabled = false;
+        launcherTargetTicksPerSec = 0.0;
+
 
         // main loop
         while (opModeIsActive()) {
@@ -288,6 +325,9 @@ public class MainTeleop extends LinearOpMode {
             // 8) Update shooter states
             updateShooting();
 
+            // 9) Update PIDF
+            updateLauncherPIDF();
+
             // Telemetry updates
             telemetry.addData("drive", "x=%.2f y=%.2f h=%.2f", x, y, h);
             telemetry.addData("pattern", patternName);
@@ -383,10 +423,12 @@ public class MainTeleop extends LinearOpMode {
     }
 
     private void setLauncherRPM(double rpm) {
-        applyLauncherVoltageCompToF();
-        double ticksPerSecond = rpm * launcherTicksPerRev / 60.0;
-        launcher.setVelocity(ticksPerSecond);
+        launcherTargetTicksPerSec = rpm * launcherTicksPerRev / 60.0;
+        launcherControlEnabled = (rpm > 0.0);
+        launcherPIDF.reset();
+        launcherLoopTimer.reset();
     }
+
 
     private double getLauncherRPM() {
         return launcher.getVelocity() * 60.0 / launcherTicksPerRev;
@@ -396,6 +438,26 @@ public class MainTeleop extends LinearOpMode {
         double rpm = getLauncherRPM();
         double err = Math.abs(rpm - targetRpm);
         return err <= (RPM_TOL_FRAC * targetRpm);
+    }
+    private void updateLauncherPIDF() {
+        if (!launcherControlEnabled) return;
+
+        double dt = launcherLoopTimer.seconds();
+        launcherLoopTimer.reset();
+
+        double measured = launcher.getVelocity(); // ticks/sec
+        double target = launcherTargetTicksPerSec;
+
+        double power = launcherPIDF.update(target, measured, dt);
+
+        // Optional: voltage compensation (helps keep behavior consistent)
+        double scale = NOMINAL_VOLTAGE / batteryVoltage();
+        power = Range.clip(power * scale, -1.0, 1.0);
+
+        launcher.setPower(power);
+
+        telemetry.addData("L PID", "t=%.0f m=%.0f pwr=%.2f dt=%.3f",
+                target, measured, power, dt);
     }
 
 
@@ -487,9 +549,9 @@ public class MainTeleop extends LinearOpMode {
     }
 
     private void stopShooter() {
-        leftFlywheel.setPower(0);
-        rightFlywheel.setPower(0);
-        launcher.setVelocity(0.0);
+        launcherControlEnabled = false;
+        launcherTargetTicksPerSec = 0.0;
+        launcher.setPower(0.0);
     }
 
 }
