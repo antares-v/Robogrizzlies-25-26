@@ -4,6 +4,7 @@ import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -64,29 +65,29 @@ public class MainTeleop extends LinearOpMode {
     private int shotIndex = 0;
 
     // Timing knobs (ms)
-    private static final long FIRST_SPINUP_MS = 3000;
-    private static final long NEXT_SPINUP_MS  = 700;
+    private static final long FIRST_SPINUP_MS = 50000;
+    private static final long NEXT_SPINUP_MS  = 50000;
     private static final long FIRE_MS         = 1000;
-    private static final long RECOVER_MS      = 5000;
+    private static final long RECOVER_MS      = 300;
     // Launcher encoder/velocity tuning
     private static final double LAUNCHER_TICKS_PER_REV = 28.0;
     // target RPMs (tune these)
-    private static final double TARGET_RPM_FIRST = 500.0;
-    private static final double TARGET_RPM_NEXT  = 600.0;
+    private static final double TARGET_RPM_FIRST = 3000.0;
+    private static final double TARGET_RPM_NEXT  = 3000.0;
 
     // Battery + launcher velocity compensation
     private static final double NOMINAL_VOLTAGE = 12.0;
     private PIDFCoefficients baseLauncherPIDF;
-    private double launcherTicksPerRev;
+    private double launcherTicksPerRev = 28.0;
 
     // "At speed" logic
     private final ElapsedTime rpmStableTimer = new ElapsedTime();
     private static final long STABLE_MS = 100;           // must be at speed this long before feeding
-    private static final double RPM_TOL_FRAC = 0.05;     // +/-3% window around target
+    private static final double RPM_TOL_FRAC = 0.1;     // +/-10% window around target
 
     // Feeder behavior (CRServos that push ball into launcher)
     private static final double FEED_POWER = 1.0;       // tune (0.6–1.0)
-    private static final long FEED_MS = 500;
+    private static final long FEED_MS = 1000;
 
     // computed velocity targets (ticks per second)
     private final double TARGET_VEL_FIRST = TARGET_RPM_FIRST * LAUNCHER_TICKS_PER_REV / 60.0;
@@ -100,6 +101,9 @@ public class MainTeleop extends LinearOpMode {
     boolean rotated = false;
 
     boolean outtaking = false;
+
+    private final ElapsedTime senseTimer = new ElapsedTime();
+
     // Helpers
     private static double deadzone(double v, double dz) {
         return (Math.abs(v) < dz) ? 0 : v;
@@ -118,6 +122,7 @@ public class MainTeleop extends LinearOpMode {
         rightIntake = hardwareMap.get(DcMotorEx.class, "rightIntake");
         sensor = hardwareMap.get(RevColorSensorV3.class, "colorSensor");
 
+        launcher.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
         launcher.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
 
         rightIntake.setDirection(DcMotorEx.Direction.REVERSE);
@@ -196,7 +201,8 @@ public class MainTeleop extends LinearOpMode {
             }
 
             // Only do auto-indexing when not shooting
-            if (!rotated && shootState == ShootState.IDLE && !outtaking) {
+            if (!rotated && shootState == ShootState.IDLE && !outtaking && senseTimer.seconds() > 0.1f) {
+                senseTimer.reset();
                 String prev = ballcols.get(i);
                 String now  = colorSensor.getColor(sensor);
                 ballcols.set(i, now);
@@ -295,6 +301,9 @@ public class MainTeleop extends LinearOpMode {
             telemetry.addData("shootState", shootState);
             telemetry.addData("shotIndex", shotIndex);
             telemetry.addData("typeofshot", stype);
+            telemetry.addData("launcherRPM", "%.0f/%.0f", getLauncherRPM(), TARGET_RPM_FIRST);
+            telemetry.addData("launcher position", launcher.getCurrentPosition());
+            telemetry.addData("launcher ticks", launcher.getMotorType().getTicksPerRev());
             telemetry.update();
 
             idle();
@@ -380,7 +389,7 @@ public class MainTeleop extends LinearOpMode {
     }
 
     private void setLauncherRPM(double rpm) {
-        applyLauncherVoltageCompToF();
+        // applyLauncherVoltageCompToF();
         double ticksPerSecond = rpm * launcherTicksPerRev / 60.0;
         launcher.setVelocity(ticksPerSecond);
     }
@@ -442,8 +451,6 @@ public class MainTeleop extends LinearOpMode {
                     shootTimer.reset();
                     shootState = ShootState.FIRE;
                 }
-
-                telemetry.addData("launcherRPM", "%.0f / %.0f", getLauncherRPM(), targetRpm);
                 telemetry.addData("stableMs", "%.0f", rpmStableTimer.milliseconds());
                 break;
             }
@@ -464,7 +471,7 @@ public class MainTeleop extends LinearOpMode {
             case RECOVER: {
                 double targetRpm = (shotIndex == 0) ? TARGET_RPM_FIRST : TARGET_RPM_NEXT;
 
-                // Prefer RPM recovery; also keep a minimum delay
+                // Prefer RPM recovery; also keep a max delay
                 boolean recovered = launcherAtSpeed(targetRpm);
                 if ((shootTimer.milliseconds() >= RECOVER_MS) || recovered) {
                     shotIndex++;
