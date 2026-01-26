@@ -1,9 +1,10 @@
 package org.firstinspires.ftc.teamcode.mech.Auto;
 
-import com.acmerobotics.roadrunner.ParallelAction;
-import com.acmerobotics.roadrunner.SequentialAction;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.TranslationalVelConstraint;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
@@ -11,286 +12,341 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+@Autonomous(name = "Right Drive Auto")
+public class RightDriveAuto extends LinearOpMode {
+    private static final class Config {
+        // Spindexer positions
+        static final double[] SPINDEX_INTAKE  = {0.00, 0.38, 0.79};
+        static final double[] SPINDEX_OUTTAKE = {0.19, 0.59, 0.99};
 
-@Autonomous(name="Right Drive Auto")
-//ts is the auto for one side you can prolly mirror for the other side
-public class RightDriveAuto extends LinearOpMode{
+        static final double LAUNCHER_TICKS_PER_REV = 28.0;
+        // target RPMs (tune these)
+        static final double TARGET_RPM_FIRST = 1900.0; // example, tune to match desired shot power
+        static final double TARGET_RPM_NEXT  = 2100.0; // often same as first, tune as needed
+
+        // computed velocity targets (ticks per second)
+        static final double TARGET_VEL_FIRST = TARGET_RPM_FIRST * LAUNCHER_TICKS_PER_REV / 60.0;
+        static final double TARGET_VEL_NEXT  = TARGET_RPM_NEXT  * LAUNCHER_TICKS_PER_REV / 60.0;
+
+        // when this fraction of target is reached we consider it spun up
+        static final double VEL_THRESHOLD_FRAC = 0.95;
+
+        // Ball layout
+        static final double BALL_SPACING = 6.0;
+        static final double FIRST_BALL_X = 43;
+        static final double ROBOT_OFFSET = 8.0;
+
+        // Row Ys
+        static final double FAR_ROW_Y   =  5;
+        static final double MID_ROW_Y   = -19;
+        static final double CLOSE_ROW_Y = -43;
+
+        // Wait before some strafes
+        static final double BALL_WAIT_SEC = 0.5;
+
+        // Motion constraint
+        static final double MOTION_VEL = 70.0;
+        static final double COLLECT_VEL = 30.0;
+
+        // Poses
+        static final Pose2d START_POSE  = new Pose2d(12, -60, Math.toRadians(90));
+        static final Pose2d SHOOT_POSE  = new Pose2d(12, -25, Math.toRadians(70));
+        static final double COLLECT_HEADING_RAD = Math.toRadians(0);
+
+        // Intake timing
+        static final double INTAKE_RUN_SEC = 3.0;
+
+        // Shooter timing
+        static final double LAUNCHER_SPINUP_SEC = 1.0;
+        static final double FIRE_WINDOW_SEC     = 0.5;
+
+        // Row X offsets
+        static final float[] ROW_X_MULTS = { -2.0f, +0.5f, +1.5f, +2.5f };
+    }
+
+    private static final class RowSpec {
+        final String name;
+        final double y;
+        final boolean[] waitBeforeSegment;
+
+        RowSpec(String name, double y, boolean s1, boolean s2, boolean s3) {
+            this.name = name;
+            this.y = y;
+            this.waitBeforeSegment = new boolean[] { s1, s2, s3 };
+        }
+    }
+    private static final class RobotHW {
+        final CRServo leftFlywheel, rightFlywheel;
+        final Servo spindexer;
+
+        // runtime fields
+        static double currentTargetVel = 0.0;
+        final DcMotor leftIntake, rightIntake;
+        final DcMotorEx launcher;
+
+        RobotHW(LinearOpMode opMode) {
+            leftIntake = opMode.hardwareMap.get(DcMotor.class, "leftIntake");
+            rightIntake = opMode.hardwareMap.get(DcMotor.class, "rightIntake");
+            launcher = opMode.hardwareMap.get(DcMotorEx.class, "launcher");
+            launcher.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+            rightIntake.setDirection(DcMotorSimple.Direction.REVERSE);
+
+            leftFlywheel = opMode.hardwareMap.get(CRServo.class, "leftFlywheel");
+            rightFlywheel = opMode.hardwareMap.get(CRServo.class, "rightFlywheel");
+            spindexer = opMode.hardwareMap.get(Servo.class, "spindexer");
+        }
+
+        void setIntakePower(double pwr) {
+            leftIntake.setPower(pwr);
+            rightIntake.setPower(pwr);
+        }
+
+        void stopFlywheels() {
+            // Keep directions consistent; power=0 is what matters
+            leftFlywheel.setPower(0);
+            rightFlywheel.setPower(0);
+        }
+
+        void startFlywheelsForShooting() {
+            // Same intent as your code: left forward, right reverse
+            leftFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
+            rightFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
+            leftFlywheel.setPower(1);
+            rightFlywheel.setPower(1);
+        }
+    }
+
     @Override
     public void runOpMode() throws InterruptedException {
-        CRServo leftFlywheel, rightFlywheel;
-        Servo spindexer;
-        DcMotor leftIntake, rightIntake, launcher;
 
-        leftIntake = hardwareMap.get(DcMotor.class, "leftIntake");
-        rightIntake = hardwareMap.get(DcMotor.class, "rightIntake");
-        rightIntake.setDirection(DcMotorSimple.Direction.REVERSE);
-        leftFlywheel = hardwareMap.get(CRServo.class, "leftFlywheel");
-        rightFlywheel = hardwareMap.get(CRServo.class, "rightFlywheel");
-        spindexer = hardwareMap.get(Servo.class, "spindexer");
-        launcher = hardwareMap.get(DcMotor.class, "launcher");
-        double[] spindexerPosIntake = {0,0.38,0.79};
-        double[] spindexerPosOuttake = {0.19,0.59,0.99};
-        double interballDistance = 10;
-        double farRowY = 26;
-        double midRowY = -15;
-        double closeRowY = -35;
-        double firstBallX = 65;
-        double ballWaiting = 0.5;
-        TranslationalVelConstraint tvConstraint = new TranslationalVelConstraint(25.0);
+        RobotHW hw = new RobotHW(this);
 
-        class RobotMechanisms {
-            // 2. Define the method that returns an Action
+        TranslationalVelConstraint motionVel = new TranslationalVelConstraint(Config.MOTION_VEL);
+        TranslationalVelConstraint collectVel = new TranslationalVelConstraint(Config.COLLECT_VEL);
 
-            Pose2d Startingpos = new Pose2d(75, 75, Math.toRadians(45));
-            //Pose2d Startingpos = new Pose2d(24,-60, Math.toRadians(45));
-            Pose2d shootLocation = new Pose2d(56,56, Math.toRadians(45));
-            Vector2d shootVector = new Vector2d(56,56);
-            Vector2d farRow1 = new Vector2d(24, farRowY);
-            Vector2d farRow2 = new Vector2d(42+1*interballDistance, farRowY);
-            Vector2d farRow3 = new Vector2d(42+2*interballDistance, farRowY);
-            Vector2d farRow4 = new Vector2d(42+3*interballDistance, farRowY);
-            Pose2d farRow1End = new Pose2d(24,27, Math.toRadians(0));
-            Pose2d farRow2End = new Pose2d(firstBallX+1*interballDistance, 30, Math.toRadians(0));
-            Pose2d farRow3End = new Pose2d(firstBallX+2*interballDistance, 30, Math.toRadians(0));
-            Pose2d farRow4End = new Pose2d(firstBallX+3*interballDistance, 30, Math.toRadians(0));
-            Vector2d midRow1 = new Vector2d(0, -15);
-            Vector2d midRow2 = new Vector2d(firstBallX+1*interballDistance, -15);
-            Vector2d midRow3 = new Vector2d(firstBallX+2*interballDistance, -15);
-            Vector2d midRow4 = new Vector2d(firstBallX+3*interballDistance, -15);
-            Pose2d midRow1End = new Pose2d(0,-15, Math.toRadians(0));
-            Pose2d midRow2End = new Pose2d(firstBallX+1*interballDistance, -15, Math.toRadians(0));
-            Pose2d midRow3End = new Pose2d(firstBallX+2*interballDistance, -15, Math.toRadians(0));
-            Pose2d midRow4End = new Pose2d(firstBallX+3*interballDistance, -15, Math.toRadians(0));
-            Vector2d closeRow1 = new Vector2d(0, -35);
-            Vector2d closeRow2 = new Vector2d(firstBallX+1*interballDistance, -35);
-            Vector2d closeRow3 = new Vector2d(firstBallX+2*interballDistance, -35);
-            Vector2d closeRow4 = new Vector2d(firstBallX+3*interballDistance, -35);
-            Pose2d closeRow1End = new Pose2d(0,-35, Math.toRadians(0));
-            Pose2d closeRow2End = new Pose2d(firstBallX+1*interballDistance, -35, Math.toRadians(0));
-            Pose2d closeRow3End = new Pose2d(firstBallX+2*interballDistance, -35, Math.toRadians(0));
-            Pose2d closeRow4End = new Pose2d(firstBallX+3*interballDistance, -35, Math.toRadians(0));
-            MecanumDrive Drivetrain = new MecanumDrive(hardwareMap, Startingpos);
-            public Action collectRowOfBalls(int spinpos) {
-                return new Action() {
-                    private boolean initialized = false;
-                    private ElapsedTime timer;
+        // Define row behaviors
+        RowSpec FAR   = new RowSpec("FAR",   Config.FAR_ROW_Y,   false, false, true);
+        RowSpec MID   = new RowSpec("MID",   Config.MID_ROW_Y,   true,  true,  true);
+        RowSpec CLOSE = new RowSpec("CLOSE", Config.CLOSE_ROW_Y, true,  true,  true);
 
+        // RoadRunner drive
+        MecanumDrive drive = new MecanumDrive(hardwareMap, Config.START_POSE);
 
-                    @Override
-                    public boolean run(TelemetryPacket packet) {
-                        // 1. Start the motors on the very first run
-                        if (!initialized) {
-                            spindexer.setPosition(spindexerPosIntake[spinpos]);
-                            rightIntake.setPower(-1);
-                            leftIntake.setPower(-1);
-                            timer = new ElapsedTime();
-                            initialized = true;
-                        }
+        // Build paths
+        Vector2d[] farPts   = makeRowPoints(FAR.y);
+        Vector2d[] midPts   = makeRowPoints(MID.y);
+        Vector2d[] closePts = makeRowPoints(CLOSE.y);
 
-                        // 2. Check if 2 seconds have passed
-                        if (timer.seconds() < 5.0) {
-                            // Return true to keep this Action running
-                            return true;
-                        } else {
-                            // 3. Stop motors and finish the Action
-                            rightIntake.setPower(0);
-                            leftIntake.setPower(0);
+        Pose2d[] farEnds   = makeRowEndPoses(farPts);
+        Pose2d[] midEnds   = makeRowEndPoses(midPts);
+        Pose2d[] closeEnds = makeRowEndPoses(closePts);
 
-                            return false; // Return false to signal we are done
-                        }
-                    }
-                };
+        // start => shoot
+        Action toShootInitially = drive.actionBuilder(Config.START_POSE)
+                .splineToLinearHeading(Config.SHOOT_POSE, Math.toRadians(45), motionVel)
+                .build();
+        Action goBackToWhereYouCameFrom = drive.actionBuilder(Config.SHOOT_POSE)
+                .splineToLinearHeading(Config.START_POSE, Math.toRadians(0), motionVel)
+                .build();
+        // shoot => start of each row
+        Action toFarRowStart = drive.actionBuilder(Config.SHOOT_POSE)
+                .strafeToLinearHeading(farPts[0], Config.COLLECT_HEADING_RAD, motionVel)
+                .build();
+
+        Action toMidRowStart = drive.actionBuilder(Config.SHOOT_POSE)
+                .strafeToLinearHeading(midPts[0], Config.COLLECT_HEADING_RAD, motionVel)
+                .build();
+
+        Action toCloseRowStart = drive.actionBuilder(Config.SHOOT_POSE)
+                .strafeToLinearHeading(closePts[0], Config.COLLECT_HEADING_RAD, motionVel)
+                .build();
+
+        // Collect across each row
+        Action[] farCollect = buildCollectAcrossRow(
+                drive, hw, farPts, farEnds, FAR.waitBeforeSegment, collectVel
+        );
+        Action[] midCollect = buildCollectAcrossRow(
+                drive, hw, midPts, midEnds, MID.waitBeforeSegment, collectVel
+        );
+        Action[] closeCollect = buildCollectAcrossRow(
+                drive, hw, closePts, closeEnds, CLOSE.waitBeforeSegment, collectVel
+        );
+
+        // From end of each row -> shoot
+        Action farEndToShoot = drive.actionBuilder(farEnds[3])
+                .splineToLinearHeading(Config.SHOOT_POSE, Math.toRadians(45), motionVel)
+                .build();
+
+        Action midEndToShoot = drive.actionBuilder(midEnds[3])
+                .splineToLinearHeading(Config.SHOOT_POSE, Math.toRadians(45), motionVel)
+                .build();
+
+        Action closeEndToShoot = drive.actionBuilder(closeEnds[3])
+                .splineToLinearHeading(Config.SHOOT_POSE, Math.toRadians(45), motionVel)
+                .build();
+
+        // auto chain
+        Action autonomousChain = new SequentialAction(
+                toShootInitially,
+                goBackToWhereYouCameFrom
+        );
+
+        waitForStart();
+        if (isStopRequested()) return;
+
+        Actions.runBlocking(autonomousChain);
+    }
+    private static Vector2d[] makeRowPoints(double rowY) {
+        Vector2d[] pts = new Vector2d[4];
+        for (int i = 0; i < 4; i++) {
+            double x = Config.FIRST_BALL_X + Config.ROW_X_MULTS[i] * Config.BALL_SPACING + Config.ROBOT_OFFSET;
+            pts[i] = new Vector2d(x, rowY);
+        }
+        return pts;
+    }
+
+    private static Pose2d[] makeRowEndPoses(Vector2d[] pts) {
+        Pose2d[] ends = new Pose2d[4];
+        for (int i = 0; i < 4; i++) {
+            ends[i] = new Pose2d(pts[i].x, pts[i].y, Config.COLLECT_HEADING_RAD);
+        }
+        return ends;
+    }
+    private Action[] buildCollectAcrossRow(
+            MecanumDrive drive,
+            RobotHW hw,
+            Vector2d[] rowPts,
+            Pose2d[] rowEnds,
+            boolean[] waitBeforeSegment,
+            TranslationalVelConstraint vel
+    ) {
+        Action[] segments = new Action[3];
+
+        for (int seg = 0; seg < 3; seg++) {
+            Pose2d startPose = rowEnds[seg];
+            Vector2d target = rowPts[seg + 1];
+
+            // Build drive segment with optional wait
+            com.acmerobotics.roadrunner.TrajectoryActionBuilder builder = drive.actionBuilder(startPose);
+            if (waitBeforeSegment[seg]) {
+                builder = builder.waitSeconds(Config.BALL_WAIT_SEC);
+            }
+            Action driveSeg = builder
+                    .strafeToLinearHeading(target, Config.COLLECT_HEADING_RAD, vel)
+                    .build();
+
+            // Build intake segment
+            Action intakeSeg = intakeForSlot(hw, seg);
+
+            segments[seg] = new ParallelAction(driveSeg, intakeSeg);
+        }
+
+        return segments;
+    }
+    private static Action intakeForSlot(RobotHW hw, int slotIndex) {
+        return new Action() {
+            private boolean initialized = false;
+            private ElapsedTime timer;
+
+            @Override
+            public boolean run(TelemetryPacket packet) {
+                if (!initialized) {
+                    hw.spindexer.setPosition(Config.SPINDEX_INTAKE[slotIndex]);
+                    hw.setIntakePower(1);
+                    timer = new ElapsedTime();
+                    initialized = true;
+                }
+
+                if (timer.seconds() < Config.INTAKE_RUN_SEC) {
+                    return true;
+                }
+
+                hw.setIntakePower(0);
+                return false;
+            }
+        };
+    }
+    private enum Phase { START_BALL, SPINUP, FIRE, ADVANCE, DONE }
+
+    private static Action shootThreeBalls(RobotHW hw) {
+        return new Action() {
+            private Phase phase = Phase.START_BALL;
+            private int ballIndex = 0;
+
+            private ElapsedTime phaseTimer = null;
+
+            private void resetTimer() {
+                phaseTimer = new ElapsedTime();
             }
 
-            public Action Shoot() {
-                return new Action() {
-                    private boolean initialized = false;
-                    private ElapsedTime timer;
-                    private ElapsedTime timer2;
-                    int i = 0;
-                    @Override
-                    public boolean run(TelemetryPacket packet) {
-                        if (timer == null) {
-                            timer = new ElapsedTime();
-                            return true;
-                        }
-                        if (!initialized) {
-                            launcher.setPower(1);
-                            initialized = true;
-                            spindexer.setPosition(spindexerPosOuttake[i]);
-                            return true;
-                        }
-                        if (timer.seconds() < 2.0){
-                            return true;
-                        }
-                        if (timer2 == null) {
-                            timer2 = new ElapsedTime();
-                            return true;
-                        }
-                        if (timer.seconds() > 2.0 && timer2.seconds() < 1.0) {
-                            leftFlywheel.setDirection(CRServo.Direction.FORWARD);
-                            leftFlywheel.setPower(1);
-                            rightFlywheel.setDirection(CRServo.Direction.REVERSE);
-                            rightFlywheel.setPower(1);
-                            return true;
-                        }
-                        if (timer.seconds() < 2.0){
-                            return true;
-                        }
-                        if (i<2) {
-                            i = i + 1;
-                            leftFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
-                            leftFlywheel.setPower(0);
-                            rightFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
-                            rightFlywheel.setPower(0);
-                            spindexer.setPosition(spindexerPosOuttake[i]);
-                            timer2 = null;
-                            timer = null;
-                            initialized = false;
-                            return true;
-                        }
-                        else {
-                            leftFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
-                            leftFlywheel.setPower(0);
-                            rightFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
-                            rightFlywheel.setPower(0);
-                            launcher.setPower(0);
-                            spindexer.setPosition(spindexerPosOuttake[0]);
-                            return false;
-                        }
+            @Override
+            public boolean run(TelemetryPacket packet) {
+                if (phaseTimer == null) resetTimer();
+
+                switch (phase) {
+
+                    case START_BALL: {
+                        // Start launcher and set initial spindex position for this ball
+                        hw.launcher.setVelocity((ballIndex == 0) ? Config.TARGET_VEL_FIRST : Config.TARGET_VEL_NEXT);
+                        hw.spindexer.setPosition(Config.SPINDEX_OUTTAKE[ballIndex]);
+                        hw.stopFlywheels();
+
+                        phase = Phase.SPINUP;
+                        resetTimer();
+                        return true;
                     }
-                };
-            };
 
-            Action trajectoryCollectRow1_1 = Drivetrain.actionBuilder(farRow1End)
-                    // .waitSeconds(ballWaiting)
-                    .strafeToLinearHeading(farRow2, Math.toRadians(0), tvConstraint)
-                    .build();
-            Action trajectoryCollectRow1_2 = Drivetrain.actionBuilder(farRow2End)
-                    // .waitSeconds(ballWaiting)
-                    .strafeTo(farRow3, tvConstraint)
-                    .build();
-            Action trajectoryCollectRow1_3 = Drivetrain.actionBuilder(farRow3End)
-                    .waitSeconds(ballWaiting)
-                    .strafeTo(farRow4, tvConstraint)
-                    .build();
-            Action trajectoryCollectRow2_1 = Drivetrain.actionBuilder(midRow1End)
-                    .waitSeconds(ballWaiting)
-                    .strafeTo(midRow2, tvConstraint)
-                    .build();
-            Action trajectoryCollectRow2_2 = Drivetrain.actionBuilder(midRow2End)
-                    .waitSeconds(ballWaiting)
-                    .strafeTo(midRow3, tvConstraint)
-                    .build();
-            Action trajectoryCollectRow2_3 = Drivetrain.actionBuilder(midRow3End)
-                    .waitSeconds(ballWaiting)
-                    .strafeTo(midRow4, tvConstraint)
-                    .build();
-            Action trajectoryCollectRow3_1 = Drivetrain.actionBuilder(closeRow1End)
-                    .waitSeconds(ballWaiting)
-                    .strafeTo(closeRow2, tvConstraint)
-                    .build();
-            Action trajectoryCollectRow3_2 = Drivetrain.actionBuilder(closeRow2End)
-                    .waitSeconds(ballWaiting)
-                    .strafeTo(closeRow3, tvConstraint)
-                    .build();
-            Action trajectoryCollectRow3_3 = Drivetrain.actionBuilder(closeRow3End)
-                    .waitSeconds(ballWaiting)
-                    .strafeTo(closeRow4, tvConstraint)
-                    .build();
+                    case SPINUP: {
+                        double vT = (ballIndex == 0) ? Config.TARGET_VEL_FIRST : Config.TARGET_VEL_NEXT;
+                        if (hw.launcher.getVelocity() < vT * Config.VEL_THRESHOLD_FRAC && phaseTimer.seconds() < Config.LAUNCHER_SPINUP_SEC) {
+                            return true;}
+                        phase = Phase.FIRE;
+                        resetTimer();
+                        return true;
+                    }
 
-            // 2. Combine the trajectory and your intake action
-            Action Pickup1_1 = new ParallelAction(
-                    trajectoryCollectRow1_1,
-                    collectRowOfBalls(0)
-            );
-            Action Pickup1_2  = new ParallelAction(
-                    trajectoryCollectRow1_2,
-                    collectRowOfBalls(1)
-            );
+                    case FIRE: {
+                        // Run flywheels during the fire window
+                        hw.startFlywheelsForShooting();
 
-            Action Pickup1_3  = new ParallelAction(
-                    collectRowOfBalls(2),
-                    trajectoryCollectRow1_3
-            );
-            Action Pickup2_1 = new ParallelAction(
-                    trajectoryCollectRow2_1,
-                    collectRowOfBalls(0)
-            );
-            Action Pickup2_2 = new ParallelAction(
-                    trajectoryCollectRow2_2,
-                    collectRowOfBalls(1)
-            );
-            Action Pickup2_3 = new ParallelAction(
-                    trajectoryCollectRow2_3,
-                    collectRowOfBalls(2)
-            );
+                        if (phaseTimer.seconds() < Config.FIRE_WINDOW_SEC) return true;
 
-            Action Pickup3_1 = new ParallelAction(
-                    trajectoryCollectRow3_1,
-                    collectRowOfBalls(0)
-            );
-            Action Pickup3_2 = new ParallelAction(
-                    trajectoryCollectRow3_2,
-                    collectRowOfBalls(1)
-            );
-            Action Pickup3_3 = new ParallelAction(
-                    trajectoryCollectRow3_3,
-                    collectRowOfBalls(2)
-            );
+                        phase = Phase.ADVANCE;
+                        resetTimer();
+                        return true;
+                    }
 
-            Action Trajectoryrow1 = Drivetrain.actionBuilder(shootLocation)
-                    .strafeTo(farRow1)
-                    .build();
+                    case ADVANCE: {
+                        hw.stopFlywheels();
 
-            Action Trajectoryrow2 = Drivetrain.actionBuilder(shootLocation)
-                    .strafeTo(midRow1)
-                    .build();
-            Action Trajectoryrow3 = Drivetrain.actionBuilder(shootLocation)
-                    .strafeTo(closeRow1)
-                    .build();
-            Action Shootingposa1 = Drivetrain.actionBuilder(farRow4End)
-                    .splineToLinearHeading(new Pose2d(50,50, Math.toRadians(45)), Math.toRadians(45))
-                    .build();
-            Action Shootingposa2 = Drivetrain.actionBuilder(midRow4End)
-                    .splineToLinearHeading(new Pose2d(50,50, Math.toRadians(45)), Math.toRadians(45))
-                    .build();
-            Action Shootingposa3 = Drivetrain.actionBuilder(closeRow4End)
-                    .splineToLinearHeading(new Pose2d(50,50, Math.toRadians(45)), Math.toRadians(45))
-                    .build();
-            Action TrajectoryInitial = Drivetrain.actionBuilder(Startingpos)
-                    .strafeTo(shootVector)
-                    .build();
-            Action autonoumouschain = new SequentialAction(
-                    TrajectoryInitial,
-                    Shoot(),
-                    Trajectoryrow1,
-                    Pickup1_1,
-                    Pickup1_2,
-                    Pickup1_3,
-                    Shootingposa1,
-                    Shoot(),
-                    Trajectoryrow2,
-                    Pickup2_1,
-                    Pickup2_2,
-                    Pickup2_3,
-                    Shootingposa2,
-                    Shoot(),
-                    Trajectoryrow3,
-                    Pickup3_1,
-                    Pickup3_2,
-                    Pickup3_3,
-                    Shootingposa3,
-                    Shoot()
-            );
-        }
-        waitForStart();
-        RobotMechanisms Robot  = new RobotMechanisms();
-        Actions.runBlocking(Robot.autonoumouschain);
+                        if (ballIndex < 2) {
+                            ballIndex++;
+                            phase = Phase.START_BALL;
+                            resetTimer();
+                            return true;
+                        }
+
+                        phase = Phase.DONE;
+                        resetTimer();
+                        return true;
+                    }
+
+                    case DONE: {
+                        hw.stopFlywheels();
+                        hw.launcher.setPower(0);
+                        hw.spindexer.setPosition(Config.SPINDEX_OUTTAKE[0]);
+                        return false;
+                    }
+                }
+
+                return false;
+            }
+        };
     }
 }

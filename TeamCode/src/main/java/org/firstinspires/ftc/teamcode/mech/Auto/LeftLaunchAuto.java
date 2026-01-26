@@ -30,45 +30,46 @@ public class LeftLaunchAuto extends LinearOpMode {
         static final double ROBOT_OFFSET = 8.0;
 
         // Row Ys
-        static final double FAR_ROW_Y   = 12;
-        static final double MID_ROW_Y   = -12;
-        static final double CLOSE_ROW_Y = -36;
+        static final double FAR_ROW_Y   = 5;
+        static final double MID_ROW_Y   = -19;
+        static final double CLOSE_ROW_Y = -43;
 
         // Wait before some strafes
         static final double BALL_WAIT_SEC = 0.5;
 
         // Motion constraint
-        static final double MOTION_VEL = 50.0;
-        static final double COLLECT_VEL = 20.0;
+        static final double MOTION_VEL = 70.0;
+        static final double COLLECT_VEL = 30.0;
 
         // Poses
         static final Pose2d START_POSE  = new Pose2d(-48, 48, Math.toRadians(135));
-        static final Pose2d SHOOT_POSE  = new Pose2d(-37, 37, Math.toRadians(135));
+        static final Pose2d SHOOT_POSE  = new Pose2d(-36, 36, Math.toRadians(135));
         static final double COLLECT_HEADING_RAD = Math.toRadians(180);
 
         // Intake timing
         static final double INTAKE_RUN_SEC = 3.0;
 
         // Shooter timing
-        static final double LAUNCHER_SPINUP_SEC = 1.0;
-        static final double FIRE_WINDOW_SEC     = 0.5;
+        static final double LAUNCHER_FIRST_SPINUP_SEC = 1.5;
+        static final double LAUNCHER_SPINUP_SEC = 0.7;
+        static final double FIRE_WINDOW_SEC  = 0.7;
          static final double LAUNCHER_TICKS_PER_REV = 28.0;
         // target RPMs (tune these)
          static final double TARGET_RPM_FIRST = 1000.0; // example, tune to match desired shot power
-         static final double TARGET_RPM_NEXT  = 1100.0; // often same as first, tune as needed
+         static final double TARGET_RPM_NEXT  = 150.0; // often same as first, tune as needed
 
         // computed velocity targets (ticks per second)
         static final double TARGET_VEL_FIRST = TARGET_RPM_FIRST * LAUNCHER_TICKS_PER_REV / 60.0;
         static final double TARGET_VEL_NEXT  = TARGET_RPM_NEXT  * LAUNCHER_TICKS_PER_REV / 60.0;
 
         // when this fraction of target is reached we consider it spun up
-         static final double VEL_THRESHOLD_FRAC = 0.90;
+         static final double VEL_THRESHOLD_FRAC = 0.95;
 
         // runtime fields
         static double currentTargetVel = 0.0;
 
         // Row X offsets
-        static final float[] ROW_X_MULTS = { +2.0f, -0.5f, -1.5f, -2.5f };
+        static final float[] ROW_X_MULTS = { +3.5f, -0.5f, -1.5f, -2.5f };
     }
 
     private static final class RowSpec {
@@ -107,7 +108,6 @@ public class LeftLaunchAuto extends LinearOpMode {
         }
 
         void stopFlywheels() {
-            // Keep directions consistent; power=0 is what matters
             leftFlywheel.setPower(0);
             rightFlywheel.setPower(0);
         }
@@ -191,9 +191,9 @@ public class LeftLaunchAuto extends LinearOpMode {
         // auto chain
         Action autonomousChain = new SequentialAction(
                 toShootInitially,
-                shootThreeBalls(hw),
+                shootThreeBalls(hw)
 
-                toFarRowStart,
+                /*toFarRowStart,
                 farCollect[0], farCollect[1], farCollect[2],
                 farEndToShoot,
                 shootThreeBalls(hw),
@@ -206,7 +206,7 @@ public class LeftLaunchAuto extends LinearOpMode {
                 toCloseRowStart,
                 closeCollect[0], closeCollect[1], closeCollect[2],
                 closeEndToShoot,
-                shootThreeBalls(hw)
+                shootThreeBalls(hw)*/
         );
 
         waitForStart();
@@ -284,7 +284,7 @@ public class LeftLaunchAuto extends LinearOpMode {
             }
         };
     }
-    private enum Phase { START_BALL, SPINUP, FIRE, ALIGN, ADVANCE, DONE }
+    private enum Phase { START_BALL, SPINUP, FIRE, ADVANCE, DONE }
 
     private static Action shootThreeBalls(RobotHW hw) {
         return new Action() {
@@ -305,9 +305,9 @@ public class LeftLaunchAuto extends LinearOpMode {
 
                     case START_BALL: {
                         // Start launcher and set initial spindex position for this ball
+                        hw.stopFlywheels();
                         hw.launcher.setVelocity((ballIndex == 0) ? Config.TARGET_VEL_FIRST : Config.TARGET_VEL_NEXT);
                         hw.spindexer.setPosition(Config.SPINDEX_OUTTAKE[ballIndex]);
-                        hw.stopFlywheels();
 
                         phase = Phase.SPINUP;
                         resetTimer();
@@ -315,28 +315,24 @@ public class LeftLaunchAuto extends LinearOpMode {
                     }
                     case SPINUP: {
                         double vT = (ballIndex == 0) ? Config.TARGET_VEL_FIRST : Config.TARGET_VEL_NEXT;
-
-                        if (hw.launcher.getVelocity() < vT * Config.VEL_THRESHOLD_FRAC && phaseTimer.seconds() < Config.LAUNCHER_SPINUP_SEC ){
-                             return true;}
+                        if (ballIndex == 0) {
+                            if ((hw.launcher.getVelocity() < vT * LeftLaunchAuto.Config.VEL_THRESHOLD_FRAC && phaseTimer.seconds() < LeftLaunchAuto.Config.LAUNCHER_FIRST_SPINUP_SEC)){
+                                return true;}
+                        }
+                        else {
+                            if ((hw.launcher.getVelocity() < vT * LeftLaunchAuto.Config.VEL_THRESHOLD_FRAC && phaseTimer.seconds() < LeftLaunchAuto.Config.LAUNCHER_SPINUP_SEC)){
+                                return true;}
+                        }
                         phase = Phase.FIRE;
                         resetTimer();
                         return true;
                     }
-
                     case FIRE: {
                         // Run flywheels during the fire window
                         hw.startFlywheelsForShooting();
 
                         if (phaseTimer.seconds() < Config.FIRE_WINDOW_SEC) return true;
-
-                        phase = Phase.ALIGN;
-                        resetTimer();
-                        return true;
-                    }
-                    case ALIGN: {
-                        // Wait 0.5 seconds for the servo to physically move
-                        if (phaseTimer.seconds() < 0.5) return true;
-
+                        hw.spindexer.setPosition(Config.SPINDEX_OUTTAKE[ballIndex]);
                         phase = Phase.ADVANCE;
                         resetTimer();
                         return true;

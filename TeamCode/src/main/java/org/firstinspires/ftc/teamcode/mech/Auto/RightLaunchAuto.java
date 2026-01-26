@@ -12,6 +12,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -29,16 +30,16 @@ public class RightLaunchAuto extends LinearOpMode {
         static final double ROBOT_OFFSET = 8.0;
 
         // Row Ys
-        static final double FAR_ROW_Y   = 12;
-        static final double MID_ROW_Y   = -12;
-        static final double CLOSE_ROW_Y = -36;
+        static final double FAR_ROW_Y   = 5;
+        static final double MID_ROW_Y   = -19;
+        static final double CLOSE_ROW_Y = -43;
 
         // Wait before some strafes
         static final double BALL_WAIT_SEC = 0.5;
 
         // Motion constraint
-        static final double MOTION_VEL = 30.0;
-        static final double COLLECT_VEL = 10.0;
+        static final double MOTION_VEL = 70.0;
+        static final double COLLECT_VEL = 30.0;
 
         // Poses
         static final Pose2d START_POSE  = new Pose2d(48, 48, Math.toRadians(45));
@@ -49,11 +50,26 @@ public class RightLaunchAuto extends LinearOpMode {
         static final double INTAKE_RUN_SEC = 3.0;
 
         // Shooter timing
-        static final double LAUNCHER_SPINUP_SEC = 1.5;
-        static final double FIRE_WINDOW_SEC     = 2.5;
+        static final double LAUNCHER_FIRST_SPINUP_SEC = 1.5;
+        static final double LAUNCHER_SPINUP_SEC = 0.7;
+        static final double FIRE_WINDOW_SEC     = 0.7;
+        static final double LAUNCHER_TICKS_PER_REV = 28.0;
+        // target RPMs (tune these)
+        static final double TARGET_RPM_FIRST = 550.0; // example, tune to match desired shot power
+        static final double TARGET_RPM_NEXT  = 420.0; // often same as first, tune as needed
+
+        // computed velocity targets (ticks per second)
+        static final double TARGET_VEL_FIRST = TARGET_RPM_FIRST * LAUNCHER_TICKS_PER_REV / 60.0;
+        static final double TARGET_VEL_NEXT  = TARGET_RPM_NEXT  * LAUNCHER_TICKS_PER_REV / 60.0;
+
+        // when this fraction of target is reached we consider it spun up
+        static final double VEL_THRESHOLD_FRAC = 0.95;
+
+        // runtime fields
+        static double currentTargetVel = 0.0;
 
         // Row X offsets
-        static final float[] ROW_X_MULTS = { -2.0f, +0.5f, +1.5f, +2.5f };
+        static final float[] ROW_X_MULTS = { -3.5f, +0.5f, +1.5f, +2.5f };
     }
 
     private static final class RowSpec {
@@ -70,12 +86,14 @@ public class RightLaunchAuto extends LinearOpMode {
     private static final class RobotHW {
         final CRServo leftFlywheel, rightFlywheel;
         final Servo spindexer;
-        final DcMotor leftIntake, rightIntake, launcher;
+        final DcMotor leftIntake, rightIntake;
+        final DcMotorEx launcher;
 
         RobotHW(LinearOpMode opMode) {
             leftIntake = opMode.hardwareMap.get(DcMotor.class, "leftIntake");
             rightIntake = opMode.hardwareMap.get(DcMotor.class, "rightIntake");
-            launcher = opMode.hardwareMap.get(DcMotor.class, "launcher");
+            launcher = opMode.hardwareMap.get(DcMotorEx.class, "launcher");
+            launcher.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
             rightIntake.setDirection(DcMotorSimple.Direction.REVERSE);
 
@@ -90,7 +108,6 @@ public class RightLaunchAuto extends LinearOpMode {
         }
 
         void stopFlywheels() {
-            // Keep directions consistent; power=0 is what matters
             leftFlywheel.setPower(0);
             rightFlywheel.setPower(0);
         }
@@ -119,9 +136,6 @@ public class RightLaunchAuto extends LinearOpMode {
 
         // RoadRunner drive
         MecanumDrive drive = new MecanumDrive(hardwareMap, Config.START_POSE);
-
-        // Actions
-        Action shoot3 = shootThreeBalls(hw);
 
         // Build paths
         Vector2d[] farPts   = makeRowPoints(FAR.y);
@@ -177,22 +191,22 @@ public class RightLaunchAuto extends LinearOpMode {
         // auto chain
         Action autonomousChain = new SequentialAction(
                 toShootInitially,
-                shoot3,
+                shootThreeBalls(hw)
 
-                toFarRowStart,
-                farCollect[0], farCollect[1], farCollect[2],
+                // toFarRowStart,
+                /*farCollect[0], farCollect[1], farCollect[2],
                 farEndToShoot,
-                shoot3,
+                shootThreeBalls(hw),
 
                 toMidRowStart,
                 midCollect[0], midCollect[1], midCollect[2],
                 midEndToShoot,
-                shoot3,
+                shootThreeBalls(hw),
 
                 toCloseRowStart,
                 closeCollect[0], closeCollect[1], closeCollect[2],
                 closeEndToShoot,
-                shoot3
+                shootThreeBalls(hw)*/
         );
 
         waitForStart();
@@ -291,34 +305,38 @@ public class RightLaunchAuto extends LinearOpMode {
 
                     case START_BALL: {
                         // Start launcher and set initial spindex position for this ball
-                        hw.launcher.setPower(1);
-                        hw.spindexer.setPosition(Config.SPINDEX_OUTTAKE[ballIndex]);
                         hw.stopFlywheels();
+                        hw.launcher.setVelocity((ballIndex == 0) ? Config.TARGET_VEL_FIRST : Config.TARGET_VEL_NEXT);
+                        hw.spindexer.setPosition(Config.SPINDEX_OUTTAKE[ballIndex]);
 
                         phase = Phase.SPINUP;
                         resetTimer();
                         return true;
                     }
-
                     case SPINUP: {
-                        if (phaseTimer.seconds() < Config.LAUNCHER_SPINUP_SEC) return true;
-
+                        double vT = (ballIndex == 0) ? Config.TARGET_VEL_FIRST : Config.TARGET_VEL_NEXT;
+                        if (ballIndex == 0) {
+                            if ((hw.launcher.getVelocity() < vT * Config.VEL_THRESHOLD_FRAC && phaseTimer.seconds() < Config.LAUNCHER_FIRST_SPINUP_SEC)){
+                                return true;}
+                        }
+                        else {
+                            if ((hw.launcher.getVelocity() < vT * Config.VEL_THRESHOLD_FRAC && phaseTimer.seconds() < Config.LAUNCHER_SPINUP_SEC)){
+                                return true;}
+                        }
                         phase = Phase.FIRE;
                         resetTimer();
                         return true;
                     }
-
                     case FIRE: {
                         // Run flywheels during the fire window
                         hw.startFlywheelsForShooting();
 
                         if (phaseTimer.seconds() < Config.FIRE_WINDOW_SEC) return true;
-
+                        hw.spindexer.setPosition(Config.SPINDEX_OUTTAKE[ballIndex]);
                         phase = Phase.ADVANCE;
                         resetTimer();
                         return true;
                     }
-
                     case ADVANCE: {
                         hw.stopFlywheels();
 
