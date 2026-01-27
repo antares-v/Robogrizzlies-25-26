@@ -432,7 +432,7 @@ public class MainTeleop extends LinearOpMode {
 
 
     private double getLauncherRPM() {
-        return launcher.getVelocity() / (2*3.14159) // This code may have iseeus related to unit version aka this might be infact wrong 60.0 / launcherTicksPerRev;
+        return launcher.getVelocity() / launcherTicksPerRev * 60.0;
     }
 
     private boolean launcherAtSpeed(double targetRpm) {
