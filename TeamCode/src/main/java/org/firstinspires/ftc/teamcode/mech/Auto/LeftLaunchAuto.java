@@ -84,40 +84,39 @@ public class LeftLaunchAuto extends LinearOpMode {
         }
     }
     private static final class RobotHW {
-        final CRServo leftFlywheel, rightFlywheel;
+        final CRServo bottomFlywheel, topFlywheel;
         final Servo spindexer;
-        final DcMotor leftIntake, rightIntake;
+        final DcMotor backIntake, frontIntake;
         final DcMotorEx launcher;
 
         RobotHW(LinearOpMode opMode) {
-            leftIntake = opMode.hardwareMap.get(DcMotor.class, "leftIntake");
-            rightIntake = opMode.hardwareMap.get(DcMotor.class, "rightIntake");
+            backIntake = opMode.hardwareMap.get(DcMotor.class, "backIntake");
+            frontIntake = opMode.hardwareMap.get(DcMotor.class, "frontIntake");
             launcher = opMode.hardwareMap.get(DcMotorEx.class, "launcher");
             launcher.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-            rightIntake.setDirection(DcMotorSimple.Direction.REVERSE);
 
-            leftFlywheel = opMode.hardwareMap.get(CRServo.class, "leftFlywheel");
-            rightFlywheel = opMode.hardwareMap.get(CRServo.class, "rightFlywheel");
+            bottomFlywheel = opMode.hardwareMap.get(CRServo.class, "bottomFlywheel");
+            topFlywheel = opMode.hardwareMap.get(CRServo.class, "topFlywheel");
             spindexer = opMode.hardwareMap.get(Servo.class, "spindexer");
         }
 
         void setIntakePower(double pwr) {
-            leftIntake.setPower(pwr);
-            rightIntake.setPower(pwr);
+            backIntake.setPower(pwr);
+            frontIntake.setPower(pwr);
         }
 
         void stopFlywheels() {
-            leftFlywheel.setPower(0);
-            rightFlywheel.setPower(0);
+            bottomFlywheel.setPower(0);
+            topFlywheel.setPower(0);
         }
 
         void startFlywheelsForShooting() {
             // Same intent as your code: left forward, right reverse
-            leftFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
-            rightFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
-            leftFlywheel.setPower(1);
-            rightFlywheel.setPower(1);
+            bottomFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
+            topFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
+            bottomFlywheel.setPower(1);
+            topFlywheel.setPower(1);
         }
     }
 

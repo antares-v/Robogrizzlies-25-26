@@ -29,10 +29,10 @@ public class MainTeleop extends LinearOpMode {
 
     // Hardware maps
     private movement drive;
-    private CRServo leftFlywheel, rightFlywheel;
+    private CRServo bottomFlywheel, topFlywheel;
     private RevColorSensorV3 sensor;
     private Servo spindexer;
-    private DcMotorEx leftIntake, rightIntake, launcher;
+    private DcMotorEx backIntake, frontIntake, launcher;
 
     // Spindexer positions
     private final double[] spindexerPosIntake  = {0.00, 0.38, 0.79};
@@ -135,12 +135,12 @@ public class MainTeleop extends LinearOpMode {
         // Init
         drive = new movement(this, 0, 0, 0);
 
-        leftFlywheel = hardwareMap.get(CRServo.class, "leftFlywheel");
-        rightFlywheel = hardwareMap.get(CRServo.class, "rightFlywheel");
+        bottomFlywheel = hardwareMap.get(CRServo.class, "bottomFlywheel");
+        topFlywheel = hardwareMap.get(CRServo.class, "topFlywheel");
         spindexer = hardwareMap.get(Servo.class, "spindexer");
         launcher = hardwareMap.get(DcMotorEx.class, "launcher");
-        leftIntake = hardwareMap.get(DcMotorEx.class, "leftIntake");
-        rightIntake = hardwareMap.get(DcMotorEx.class, "rightIntake");
+        backIntake = hardwareMap.get(DcMotorEx.class, "backIntake");
+        frontIntake = hardwareMap.get(DcMotorEx.class, "frontIntake");
         sensor = hardwareMap.get(RevColorSensorV3.class, "colorSensor");
         turretYaw   = hardwareMap.get(Servo.class, "turretYaw");
         turretPitch = hardwareMap.get(Servo.class, "turretPitch");
@@ -156,10 +156,10 @@ public class MainTeleop extends LinearOpMode {
         launcher.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
 
 
-        rightIntake.setDirection(DcMotorEx.Direction.REVERSE);
+        frontIntake.setDirection(DcMotorEx.Direction.REVERSE);
 
-        leftFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
-        rightFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
+        bottomFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
+        topFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
 
         // init ball list
         ballcols.clear();
@@ -235,15 +235,15 @@ public class MainTeleop extends LinearOpMode {
 
             if (rB) {
                 spindexer.setPosition(spindexerPosIntake[i]);
-                rightIntake.setPower(1);
-                leftIntake.setPower(1);
+                frontIntake.setPower(1);
+                backIntake.setPower(1);
             } else if (lB) {
                 spindexer.setPosition(spindexerPosIntake[i]);
-                rightIntake.setPower(-1);
-                leftIntake.setPower(-1);
+                frontIntake.setPower(-1);
+                backIntake.setPower(-1);
             } else {
-                rightIntake.setPower(0);
-                leftIntake.setPower(0);
+                frontIntake.setPower(0);
+                backIntake.setPower(0);
             }
 
             // Only do auto-indexing when not shooting
@@ -531,8 +531,8 @@ public class MainTeleop extends LinearOpMode {
 
                 if (stableEnough || timedOut) {
                     // Feed one ball into the launcher
-                    leftFlywheel.setPower(vcPower(FEED_POWER));
-                    rightFlywheel.setPower(vcPower(FEED_POWER));
+                    bottomFlywheel.setPower(vcPower(FEED_POWER));
+                    topFlywheel.setPower(vcPower(FEED_POWER));
 
                     shootTimer.reset();
                     shootState = ShootState.FIRE;
@@ -546,8 +546,8 @@ public class MainTeleop extends LinearOpMode {
 
             case FIRE: {
                 if (shootTimer.milliseconds() >= FEED_MS) {
-                    leftFlywheel.setPower(0);
-                    rightFlywheel.setPower(0);
+                    bottomFlywheel.setPower(0);
+                    topFlywheel.setPower(0);
 
                     shootTimer.reset();
                     shootState = ShootState.RECOVER;
