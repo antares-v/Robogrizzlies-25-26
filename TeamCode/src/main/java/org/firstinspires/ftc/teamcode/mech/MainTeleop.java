@@ -33,12 +33,12 @@ public class MainTeleop extends LinearOpMode {
     private movement drive;
     private CRServo bottomFlywheel, topFlywheel;
     private RevColorSensorV3 sensor;
-    private Servo spindexer;
+    // private Servo spindexer;  // SPINDEXER DISABLED
     private DcMotorEx backIntake, frontIntake, launcher;
 
     // Spindexer positions
-    private final double[] spindexerPosIntake  = {0.00, 0.38, 0.79};
-    private final double[] spindexerPosOuttake = {0.19, 0.59, 0.99};
+    // private final double[] spindexerPosIntake  = {0.00, 0.38, 0.79};  // SPINDEXER DISABLED
+    // private final double[] spindexerPosOuttake = {0.19, 0.59, 0.99};  // SPINDEXER DISABLED
 
     // Ball tracking
     private final List<String> ballcols = new ArrayList<>();
@@ -51,7 +51,7 @@ public class MainTeleop extends LinearOpMode {
     private boolean xPrev = false, yPrev = false, bPrev = false, aPrev = false;
 
     // Pattern selection
-    private boolean patternChecked = false;
+    private boolean patternChecked = true;  // order sorting disabled
     private int p = 0;                    // where green should end up (0/1/2)
     private String patternName = "random";
     private String stype = "none";
@@ -65,7 +65,8 @@ public class MainTeleop extends LinearOpMode {
     private ShootState shootState = ShootState.IDLE; //initial shootstate
 
     private final ElapsedTime shootTimer = new ElapsedTime();
-    private int[] shotOrder = new int[] {0, 1, 2}; // indices into spindexerPosOuttake
+    // Single-shot robot (no spindexer / no multi-shot sequencing)
+    private int[] shotOrder = new int[] {0};
     private int shotIndex = 0;
 
     // Timing knobs (ms)
@@ -141,7 +142,7 @@ public class MainTeleop extends LinearOpMode {
 
         bottomFlywheel = hardwareMap.get(CRServo.class, "bottomFlywheel");
         topFlywheel = hardwareMap.get(CRServo.class, "topFlywheel");
-        spindexer = hardwareMap.get(Servo.class, "spindexer");
+        // spindexer = hardwareMap.get(Servo.class, "spindexer");  // SPINDEXER DISABLED
         launcher = hardwareMap.get(DcMotorEx.class, "launcher");
         backIntake = hardwareMap.get(DcMotorEx.class, "backIntake");
         frontIntake = hardwareMap.get(DcMotorEx.class, "frontIntake");
@@ -238,11 +239,11 @@ public class MainTeleop extends LinearOpMode {
             boolean rB = gamepad1.right_bumper;
 
             if (rB) {
-                spindexer.setPosition(spindexerPosIntake[i]);
+                // spindexer.setPosition(spindexerPosIntake[i]);  // SPINDEXER DISABLED
                 frontIntake.setPower(1);
                 backIntake.setPower(1);
             } else if (lB) {
-                spindexer.setPosition(spindexerPosIntake[i]);
+                // spindexer.setPosition(spindexerPosIntake[i]);  // SPINDEXER DISABLED
                 frontIntake.setPower(-1);
                 backIntake.setPower(-1);
             } else {
@@ -250,93 +251,96 @@ public class MainTeleop extends LinearOpMode {
                 backIntake.setPower(0);
             }
 
+            // AUTO-INDEXING (SPINDEXER) DISABLED
             // Only do auto-indexing when not shooting
-            if (!rotated && shootState == ShootState.IDLE && !outtaking) {
-                String prev = ballcols.get(i);
-                String now  = colorSensor.getColor(sensor);
-                ballcols.set(i, now);
-
-                boolean newBallArrived = prev.equals("blank") && !now.equals("blank");
-                if (newBallArrived) {
+            // if (!rotated && shootState == ShootState.IDLE && !outtaking) {
+                // String prev = ballcols.get(i);
+                // String now  = colorSensor.getColor(sensor);
+                // ballcols.set(i, now);
+// 
+                // boolean newBallArrived = prev.equals("blank") && !now.equals("blank");
+                // if (newBallArrived) {
                     // Re-enable auto-indexing after a new ball is intaken/detected
-                    autoIndexLockout = false;
-                    autoIndexedSinceLastBall = false;
-                }
-
-                if (!autoIndexLockout && !ballcols.get(i).equals("blank")) {
-                    for (int j = 0; j < 3; j++) {
-                        if (ballcols.get(j).equals("blank")) {
-                            i = j;
-                            spindexer.setPosition(spindexerPosIntake[i]);
-                            spintime.reset();
-                            rotated = true;
-
-                            autoIndexedSinceLastBall = true; // remember that auto moved
-                            break;
-                        }
-                    }
-                }
-            }
+                    // autoIndexLockout = false;
+                    // autoIndexedSinceLastBall = false;
+                // }
+// 
+                // if (!autoIndexLockout && !ballcols.get(i).equals("blank")) {
+                    // for (int j = 0; j < 3; j++) {
+                        // if (ballcols.get(j).equals("blank")) {
+                            // i = j;
+                            // spindexer.setPosition(spindexerPosIntake[i]);  // SPINDEXER DISABLED
+                            // spintime.reset();
+                            // rotated = true;
+// 
+                            // autoIndexedSinceLastBall = true; // remember that auto moved
+                            // break;
+                        // }
+                    // }
+                // }
+            // }
 
 
             if (spintime.milliseconds() > 100 && rotated) {
                 rotated = false;
             }
 
+            // MANUAL INDEXING (SPINDEXER) DISABLED
             // 4) Indexer and sample color
-            if (dLeftPressed && i < spindexerPosIntake.length - 1 && !rotated) {
-                rotated = true;
-                outtaking = false;
-                i++;
-                spintime.reset();
-                spindexer.setPosition(spindexerPosIntake[i]);
-
-                if (autoIndexedSinceLastBall) autoIndexLockout = true; // driver override after auto
-                telemetry.update();
-            }
-
-            if (dRightPressed && i > 0 && !rotated) {
-                rotated = true;
-                outtaking = false;
-                i--;
-                spintime.reset();
-                spindexer.setPosition(spindexerPosIntake[i]);
-
-                if (autoIndexedSinceLastBall) autoIndexLockout = true; // driver override after auto
-                telemetry.update();
-            }
-
+            // if (dLeftPressed && i < spindexerPosIntake.length - 1 && !rotated) {
+                // rotated = true;
+                // outtaking = false;
+                // i++;
+                // spintime.reset();
+                // spindexer.setPosition(spindexerPosIntake[i]);  // SPINDEXER DISABLED
+// 
+                // if (autoIndexedSinceLastBall) autoIndexLockout = true; // driver override after auto
+                // telemetry.update();
+            // }
+// 
+            // if (dRightPressed && i > 0 && !rotated) {
+                // rotated = true;
+                // outtaking = false;
+                // i--;
+                // spintime.reset();
+                // spindexer.setPosition(spindexerPosIntake[i]);  // SPINDEXER DISABLED
+// 
+                // if (autoIndexedSinceLastBall) autoIndexLockout = true; // driver override after auto
+                // telemetry.update();
+            // }
+// 
+            // PATTERN / ORDER SORTING DISABLED (NO SPINDEXER)
             // 5) Pattern selection (one-time at the start or round) (X, Y, B)
-            boolean consumedYThisLoop = false;
-
-            if (!patternChecked) {
-                if (xPressed) {
-                    p = 0;
-                    patternChecked = true;
-                    patternName = "g_first";
-                } else if (yPressed) {
-                    p = 1;
-                    patternChecked = true;
-                    patternName = "g_second";
-                    consumedYThisLoop = true; // don't fire on same press
-                } else if (bPressed) {
-                    p = 2;
-                    patternChecked = true;
-                    patternName = "g_third";
-                }
-            }
-
+            // boolean consumedYThisLoop = false;
+// 
+            // if (!patternChecked) {
+                // if (xPressed) {
+                    // p = 0;
+                    // patternChecked = true;
+                    // patternName = "g_first";
+                // } else if (yPressed) {
+                    // p = 1;
+                    // patternChecked = true;
+                    // patternName = "g_second";
+                    // consumedYThisLoop = true; // don't fire on same press
+                // } else if (bPressed) {
+                    // p = 2;
+                    // patternChecked = true;
+                    // patternName = "g_third";
+                // }
+            // }
+// 
             // 6) Cancel firing immediately for fallback (A)
             if (aPressed) {
                 cancelShooting();
             }
 
             // 7) Start firing (Y)
-            if (patternChecked && yPressed && !consumedYThisLoop && shootState == ShootState.IDLE) {
-                int[] order = computeShotOrder(ballcols, p);
-                stype = Arrays.toString(order);
+            if (yPressed && shootState == ShootState.IDLE) {
+                // No spindexer / no sorting / single-ball robot: spin up launcher, then feed once.
+                stype = "single";
                 telemetry.update();
-                startShooting(order);
+                startShooting(new int[]{0});
             }
 
             // 8) Update shooter states
@@ -509,15 +513,14 @@ public class MainTeleop extends LinearOpMode {
             case SET_SERVO: {
                 outtaking = true;
                 // Move servo to the next desired outtake position
-                int posIdx = shotOrder[shotIndex];
+                // int posIdx = shotOrder[shotIndex];  // SPINDEXER DISABLED
+//   // SPINDEXER DISABLED
+                // posIdx = (posIdx + 1) % 3; // Spindexer Outtake is offset by 1.  // SPINDEXER DISABLED
+                // posIdx = Math.max(0, Math.min(posIdx, spindexerPosOuttake.length - 1));  // SPINDEXER DISABLED
+                // spindexer.setPosition(spindexerPosOuttake[posIdx]);  // SPINDEXER DISABLED
 
-                posIdx = (posIdx + 1) % 3; // Spindexer Outtake is offset by 1.
-                posIdx = Math.max(0, Math.min(posIdx, spindexerPosOuttake.length - 1));
-                spindexer.setPosition(spindexerPosOuttake[posIdx]);
-
-                // choose target velocity depending on whether this is the first shot
-                double targetRpm = (shotIndex == 0) ? TARGET_RPM_FIRST : TARGET_RPM_NEXT;
-                setLauncherRPM(targetRpm);
+                // Single-shot: always use the "first shot" RPM
+                setLauncherRPM(TARGET_RPM_FIRST);
 
                 rpmStableTimer.reset();
                 shootTimer.reset();
@@ -526,8 +529,8 @@ public class MainTeleop extends LinearOpMode {
             }
 
             case SPINUP: {
-                double targetRpm = (shotIndex == 0) ? TARGET_RPM_FIRST : TARGET_RPM_NEXT;
-                long needed = (shotIndex == 0) ? FIRST_SPINUP_MS : NEXT_SPINUP_MS;
+                double targetRpm = TARGET_RPM_FIRST;
+                long needed = FIRST_SPINUP_MS;
 
                 boolean atSpeed = launcherAtSpeed(targetRpm);
 
@@ -566,19 +569,15 @@ public class MainTeleop extends LinearOpMode {
 
 
             case RECOVER: {
-                double targetRpm = (shotIndex == 0) ? TARGET_RPM_FIRST : TARGET_RPM_NEXT;
+                double targetRpm = TARGET_RPM_FIRST;
 
                 // Prefer RPM recovery; also keep a minimum delay
                 boolean recovered = launcherAtSpeed(targetRpm);
                 if ((shootTimer.milliseconds() >= RECOVER_MS) || recovered) {
-                    shotIndex++;
-
-                    if (shotIndex >= shotOrder.length) {
-                        shootState = ShootState.IDLE;
-                        stopShooter();
-                    } else {
-                        shootState = ShootState.SET_SERVO;
-                    }
+                    // Single-shot: end the cycle
+                    shootState = ShootState.IDLE;
+                    shotIndex = 0;
+                    stopShooter();
                     outtaking = false;
                 }
                 break;
@@ -591,6 +590,8 @@ public class MainTeleop extends LinearOpMode {
         launcherControlEnabled = false;
         launcherTargetTicksPerSec = 0.0;
         launcher.setPower(0.0);
+        bottomFlywheel.setPower(0.0);
+        topFlywheel.setPower(0.0);
     }
 
 }
