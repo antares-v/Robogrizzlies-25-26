@@ -15,7 +15,7 @@ import com.qualcomm.robotcore.util.Range;
 
 
 import org.firstinspires.ftc.teamcode.mech.Auto.PinpointLocalizer;
-import org.firstinspires.ftc.teamcode.mech.CV.ColorDetection;
+// import org.firstinspires.ftc.teamcode.mech.CV.ColorDetection; // SPINDEXER REMOVED
 import org.firstinspires.ftc.teamcode.mech.movement.movement;
 import org.firstinspires.ftc.teamcode.mech.control.CustomPIDF;
 import org.firstinspires.ftc.teamcode.mech.control.TurretController;
@@ -32,40 +32,40 @@ public class MainTeleop extends LinearOpMode {
     // Hardware maps
     private movement drive;
     private CRServo bottomFlywheel, topFlywheel;
-    private RevColorSensorV3 sensor;
-    private Servo spindexer;
+    // private RevColorSensorV3 sensor; // SPINDEXER REMOVED
+    // private Servo spindexer; // SPINDEXER REMOVED
     private DcMotorEx backIntake, frontIntake, launcher;
 
     // Spindexer positions
-    private final double[] spindexerPosIntake  = {0.00, 0.38, 0.79};
-    private final double[] spindexerPosOuttake = {0.19, 0.59, 0.99};
+//     private final double[] spindexerPosIntake  = {0.00, 0.38, 0.79}; // SPINDEXER REMOVED
+//     private final double[] spindexerPosOuttake = {0.19, 0.59, 0.99}; // SPINDEXER REMOVED
 
     // Ball tracking
-    private final List<String> ballcols = new ArrayList<>();
-    private final ColorDetection colorSensor = new ColorDetection();
-    private int i = 0;
-    private final ElapsedTime spintime = new ElapsedTime();
+//     private final List<String> ballcols = new ArrayList<>(); // SPINDEXER REMOVED
+//     private final ColorDetection colorSensor = new ColorDetection(); // SPINDEXER REMOVED
+//     private int i = 0; // SPINDEXER REMOVED
+//     private final ElapsedTime spintime = new ElapsedTime(); // SPINDEXER REMOVED
 
     // Button tracking
-    private boolean dLeftPrev = false, dRightPrev = false;
+//     private boolean dLeftPrev = false, dRightPrev = false; // SPINDEXER REMOVED
     private boolean xPrev = false, yPrev = false, bPrev = false, aPrev = false;
 
     // Pattern selection
-    private boolean patternChecked = false;
+//     private boolean patternChecked = false; // SPINDEXER REMOVED
     private int p = 0;                    // where green should end up (0/1/2)
-    private String patternName = "random";
-    private String stype = "none";
+//     private String patternName = "random"; // SPINDEXER REMOVED
+//     private String stype = "none"; // SPINDEXER REMOVED
 
     // Auto-index
-    private boolean autoIndexLockout = false;          // true = don't auto-move spindexer
-    private boolean autoIndexedSinceLastBall = false;  // true = auto moved since last ball was detected
+//     private boolean autoIndexLockout = false;          // true = don't auto-move spindexer // SPINDEXER REMOVED
+//     private boolean autoIndexedSinceLastBall = false;  // true = auto moved since last ball was detected // SPINDEXER REMOVED
 
     // Shooter states
     private enum ShootState { IDLE, AIM, SET_SERVO, SPINUP, FIRE, RECOVER }
     private ShootState shootState = ShootState.IDLE; //initial shootstate
 
     private final ElapsedTime shootTimer = new ElapsedTime();
-    private int[] shotOrder = new int[] {0, 1, 2}; // indices into spindexerPosOuttake
+//     private int[] shotOrder = new int[] {0, 1, 2}; // indices into spindexerPosOuttake // SPINDEXER REMOVED
     private int shotIndex = 0;
 
     // Timing knobs (ms)
@@ -102,7 +102,7 @@ public class MainTeleop extends LinearOpMode {
 
     // runtime fields
     private double currentTargetVel = 0.0;
-    boolean rotated = false;
+//     boolean rotated = false; // SPINDEXER REMOVED
 
     boolean outtaking = false;
 
@@ -141,11 +141,11 @@ public class MainTeleop extends LinearOpMode {
 
         bottomFlywheel = hardwareMap.get(CRServo.class, "bottomFlywheel");
         topFlywheel = hardwareMap.get(CRServo.class, "topFlywheel");
-        spindexer = hardwareMap.get(Servo.class, "spindexer");
+//         spindexer = hardwareMap.get(Servo.class, "spindexer"); // SPINDEXER REMOVED
         launcher = hardwareMap.get(DcMotorEx.class, "launcher");
         backIntake = hardwareMap.get(DcMotorEx.class, "backIntake");
         frontIntake = hardwareMap.get(DcMotorEx.class, "frontIntake");
-        sensor = hardwareMap.get(RevColorSensorV3.class, "colorSensor");
+//         sensor = hardwareMap.get(RevColorSensorV3.class, "colorSensor"); // SPINDEXER REMOVED
         turretYaw   = hardwareMap.get(Servo.class, "turretYaw");
         turretPitch = hardwareMap.get(Servo.class, "turretPitch");
 
@@ -166,12 +166,12 @@ public class MainTeleop extends LinearOpMode {
         topFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
 
         // init ball list
-        ballcols.clear();
-        ballcols.add("blank");
-        ballcols.add("blank");
-        ballcols.add("blank");
+//         ballcols.clear(); // SPINDEXER REMOVED
+//         ballcols.add("blank"); // SPINDEXER REMOVED
+//         ballcols.add("blank"); // SPINDEXER REMOVED
+//         ballcols.add("blank"); // SPINDEXER REMOVED
 
-        spintime.reset();
+//         spintime.reset(); // SPINDEXER REMOVED
         shootTimer.reset();
         stopShooter();
 
@@ -179,7 +179,7 @@ public class MainTeleop extends LinearOpMode {
         telemetry.update();
 
         waitForStart();
-        colorSensor.enableLed(sensor);
+//         colorSensor.enableLed(sensor); // SPINDEXER REMOVED
 
         launcherTicksPerRev = launcher.getMotorType().getTicksPerRev();
         baseLauncherPIDF = launcher.getPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER);
@@ -211,11 +211,11 @@ public class MainTeleop extends LinearOpMode {
             boolean dLeft = gamepad1.dpad_left;
             boolean dRight = gamepad1.dpad_right;
 
-            boolean dLeftPressed  = dLeft  && !dLeftPrev;
-            boolean dRightPressed = dRight && !dRightPrev;
+//             boolean dLeftPressed  = dLeft  && !dLeftPrev; // SPINDEXER REMOVED
+//             boolean dRightPressed = dRight && !dRightPrev; // SPINDEXER REMOVED
 
-            dLeftPrev = dLeft;
-            dRightPrev = dRight;
+//             dLeftPrev = dLeft; // SPINDEXER REMOVED
+//             dRightPrev = dRight; // SPINDEXER REMOVED
 
             boolean xNow = gamepad1.x;
             boolean yNow = gamepad1.y;
@@ -238,11 +238,11 @@ public class MainTeleop extends LinearOpMode {
             boolean rB = gamepad1.right_bumper;
 
             if (rB) {
-                spindexer.setPosition(spindexerPosIntake[i]);
+//                 spindexer.setPosition(spindexerPosIntake[i]); // SPINDEXER REMOVED
                 frontIntake.setPower(1);
                 backIntake.setPower(1);
             } else if (lB) {
-                spindexer.setPosition(spindexerPosIntake[i]);
+//                 spindexer.setPosition(spindexerPosIntake[i]); // SPINDEXER REMOVED
                 frontIntake.setPower(-1);
                 backIntake.setPower(-1);
             } else {
@@ -250,28 +250,29 @@ public class MainTeleop extends LinearOpMode {
                 backIntake.setPower(0);
             }
 
+/* SPINDEXER REMOVED: auto-index & indexer BEGIN
             // Only do auto-indexing when not shooting
             if (!rotated && shootState == ShootState.IDLE && !outtaking) {
-                String prev = ballcols.get(i);
-                String now  = colorSensor.getColor(sensor);
-                ballcols.set(i, now);
+//                 String prev = ballcols.get(i); // SPINDEXER REMOVED
+//                 String now  = colorSensor.getColor(sensor); // SPINDEXER REMOVED
+//                 ballcols.set(i, now); // SPINDEXER REMOVED
 
                 boolean newBallArrived = prev.equals("blank") && !now.equals("blank");
                 if (newBallArrived) {
                     // Re-enable auto-indexing after a new ball is intaken/detected
-                    autoIndexLockout = false;
-                    autoIndexedSinceLastBall = false;
+//                     autoIndexLockout = false; // SPINDEXER REMOVED
+//                     autoIndexedSinceLastBall = false; // SPINDEXER REMOVED
                 }
 
-                if (!autoIndexLockout && !ballcols.get(i).equals("blank")) {
+//                 if (!autoIndexLockout && !ballcols.get(i).equals("blank")) { // SPINDEXER REMOVED
                     for (int j = 0; j < 3; j++) {
-                        if (ballcols.get(j).equals("blank")) {
+//                         if (ballcols.get(j).equals("blank")) { // SPINDEXER REMOVED
                             i = j;
-                            spindexer.setPosition(spindexerPosIntake[i]);
-                            spintime.reset();
+//                             spindexer.setPosition(spindexerPosIntake[i]); // SPINDEXER REMOVED
+//                             spintime.reset(); // SPINDEXER REMOVED
                             rotated = true;
 
-                            autoIndexedSinceLastBall = true; // remember that auto moved
+//                             autoIndexedSinceLastBall = true; // remember that auto moved // SPINDEXER REMOVED
                             break;
                         }
                     }
@@ -279,19 +280,19 @@ public class MainTeleop extends LinearOpMode {
             }
 
 
-            if (spintime.milliseconds() > 100 && rotated) {
+//             if (spintime.milliseconds() > 100 && rotated) { // SPINDEXER REMOVED
                 rotated = false;
             }
 
             // 4) Indexer and sample color
-            if (dLeftPressed && i < spindexerPosIntake.length - 1 && !rotated) {
+//             if (dLeftPressed && i < spindexerPosIntake.length - 1 && !rotated) { // SPINDEXER REMOVED
                 rotated = true;
                 outtaking = false;
                 i++;
-                spintime.reset();
-                spindexer.setPosition(spindexerPosIntake[i]);
+//                 spintime.reset(); // SPINDEXER REMOVED
+//                 spindexer.setPosition(spindexerPosIntake[i]); // SPINDEXER REMOVED
 
-                if (autoIndexedSinceLastBall) autoIndexLockout = true; // driver override after auto
+//                 if (autoIndexedSinceLastBall) autoIndexLockout = true; // driver override after auto // SPINDEXER REMOVED
                 telemetry.update();
             }
 
@@ -299,44 +300,58 @@ public class MainTeleop extends LinearOpMode {
                 rotated = true;
                 outtaking = false;
                 i--;
-                spintime.reset();
-                spindexer.setPosition(spindexerPosIntake[i]);
+//                 spintime.reset(); // SPINDEXER REMOVED
+//                 spindexer.setPosition(spindexerPosIntake[i]); // SPINDEXER REMOVED
 
-                if (autoIndexedSinceLastBall) autoIndexLockout = true; // driver override after auto
+//                 if (autoIndexedSinceLastBall) autoIndexLockout = true; // driver override after auto // SPINDEXER REMOVED
                 telemetry.update();
             }
 
+
+SPINDEXER REMOVED: auto-index & indexer END */
+/* SPINDEXER REMOVED: pattern selection BEGIN
             // 5) Pattern selection (one-time at the start or round) (X, Y, B)
             boolean consumedYThisLoop = false;
 
-            if (!patternChecked) {
+//             if (!patternChecked) { // SPINDEXER REMOVED
                 if (xPressed) {
                     p = 0;
-                    patternChecked = true;
-                    patternName = "g_first";
+//                     patternChecked = true; // SPINDEXER REMOVED
+//                     patternName = "g_first"; // SPINDEXER REMOVED
                 } else if (yPressed) {
                     p = 1;
-                    patternChecked = true;
-                    patternName = "g_second";
+//                     patternChecked = true; // SPINDEXER REMOVED
+//                     patternName = "g_second"; // SPINDEXER REMOVED
                     consumedYThisLoop = true; // don't fire on same press
                 } else if (bPressed) {
                     p = 2;
-                    patternChecked = true;
-                    patternName = "g_third";
+//                     patternChecked = true; // SPINDEXER REMOVED
+//                     patternName = "g_third"; // SPINDEXER REMOVED
                 }
             }
 
+
+SPINDEXER REMOVED: pattern selection END */
             // 6) Cancel firing immediately for fallback (A)
             if (aPressed) {
                 cancelShooting();
             }
 
+/* SPINDEXER REMOVED: shot order firing BEGIN
             // 7) Start firing (Y)
-            if (patternChecked && yPressed && !consumedYThisLoop && shootState == ShootState.IDLE) {
-                int[] order = computeShotOrder(ballcols, p);
-                stype = Arrays.toString(order);
+//             if (patternChecked && yPressed && !consumedYThisLoop && shootState == ShootState.IDLE) { // SPINDEXER REMOVED
+//                 int[] order = computeShotOrder(ballcols, p); // SPINDEXER REMOVED
+//                 stype = Arrays.toString(order); // SPINDEXER REMOVED
                 telemetry.update();
                 startShooting(order);
+            }
+
+
+SPINDEXER REMOVED: shot order firing END */
+            // 7) Start firing (Y) -- SPINDEXER REMOVED
+            // With the spindexer removed, we simply start the shooter sequence when Y is pressed.
+            if (yPressed && shootState == ShootState.IDLE) {
+                startShooting(new int[] {0, 1, 2});
             }
 
             // 8) Update shooter states
@@ -355,12 +370,12 @@ public class MainTeleop extends LinearOpMode {
 
             // Telemetry updates
             telemetry.addData("drive", "x=%.2f y=%.2f h=%.2f", x, y, h);
-            telemetry.addData("pattern", patternName);
-            telemetry.addData("colors", ballcols);
+//             telemetry.addData("pattern", patternName); // SPINDEXER REMOVED
+//             telemetry.addData("colors", ballcols); // SPINDEXER REMOVED
             telemetry.addData("i", i);
             telemetry.addData("shootState", shootState);
             telemetry.addData("shotIndex", shotIndex);
-            telemetry.addData("typeofshot", stype);
+//             telemetry.addData("typeofshot", stype); // SPINDEXER REMOVED
             telemetry.addData("pos", launcher.getCurrentPosition());
             telemetry.addData("vel", launcher.getVelocity());
             telemetry.update();
@@ -371,7 +386,8 @@ public class MainTeleop extends LinearOpMode {
 
     // Builds the order array,
     // fallback to [0,1,2]
-    private int[] computeShotOrder(List<String> ballcols, int p) {
+//     /* SPINDEXER REMOVED: computeShotOrder BEGIN
+private int[] computeShotOrder(List<String> ballcols, int p) { // SPINDEXER REMOVED
         // Default fallback
         int[] fallback = new int[] {0, 1, 2};
 
@@ -382,7 +398,7 @@ public class MainTeleop extends LinearOpMode {
         int purple = 0;
 
         for (int j = 0; j < 3; j++) {
-            String color = ballcols.get(j);
+//             String color = ballcols.get(j); // SPINDEXER REMOVED
 
             if ("green".equals(color) && !greenFound) {
                 poslist.set(p, j);
@@ -407,6 +423,8 @@ public class MainTeleop extends LinearOpMode {
         return order;
     }
 
+
+SPINDEXER REMOVED: computeShotOrder END */
     // Shooting States
     private void startShooting(int[] order) {
         shotOrder = order.clone();
@@ -512,8 +530,8 @@ public class MainTeleop extends LinearOpMode {
                 int posIdx = shotOrder[shotIndex];
 
                 posIdx = (posIdx + 1) % 3; // Spindexer Outtake is offset by 1.
-                posIdx = Math.max(0, Math.min(posIdx, spindexerPosOuttake.length - 1));
-                spindexer.setPosition(spindexerPosOuttake[posIdx]);
+//                 posIdx = Math.max(0, Math.min(posIdx, spindexerPosOuttake.length - 1)); // SPINDEXER REMOVED
+//                 spindexer.setPosition(spindexerPosOuttake[posIdx]); // SPINDEXER REMOVED
 
                 // choose target velocity depending on whether this is the first shot
                 double targetRpm = (shotIndex == 0) ? TARGET_RPM_FIRST : TARGET_RPM_NEXT;
