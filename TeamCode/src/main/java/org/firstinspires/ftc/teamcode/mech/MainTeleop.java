@@ -59,7 +59,7 @@ public class MainTeleop extends LinearOpMode {
     private boolean autoIndexedSinceLastBall = false;  // true = auto moved since last ball was detected
 
     // Shooter states
-    private enum ShootState { IDLE, SET_SERVO, SPINUP, FIRE, RECOVER }
+    private enum ShootState { IDLE, AIM, SET_SERVO, SPINUP, FIRE, RECOVER }
     private ShootState shootState = ShootState.IDLE; //initial shootstate
 
     private final ElapsedTime shootTimer = new ElapsedTime();
@@ -110,6 +110,12 @@ public class MainTeleop extends LinearOpMode {
     private double launcherTargetTicksPerSec = 0.0;
     private boolean launcherControlEnabled = false;
 
+    // turret control
+
+    private Servo turretYaw, turretPitch;
+    private TurretController turret;
+
+
     // tune values
     private static double LAUNCH_kP = 0.00025;
     private static double LAUNCH_kI = 0.0000008;
@@ -136,6 +142,12 @@ public class MainTeleop extends LinearOpMode {
         leftIntake = hardwareMap.get(DcMotorEx.class, "leftIntake");
         rightIntake = hardwareMap.get(DcMotorEx.class, "rightIntake");
         sensor = hardwareMap.get(RevColorSensorV3.class, "colorSensor");
+        turretYaw   = hardwareMap.get(Servo.class, "turretYaw");
+        turretPitch = hardwareMap.get(Servo.class, "turretPitch");
+
+        turret = new TurretController(turretYaw, turretPitch);
+
+        turret.setTargetRobotRelative(36, 10, 0);
 
         launcher.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
 
@@ -329,6 +341,9 @@ public class MainTeleop extends LinearOpMode {
             // 9) Update PIDF
             updateLauncherPIDF();
 
+            // 10) Update turret
+            turret.update();
+
             // Telemetry updates
             telemetry.addData("drive", "x=%.2f y=%.2f h=%.2f", x, y, h);
             telemetry.addData("pattern", patternName);
@@ -389,7 +404,7 @@ public class MainTeleop extends LinearOpMode {
         shotIndex = 0;
 
         // kick off
-        shootState = ShootState.SET_SERVO;
+        shootState = ShootState.AIM;
         shootTimer.reset();
     }
 
@@ -467,6 +482,20 @@ public class MainTeleop extends LinearOpMode {
             case IDLE:
                 outtaking = false;
                 return;
+
+            case AIM: {
+                outtaking = true;
+                turret.update();
+
+                // If turret is aimed, continue
+                if (turret.isAimed()) {
+                    shootState = ShootState.SET_SERVO;
+                    shootTimer.reset();
+                }
+
+                telemetry.addData("turret", "aiming...");
+                break;
+            }
 
             case SET_SERVO: {
                 outtaking = true;
