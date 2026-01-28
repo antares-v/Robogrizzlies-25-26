@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.mech;
 
+import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -13,6 +14,7 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.Range;
 
 
+import org.firstinspires.ftc.teamcode.mech.Auto.PinpointLocalizer;
 import org.firstinspires.ftc.teamcode.mech.CV.ColorDetection;
 import org.firstinspires.ftc.teamcode.mech.movement.movement;
 import org.firstinspires.ftc.teamcode.mech.control.CustomPIDF;
@@ -115,6 +117,8 @@ public class MainTeleop extends LinearOpMode {
     private Servo turretYaw, turretPitch;
     private TurretController turret;
 
+    private PinpointLocalizer localizer = new PinpointLocalizer(hardwareMap, 0.00199746322, new Pose2d(0, 0, Math.toRadians(90)));
+    private Pose2d robotPos;
 
     // tune values
     private static double LAUNCH_kP = 0.00025;
@@ -341,7 +345,12 @@ public class MainTeleop extends LinearOpMode {
             // 9) Update PIDF
             updateLauncherPIDF();
 
-            // 10) Update turret
+            // 10) Update localizer
+            localizer.update();
+
+            // 11) Update turret
+            robotPos = localizer.getPose();
+            turret.setTargetRobotRelative(robotPos.position.x, robotPos.position.y, 0);
             turret.update();
 
             // Telemetry updates
