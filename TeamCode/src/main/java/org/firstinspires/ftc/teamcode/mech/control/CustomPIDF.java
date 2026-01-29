@@ -1,7 +1,8 @@
 package org.firstinspires.ftc.teamcode.mech.control;
 
 import com.qualcomm.robotcore.util.Range;
-
+import java.util.ArrayList;
+import java.lang.Math;
 /**
  * Units:
  *  - target/measured are in ticks/sec
@@ -15,6 +16,11 @@ public class CustomPIDF {
     public double outputMin = -1.0;
     public double outputMax =  1.0;
 
+    private ArrayList<Double> errorlist = new ArrayList<>();
+    private ArrayList<Double> stdlist = new ArrayList<>();
+    //This is 0 when we are oslating (or close to oslating)
+    public double osalationratio =100; 
+    
     private double integral = 0.0;
     private double lastError = 0.0;
     private boolean hasLast = false;
@@ -25,18 +31,50 @@ public class CustomPIDF {
         this.kD = kD;
         this.kF = kF;
     }
-
+    //Calculates the spread of the data set, helps show the oslatation per new value, n stuff
+    public void StandardDeviationError(){
+        double sum = 0;
+        double mean = 0;
+        double STD = 0;
+        for(int i = 0; i<errorlist.size(); i++){
+            sum+=errorlist.get(i);
+        }
+        mean = sum/errorlist.size();
+        for (int i = 0; i<errorlist.size(); i++) {
+            STD += Math.pow(errorlist.get(i) - mean, 2);
+        }
+        return Math.sqrt(STD / (errorlist.size(i) - 1));
+    }
     public void reset() {
         integral = 0.0;
         lastError = 0.0;
         hasLast = false;
     }
-
-    public double update(double targetTicksPerSec, double measuredTicksPerSec, double dtSec) {
+//Actualy ts is ziegler nichloas, we only use kp and wait till we have osalation, which would man that the STD is fairly constnat aka 0
+public double ZiegerZichloas(double targetTicksPerSec, double measuredTicksPerSec, double dtSec) {
         if (dtSec <= 1e-6) dtSec = 1e-3;
 
         double error = targetTicksPerSec - measuredTicksPerSec;
 
+        errorlist.add(error);
+        stdlist.add(StandardDeviationError());
+        if(stdlist.size()>3){
+        osalationratio = Math.log((stdlist.get(stdlist.size()-1))/(stdlist.get(stdlist.size()-2)));
+        }
+
+        lastError = error;
+        hasLast = true;
+
+        double out = (kP * error);
+        return Range.clip(out, outputMin, outputMax);
+    }
+    
+    public double update(double targetTicksPerSec, double measuredTicksPerSec, double dtSec) {
+        if (dtSec <= 1e-6) dtSec = 1e-3;
+
+        double error = targetTicksPerSec - measuredTicksPerSec;
+        
+        
         // Integral with clamp
         integral += error * dtSec;
         double iTerm = kI * integral;
