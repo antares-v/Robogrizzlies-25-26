@@ -19,7 +19,7 @@ public class CustomPIDF {
     private ArrayList<Double> errorlist = new ArrayList<>();
     private ArrayList<Double> stdlist = new ArrayList<>();
     //This is 0 when we are oslating (or close to oslating)
-    public double osalationratio =100; 
+    public double osalationratio =100;
     
     private double integral = 0.0;
     private double lastError = 0.0;
@@ -32,7 +32,7 @@ public class CustomPIDF {
         this.kF = kF;
     }
     //Calculates the spread of the data set, helps show the oslatation per new value, n stuff
-    public void StandardDeviationError(){
+    public double StandardDeviationError(){
         double sum = 0;
         double mean = 0;
         double STD = 0;
@@ -43,14 +43,16 @@ public class CustomPIDF {
         for (int i = 0; i<errorlist.size(); i++) {
             STD += Math.pow(errorlist.get(i) - mean, 2);
         }
-        return Math.sqrt(STD / (errorlist.size(i) - 1));
+        return Math.sqrt(STD / (errorlist.size() - 1));
     }
     public void reset() {
         integral = 0.0;
         lastError = 0.0;
         hasLast = false;
     }
-//Actualy ts is ziegler nichloas, we only use kp and wait till we have osalation, which would man that the STD is fairly constnat aka 0
+
+//Actualy ts is ziegler nichloas testing for a single Kp Value, we only use kp and wait till we have osalation, which would man that the STD is fairly constnat aka 0
+
 public double ZiegerZichloas(double targetTicksPerSec, double measuredTicksPerSec, double dtSec) {
         if (dtSec <= 1e-6) dtSec = 1e-3;
 
