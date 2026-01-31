@@ -16,8 +16,8 @@ public class CustomPIDF {
     public double outputMin = -1.0;
     public double outputMax =  1.0;
 
-    private ArrayList<Double> errorlist = new ArrayList<>();
-    private ArrayList<Double> stdlist = new ArrayList<>();
+    private ArrayList<Double> errorlist;
+    private ArrayList<Double> stdlist;
     //This is 0 when we are oslating (or close to oslating)
     public double osalationratio =100;
     
@@ -30,6 +30,11 @@ public class CustomPIDF {
         this.kI = kI;
         this.kD = kD;
         this.kF = kF;
+        errorlist = new ArrayList<>();
+        stdlist = new ArrayList<>();
+    
+        osalationratio =100;
+        
     }
     //Calculates the spread of the data set, helps show the oslatation per new value, n stuff
     public double StandardDeviationError(){
