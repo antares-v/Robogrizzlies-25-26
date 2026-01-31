@@ -123,8 +123,9 @@ public class MainTeleop extends LinearOpMode {
 
     // tune values
     private static double LAUNCH_kP = 0.00025;
-    private static double LAUNCH_kI = 0.0000008;
-    private static double LAUNCH_kD = 0.00001;
+    private double Kp = 0.001;
+    private static double LAUNCH_kI = 0;
+    private static double LAUNCH_kD = 0;
 
     // kF will be computed from motor max speed at init, but you can override if you want:
     private static double LAUNCH_kF = -1.0; // -1 = auto compute
@@ -188,8 +189,8 @@ public class MainTeleop extends LinearOpMode {
         // Max ticks/sec = maxRPM * ticksPerRev / 60
         double maxRpm = launcher.getMotorType().getMaxRPM();
         double maxTicksPerSec = (maxRpm * launcherTicksPerRev) / 60.0;
-
-        double kF = (LAUNCH_kF > 0) ? LAUNCH_kF : (1.0 / maxTicksPerSec);
+//keep all other constans zero while testing Kp but talk to gavin about kf intergration into thes system 
+        double kF = 0;//(LAUNCH_kF > 0) ? LAUNCH_kF : (1.0 / maxTicksPerSec);
 
         launcherPIDF = new CustomPIDF(LAUNCH_kP, LAUNCH_kI, LAUNCH_kD, kF);
         launcherPIDF.iMax = 0.35; // clamp integral contribution (power units)
@@ -477,8 +478,31 @@ public class MainTeleop extends LinearOpMode {
         double measured = launcher.getVelocity(); // ticks/sec
         double target = launcherTargetTicksPerSec;
 
-        double power = launcherPIDF.update(target, measured, dt);
-
+        double power = launcherPIDF.ZiegerZichloas(target, measured, dt);
+        //TS IS OSLARION RATIO OF LOG SO REALLY IMPORTANT ILL VARIBLE TS LATER
+        telemetry.addData("Error_Osolation", "CustomPIDF.osolation=%.3f",CustomPIDF.osolation);
+        telemetry.addData("Ku", "Kp=%.3f",Kp);
+        if(CustomPIDF.osolation<.01){
+            if(CustomPIDF.errorlist.size()>100){
+                for(int i=11;i<errorlist.size();i++){
+                    if((errorlist.get(10)+.01)>errorlist.get(i) && (errorlist.get(10)-.01)<errorlist.get(i)){
+                        int frequency = 1/(timelist(i)-timelist(10));
+                        int Period = 2*3.14/frequency;
+                        break;
+                    }
+                }
+                telemetry.addData("Error_Osolation", "CustomPIDF.osolation=%.3f",CustomPIDF.osolation);
+                telemetry.addData("Ku", "Kp=%.3f",Kp);
+                telemetry.addData("Pu", "Period=%.3f",Period);
+                telemetry.addLine("Ku found, testing over");
+                stopShooter();
+            }
+        } else{
+            if(CustomPIDF.errorlist.size()>100){
+                Kp+=.001;
+                launcherPIDF = new CustomPIDF(Kp, LAUNCH_kI, LAUNCH_kD, kF);
+            }
+        }
         // Optional: voltage compensation (helps keep behavior consistent)
         double scale = NOMINAL_VOLTAGE / batteryVoltage();
         power = Range.clip(power * scale, -1.0, 1.0);
