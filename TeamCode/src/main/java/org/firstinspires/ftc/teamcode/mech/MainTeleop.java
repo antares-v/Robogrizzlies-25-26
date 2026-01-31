@@ -468,6 +468,26 @@ public class MainTeleop extends LinearOpMode {
         double err = Math.abs(rpm - targetRpm);
         return err <= (RPM_TOL_FRAC * targetRpm);
     }
+    private void FindKp(){
+        if (!launcherControlEnabled) return;
+
+        double dt = launcherLoopTimer.seconds();
+        launcherLoopTimer.reset();
+
+        double measured = launcher.getVelocity(); // ticks/sec
+        double target = launcherTargetTicksPerSec;
+
+        double power = launcherPIDF.update(target, measured, dt);
+
+        // Optional: voltage compensation (helps keep behavior consistent)
+        double scale = NOMINAL_VOLTAGE / batteryVoltage();
+        power = Range.clip(power * scale, -1.0, 1.0);
+
+        launcher.setPower(power);
+
+        telemetry.addData("L PID", "t=%.0f m=%.0f pwr=%.2f dt=%.3f",
+                target, measured, power, dt);
+    }
     private void updateLauncherPIDF() {
         if (!launcherControlEnabled) return;
 
