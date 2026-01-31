@@ -24,6 +24,7 @@ import org.firstinspires.ftc.teamcode.mech.control.TurretController;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Collections;
 
 
 @TeleOp
@@ -483,10 +484,11 @@ public class MainTeleop extends LinearOpMode {
         telemetry.addData("Error_Osolation", "CustomPIDF.osolation=%.3f",CustomPIDF.osolation);
         telemetry.addData("Ku", "Kp=%.3f",Kp);
         if(CustomPIDF.osolation<.01){
-            if(CustomPIDF.errorlist.size()>100){
+            if(CustomPIDF.errorlist.size()>1000){
+                int j = errorlist.indexOf(Collections.max(errorlist));
                 for(int i=11;i<errorlist.size();i++){
-                    if((errorlist.get(10)+.01)>errorlist.get(i) && (errorlist.get(10)-.01)<errorlist.get(i)){
-                        int frequency = 1/(timelist(i)-timelist(10));
+                    if((errorlist.get(j)+.01)>errorlist.get(i) && (errorlist.get(j)-.01)<errorlist.get(i)){
+                        int frequency = 1/Math.abs((timelist(i)-timelist(j)));
                         int Period = 2*3.14/frequency;
                         break;
                     }
