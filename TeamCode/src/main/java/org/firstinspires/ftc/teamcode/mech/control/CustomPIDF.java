@@ -19,9 +19,8 @@ public class CustomPIDF {
     public ArrayList<Double> errorlist;
     public ArrayList<Double> timelist;
     private ArrayList<Double> stdlist;
-    
-    //This is 0 when we are oslating (or close to oslating)
-    public double osalationratio =100;
+
+    public double oscillationratio =100;
     
     private double integral = 0.0;
     private double lastError = 0.0;
@@ -36,7 +35,7 @@ public class CustomPIDF {
         timelist = new ArrayList<>();
         stdlist = new ArrayList<>();
     
-        osalationratio =100;
+        oscillationratio =100;
         
     }
     //Calculates the spread of the data set, helps show the oslatation per new value, n stuff
@@ -70,7 +69,7 @@ public double ZiegerZichloas(double targetTicksPerSec, double measuredTicksPerSe
         stdlist.add(StandardDeviationError());
         timelist.add(timelist.get(-1)+dtSec);
         if(stdlist.size()>3){
-        osalationratio = Math.log((stdlist.get(stdlist.size()-1))/(stdlist.get(stdlist.size()-2)));
+        oscillationratio = Math.log((stdlist.get(stdlist.size()-1))/(stdlist.get(stdlist.size()-2)));
         }
 
         lastError = error;

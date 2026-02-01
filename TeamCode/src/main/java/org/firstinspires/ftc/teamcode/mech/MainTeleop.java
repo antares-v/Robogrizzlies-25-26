@@ -5,6 +5,7 @@ import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -359,6 +360,8 @@ public class MainTeleop extends LinearOpMode {
             turret.setTargetRobotRelative(robotPos.position.x, robotPos.position.y, 0);
             turret.update();
 
+            findKp();
+
             // Telemetry updates
             telemetry.addData("drive", "x=%.2f y=%.2f h=%.2f", x, y, h);
             telemetry.addData("pattern", patternName);
@@ -470,7 +473,7 @@ public class MainTeleop extends LinearOpMode {
         double err = Math.abs(rpm - targetRpm);
         return err <= (RPM_TOL_FRAC * targetRpm);
     }
-    private void FindKp(){
+    private void findKp(){
         if (!launcherControlEnabled) return;
 
         double dt = launcherLoopTimer.seconds();
@@ -480,29 +483,30 @@ public class MainTeleop extends LinearOpMode {
         double target = launcherTargetTicksPerSec;
 
         double power = launcherPIDF.ZiegerZichloas(target, measured, dt);
-        //TS IS OSLARION RATIO OF LOG SO REALLY IMPORTANT ILL VARIBLE TS LATER
-        telemetry.addData("Error_Osolation", "CustomPIDF.osolation=%.3f",CustomPIDF.osolation);
+        double period = 0;
+
+        telemetry.addData("Error_Oscillation", "CustomPIDF.oscillation=%.3f",launcherPIDF.oscillationratio);
         telemetry.addData("Ku", "Kp=%.3f",Kp);
-        if(CustomPIDF.osolation<.01){
-            if(CustomPIDF.errorlist.size()>1000){
-                int j = errorlist.indexOf(Collections.max(errorlist));
-                for(int i=11;i<errorlist.size();i++){
-                    if((errorlist.get(j)+.01)>errorlist.get(i) && (errorlist.get(j)-.01)<errorlist.get(i)){
-                        int frequency = 1/Math.abs((timelist(i)-timelist(j)));
-                        int Period = 2*3.14/frequency;
+        if(launcherPIDF.oscillationratio<.01){
+            if(launcherPIDF.errorlist.size()>1000){
+                int j = launcherPIDF.errorlist.indexOf(Collections.max(launcherPIDF.errorlist));
+                for(int i=11;i<launcherPIDF.errorlist.size();i++){
+                    if((launcherPIDF.errorlist.get(j)+.01)>launcherPIDF.errorlist.get(i) && (launcherPIDF.errorlist.get(j)-.01)<launcherPIDF.errorlist.get(i)){
+                        double frequency = 1/Math.abs((launcherPIDF.timelist.get(i)-launcherPIDF.timelist.get(j)));
+                        period = 2*3.14/frequency;
                         break;
                     }
                 }
-                telemetry.addData("Error_Osolation", "CustomPIDF.osolation=%.3f",CustomPIDF.osolation);
+                telemetry.addData("Error_Oscillation", "CustomPIDF.oscillation=%.3f",launcherPIDF.oscillationratio);
                 telemetry.addData("Ku", "Kp=%.3f",Kp);
-                telemetry.addData("Pu", "Period=%.3f",Period);
+                telemetry.addData("Pu", "Period=%.3f",period);
                 telemetry.addLine("Ku found, testing over");
                 stopShooter();
             }
         } else{
-            if(CustomPIDF.errorlist.size()>100){
+            if(launcherPIDF.errorlist.size()>100){
                 Kp+=.001;
-                launcherPIDF = new CustomPIDF(Kp, LAUNCH_kI, LAUNCH_kD, kF);
+                launcherPIDF = new CustomPIDF(Kp, LAUNCH_kI, LAUNCH_kD, launcherPIDF.kF);
             }
         }
         // Optional: voltage compensation (helps keep behavior consistent)
