@@ -53,6 +53,8 @@ public class MainTeleop extends LinearOpMode {
     private final List<String> ballcols = new ArrayList<>();
     private final ColorDetection colorSensor = new ColorDetection();
     private int i = 0;
+
+    private int Kp;
     private final ElapsedTime spintime = new ElapsedTime();
 
     // Button tracking
@@ -124,7 +126,8 @@ public class MainTeleop extends LinearOpMode {
 
     // turret control
 
-    private Servo turretYaw, turretPitch;
+    private CRServo turretYaw;
+    private Servo turretPitch;
     private TurretController turret;
 
     private PinpointLocalizer localizer = new PinpointLocalizer(hardwareMap, 0.00199746322, new Pose2d(0, 0, Math.toRadians(90)));
