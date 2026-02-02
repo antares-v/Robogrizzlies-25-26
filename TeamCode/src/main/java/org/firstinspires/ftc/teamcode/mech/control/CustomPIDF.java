@@ -16,10 +16,11 @@ public class CustomPIDF {
     public double outputMin = -1.0;
     public double outputMax =  1.0;
 
-    private ArrayList<Double> errorlist = new ArrayList<>();
-    private ArrayList<Double> stdlist = new ArrayList<>();
-    //This is 0 when we are oslating (or close to oslating)
-    public double osalationratio =100; 
+    public ArrayList<Double> errorlist;
+    public ArrayList<Double> timelist;
+    private ArrayList<Double> stdlist;
+
+    public double oscillationratio =100;
     
     private double integral = 0.0;
     private double lastError = 0.0;
@@ -30,6 +31,12 @@ public class CustomPIDF {
         this.kI = kI;
         this.kD = kD;
         this.kF = kF;
+        errorlist = new ArrayList<>();
+        timelist = new ArrayList<>();
+        stdlist = new ArrayList<>();
+    
+        oscillationratio =100;
+        
     }
     //Calculates the spread of the data set, helps show the oslatation per new value, n stuff
     public double StandardDeviationError(){
@@ -50,7 +57,9 @@ public class CustomPIDF {
         lastError = 0.0;
         hasLast = false;
     }
-//Actualy ts is ziegler nichloas, we only use kp and wait till we have osalation, which would man that the STD is fairly constnat aka 0
+
+//Actualy ts is ziegler nichloas testing for a single Kp Value, we only use kp and wait till we have osalation, which would man that the STD is fairly constnat aka 0
+
 public double ZiegerZichloas(double targetTicksPerSec, double measuredTicksPerSec, double dtSec) {
         if (dtSec <= 1e-6) dtSec = 1e-3;
 
@@ -58,8 +67,9 @@ public double ZiegerZichloas(double targetTicksPerSec, double measuredTicksPerSe
 
         errorlist.add(error);
         stdlist.add(StandardDeviationError());
+        timelist.add(timelist.get(-1)+dtSec);
         if(stdlist.size()>3){
-        osalationratio = Math.log((stdlist.get(stdlist.size()-1))/(stdlist.get(stdlist.size()-2)));
+        oscillationratio = Math.log((stdlist.get(stdlist.size()-1))/(stdlist.get(stdlist.size()-2)));
         }
 
         lastError = error;

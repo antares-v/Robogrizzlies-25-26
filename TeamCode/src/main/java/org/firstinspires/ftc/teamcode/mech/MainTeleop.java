@@ -5,6 +5,7 @@ import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -29,7 +30,9 @@ import org.openftc.easyopencv.OpenCvInternalCamera;
 
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Collections;
 
 
 @TeleOp
@@ -121,8 +124,7 @@ public class MainTeleop extends LinearOpMode {
 
     // turret control
 
-    private CRServo turretYaw;
-    private Servo turretPitch;
+    private Servo turretYaw, turretPitch;
     private TurretController turret;
 
     private PinpointLocalizer localizer = new PinpointLocalizer(hardwareMap, 0.00199746322, new Pose2d(0, 0, Math.toRadians(90)));
@@ -218,8 +220,8 @@ public class MainTeleop extends LinearOpMode {
         // Max ticks/sec = maxRPM * ticksPerRev / 60
         double maxRpm = launcher.getMotorType().getMaxRPM();
         double maxTicksPerSec = (maxRpm * launcherTicksPerRev) / 60.0;
-
-        double kF = (LAUNCH_kF > 0) ? LAUNCH_kF : (1.0 / maxTicksPerSec);
+//keep all other constans zero while testing Kp but talk to gavin about kf intergration into thes system
+        double kF = 0;//(LAUNCH_kF > 0) ? LAUNCH_kF : (1.0 / maxTicksPerSec);
 
         launcherPIDF = new CustomPIDF(LAUNCH_kP, LAUNCH_kI, LAUNCH_kD, kF);
         launcherPIDF.iMax = 0.35; // clamp integral contribution (power units)
@@ -384,25 +386,11 @@ public class MainTeleop extends LinearOpMode {
 
             // 11) Update turret
             robotPos = localizer.getPose();
-// feed data to the actual thing with the camera
-            ArrayList<AprilTagDetection> detections = pipeline.getLatestDetections();
-            if (!detections.isEmpty()) {
-                AprilTagDetection tag = detections.get(0);
-
-                double bearing = Math.toDegrees(Math.atan2(tag.pose.x, tag.pose.z));
-                turret.updateVisionMeasurement(bearing, true);
-
-                double forwardDist = tag.pose.z * 3.28084 * 12; // convert to inches if needed
-                double leftRight = tag.pose.x * 3.28084 * 12;
-                double height = tag.pose.y * 3.28084 * 12; // height of tag relative
-
-                turret.setTargetRobotRelative(forwardDist, leftRight, height);
-            } else {
-                // No tag seen - tell turret vision is invalid (it will stop or use last known)
-                turret.updateVisionMeasurement(0, false);
-            }
-
+            turret.setTargetRobotRelative(robotPos.position.x, robotPos.position.y, 0);
             turret.update();
+
+            findKp();
+
             // Telemetry updates
             telemetry.addData("drive", "x=%.2f y=%.2f h=%.2f", x, y, h);
             telemetry.addData("pattern", patternName);
@@ -513,6 +501,51 @@ public class MainTeleop extends LinearOpMode {
         double rpm = getLauncherRPM();
         double err = Math.abs(rpm - targetRpm);
         return err <= (RPM_TOL_FRAC * targetRpm);
+    }
+    private void findKp(){
+        if (!launcherControlEnabled) return;
+
+        double dt = launcherLoopTimer.seconds();
+        launcherLoopTimer.reset();
+
+        double measured = launcher.getVelocity(); // ticks/sec
+        double target = launcherTargetTicksPerSec;
+
+        double power = launcherPIDF.ZiegerZichloas(target, measured, dt);
+        double period = 0;
+
+        telemetry.addData("Error_Oscillation", "CustomPIDF.oscillation=%.3f",launcherPIDF.oscillationratio);
+        telemetry.addData("Ku", "Kp=%.3f",Kp);
+        if(launcherPIDF.oscillationratio<.01){
+            if(launcherPIDF.errorlist.size()>1000){
+                int j = launcherPIDF.errorlist.indexOf(Collections.max(launcherPIDF.errorlist));
+                for(int i=11;i<launcherPIDF.errorlist.size();i++){
+                    if((launcherPIDF.errorlist.get(j)+.01)>launcherPIDF.errorlist.get(i) && (launcherPIDF.errorlist.get(j)-.01)<launcherPIDF.errorlist.get(i)){
+                        double frequency = 1/Math.abs((launcherPIDF.timelist.get(i)-launcherPIDF.timelist.get(j)));
+                        period = 2*3.14/frequency;
+                        break;
+                    }
+                }
+                telemetry.addData("Error_Oscillation", "CustomPIDF.oscillation=%.3f",launcherPIDF.oscillationratio);
+                telemetry.addData("Ku", "Kp=%.3f",Kp);
+                telemetry.addData("Pu", "Period=%.3f",period);
+                telemetry.addLine("Ku found, testing over");
+                stopShooter();
+            }
+        } else{
+            if(launcherPIDF.errorlist.size()>100){
+                Kp+=.001;
+                launcherPIDF = new CustomPIDF(Kp, LAUNCH_kI, LAUNCH_kD, launcherPIDF.kF);
+            }
+        }
+        // Optional: voltage compensation (helps keep behavior consistent)
+        double scale = NOMINAL_VOLTAGE / batteryVoltage();
+        power = Range.clip(power * scale, -1.0, 1.0);
+
+        launcher.setPower(power);
+
+        telemetry.addData("L PID", "t=%.0f m=%.0f pwr=%.2f dt=%.3f",
+                target, measured, power, dt);
     }
     private void updateLauncherPIDF() {
         if (!launcherControlEnabled) return;
