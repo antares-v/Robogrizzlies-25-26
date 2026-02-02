@@ -32,7 +32,7 @@ public class CustomPIDF {
         this.kF = kF;
     }
     //Calculates the spread of the data set, helps show the oslatation per new value, n stuff
-    public void StandardDeviationError(){
+    public double StandardDeviationError(){
         double sum = 0;
         double mean = 0;
         double STD = 0;
@@ -43,7 +43,7 @@ public class CustomPIDF {
         for (int i = 0; i<errorlist.size(); i++) {
             STD += Math.pow(errorlist.get(i) - mean, 2);
         }
-        return Math.sqrt(STD / (errorlist.size(i) - 1));
+        return Math.sqrt(STD / (errorlist.size() - 1));
     }
     public void reset() {
         integral = 0.0;
@@ -68,13 +68,13 @@ public double ZiegerZichloas(double targetTicksPerSec, double measuredTicksPerSe
         double out = (kP * error);
         return Range.clip(out, outputMin, outputMax);
     }
-    
+
     public double update(double targetTicksPerSec, double measuredTicksPerSec, double dtSec) {
         if (dtSec <= 1e-6) dtSec = 1e-3;
 
         double error = targetTicksPerSec - measuredTicksPerSec;
-        
-        
+
+
         // Integral with clamp
         integral += error * dtSec;
         double iTerm = kI * integral;

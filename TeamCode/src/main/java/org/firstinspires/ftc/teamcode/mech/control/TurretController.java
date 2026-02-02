@@ -1,16 +1,23 @@
 package org.firstinspires.ftc.teamcode.mech.control;
 
-import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
+import com.qualcomm.robotcore.hardware.Servo;
+import org.firstinspires.ftc.teamcode.mech.control.CustomPIDF;
 public class TurretController {
-    private final Servo yawServo;
+    private final CRServo yawServo;
     private final Servo pitchServo;
     public double yawMinDeg = -90;      // left limit
     public double yawMaxDeg =  90;      // right limit
     public double yawMinPos = 0.05;     // servo pos at yawMinDeg
     public double yawMaxPos = 0.95;     // servo pos at yawMaxDeg
     public boolean yawInverted = false; // flip if turret turns the wrong way
+    private final CustomPIDF yawPidf;
+    private double visionYawDegrees = 0;
+    private boolean visionValid = false;
+    private long lastVisionTime = 0;
+    public long visionTimeoutMs = 500;
 
     // CHANGE THESE VALUES
     // Must be same length and strictly increasing distances.
@@ -35,7 +42,7 @@ public class TurretController {
     private double targetZIn = 0;   // unused for now
 
     // Internal state
-    private double yawCmd = 0.5;
+    private double desiredYawDeg;
     private double pitchCmd = 0.7;
 
     private double yawDesired = 0.5;
@@ -44,14 +51,17 @@ public class TurretController {
     private final ElapsedTime loopTimer = new ElapsedTime();
     private final ElapsedTime settleTimer = new ElapsedTime();
 
-    public TurretController(Servo yawServo, Servo pitchServo) {
+    public TurretController(CRServo yawServo, Servo pitchServo) {
         this.yawServo = yawServo;
         this.pitchServo = pitchServo;
 
         // initialize commands to current positions
-        yawCmd = yawServo.getPosition();
+        // yawCmd = yawServo.getPosition();
+        this.yawPidf = new CustomPIDF(0.02, 0.001, 0.002, 0.0); //need tuning
+        this.visionYawDegrees = 0;
+        this.visionValid = false;
         pitchCmd = pitchServo.getPosition();
-        yawDesired = yawCmd;
+//      yawDesired = yawCmd;
         pitchDesired = pitchCmd;
 
         loopTimer.reset();
@@ -65,28 +75,68 @@ public class TurretController {
         // whenever target changes, restart settle window
         settleTimer.reset();
     }
+    public void updateVisionMeasurement(double currentYawDegrees, boolean isValid) {
+        this.visionYawDegrees = currentYawDegrees;
+        this.visionValid = isValid;
+        if (isValid) {
+            this.lastVisionTime = System.currentTimeMillis();
+        }
+    }
+
+    private double elevationDegToServoPos(double elevationDeg) {
+        double minElevation = -20; // degrees down
+        double maxElevation = 45;  // degrees up
+
+        elevationDeg = Range.clip(elevationDeg, minElevation, maxElevation);
+
+        double t = (elevationDeg - minElevation) / (maxElevation - minElevation);
+        double pos = pitchMinPos + t * (pitchMaxPos - pitchMinPos);
+
+        return Range.clip(pos, pitchMinPos, pitchMaxPos);
+    }
 
     public void update() {
         double dt = loopTimer.seconds();
         loopTimer.reset();
         if (dt <= 1e-6) dt = 0.02;
 
-        double yawRad = Math.atan2(targetYIn, targetXIn);
-        double yawDeg = Math.toDegrees(yawRad);
-
-        yawDesired = yawDegToServoPos(yawDeg);
-
         double dist = Math.hypot(targetXIn, targetYIn);
-        pitchDesired = interpPitch(dist);
 
-        yawCmd = slew(yawCmd, yawDesired, yawSlewPerSec, dt);
+        desiredYawDeg = Math.toDegrees(Math.atan2(targetYIn, targetXIn)); // existing
+        if (Math.abs(targetZIn) > 0.5) {
+            double elevationDeg = Math.toDegrees(Math.atan2(targetZIn, dist));
+            pitchDesired = elevationDegToServoPos(elevationDeg);
+        } else {
+            pitchDesired = interpPitch(dist);
+        }
+
+        // Check timeout
+        boolean visionFresh = visionValid && (System.currentTimeMillis() - lastVisionTime < visionTimeoutMs);
+
+        double yawPower;
+        if (visionFresh) {
+            yawPower = yawPidf.update(0, visionYawDegrees, dt);
+        } else {
+            // No vision
+            yawPower = 0;
+            yawPidf.reset();
+        }
         pitchCmd = slew(pitchCmd, pitchDesired, pitchSlewPerSec, dt);
 
-        yawServo.setPosition(yawCmd);
+        yawServo.setPower(yawPower);
         pitchServo.setPosition(pitchCmd);
     }
     public boolean isAimed() {
-        boolean yawOk = Math.abs(yawCmd - yawDesired) <= servoPosTolForYawDeg(aimTolYawDeg);
+        boolean yawOk;
+        if (visionValid) {
+            double error = Math.abs(desiredYawDeg - visionYawDegrees);
+            // Handle 360 wrap
+            while (error > 180) error -= 360;
+            while (error < -180) error += 360;
+            yawOk = Math.abs(error) <= aimTolYawDeg;
+        } else {
+            yawOk = false; // Can't be aimed if cant be see
+        }
         boolean pitchOk = Math.abs(pitchCmd - pitchDesired) <= aimTolPitchPos;
         boolean timeOk = settleTimer.milliseconds() >= settleMs;
         return yawOk && pitchOk && timeOk;
@@ -147,5 +197,9 @@ public class TurretController {
         double delta = target - current;
         if (Math.abs(delta) <= maxStep) return target;
         return current + Math.signum(delta) * maxStep;
+    }
+    public void resetYawPID() {
+        yawPidf.reset();
+        visionValid = false;
     }
 }

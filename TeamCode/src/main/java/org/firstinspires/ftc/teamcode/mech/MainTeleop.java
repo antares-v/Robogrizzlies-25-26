@@ -14,15 +14,21 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.Range;
 
 
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.teamcode.mech.Auto.PinpointLocalizer;
+import org.firstinspires.ftc.teamcode.mech.CV.AprilTagDetectionPipeline;
 import org.firstinspires.ftc.teamcode.mech.CV.ColorDetection;
 import org.firstinspires.ftc.teamcode.mech.movement.movement;
 import org.firstinspires.ftc.teamcode.mech.control.CustomPIDF;
 import org.firstinspires.ftc.teamcode.mech.control.TurretController;
+import org.openftc.apriltag.AprilTagDetection;
+import org.openftc.easyopencv.OpenCvCamera;
+import org.openftc.easyopencv.OpenCvCameraFactory;
+import org.openftc.easyopencv.OpenCvCameraRotation;
+import org.openftc.easyopencv.OpenCvInternalCamera;
 
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 
@@ -115,7 +121,8 @@ public class MainTeleop extends LinearOpMode {
 
     // turret control
 
-    private Servo turretYaw, turretPitch;
+    private CRServo turretYaw;
+    private Servo turretPitch;
     private TurretController turret;
 
     private PinpointLocalizer localizer = new PinpointLocalizer(hardwareMap, 0.00199746322, new Pose2d(0, 0, Math.toRadians(90)));
@@ -129,6 +136,11 @@ public class MainTeleop extends LinearOpMode {
     // kF will be computed from motor max speed at init, but you can override if you want:
     private static double LAUNCH_kF = -1.0; // -1 = auto compute
 
+    private AprilTagDetectionPipeline pipeline;
+    private OpenCvCamera camera;
+
+    int cameraMonitorViewId = hardwareMap.appContext.getResources()
+            .getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
 
     // Helpers
     private static double deadzone(double v, double dz) {
@@ -147,10 +159,16 @@ public class MainTeleop extends LinearOpMode {
         backIntake = hardwareMap.get(DcMotorEx.class, "backIntake");
         frontIntake = hardwareMap.get(DcMotorEx.class, "frontIntake");
         sensor = hardwareMap.get(RevColorSensorV3.class, "colorSensor");
-        turretYaw   = hardwareMap.get(Servo.class, "turretYaw");
+        turretYaw  = hardwareMap.get(CRServo.class, "turretYaw");
         turretPitch = hardwareMap.get(Servo.class, "turretPitch");
+        camera = OpenCvCameraFactory.getInstance().createWebcam(
+                hardwareMap.get(WebcamName.class, "webcam"), cameraMonitorViewId);
+
+
 
         turret = new TurretController(turretYaw, turretPitch);
+
+        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
 
         turret.setTargetRobotRelative(36, 10, 0);
 
@@ -178,8 +196,20 @@ public class MainTeleop extends LinearOpMode {
 
         telemetry.addLine("Ready");
         telemetry.update();
+        camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
+            @Override
+            public void onOpened() {
+                camera.startStreaming(640, 480, OpenCvCameraRotation.UPRIGHT);
+            }
+            @Override
+            public void onError(int errorCode) {}
+        });
 
         waitForStart();
+        pipeline = new AprilTagDetectionPipeline(telemetry);
+        camera.setPipeline(pipeline);
+
+
         colorSensor.enableLed(sensor);
 
         launcherTicksPerRev = launcher.getMotorType().getTicksPerRev();
@@ -354,9 +384,25 @@ public class MainTeleop extends LinearOpMode {
 
             // 11) Update turret
             robotPos = localizer.getPose();
-            turret.setTargetRobotRelative(robotPos.position.x, robotPos.position.y, 0);
-            turret.update();
+// feed data to the actual thing with the camera
+            ArrayList<AprilTagDetection> detections = pipeline.getLatestDetections();
+            if (!detections.isEmpty()) {
+                AprilTagDetection tag = detections.get(0);
 
+                double bearing = Math.toDegrees(Math.atan2(tag.pose.x, tag.pose.z));
+                turret.updateVisionMeasurement(bearing, true);
+
+                double forwardDist = tag.pose.z * 3.28084 * 12; // convert to inches if needed
+                double leftRight = tag.pose.x * 3.28084 * 12;
+                double height = tag.pose.y * 3.28084 * 12; // height of tag relative
+
+                turret.setTargetRobotRelative(forwardDist, leftRight, height);
+            } else {
+                // No tag seen - tell turret vision is invalid (it will stop or use last known)
+                turret.updateVisionMeasurement(0, false);
+            }
+
+            turret.update();
             // Telemetry updates
             telemetry.addData("drive", "x=%.2f y=%.2f h=%.2f", x, y, h);
             telemetry.addData("pattern", patternName);
