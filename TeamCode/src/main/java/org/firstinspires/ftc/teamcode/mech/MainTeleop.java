@@ -522,9 +522,15 @@ public class MainTeleop extends LinearOpMode {
         if(launcherPIDF.oscillationratio<.01){
             if(launcherPIDF.errorlist.size()>1000){
                 int j = launcherPIDF.errorlist.indexOf(Collections.max(launcherPIDF.errorlist));
+                int k = 0;
                 for(int i=11;i<launcherPIDF.errorlist.size();i++){
                     if((launcherPIDF.errorlist.get(j)+.01)>launcherPIDF.errorlist.get(i) && (launcherPIDF.errorlist.get(j)-.01)<launcherPIDF.errorlist.get(i)){
-                        double frequency = 1/Math.abs((launcherPIDF.timelist.get(i)-launcherPIDF.timelist.get(j)));
+                        k = i;
+                    }
+                }
+                for(int i=k;i<launcherPIDF.errorlist.size();i++){
+                    if((launcherPIDF.errorlist.get(k)+.01)>launcherPIDF.errorlist.get(i) && (launcherPIDF.errorlist.get(k)-.01)<launcherPIDF.errorlist.get(i)){
+                        double frequency = 1/Math.abs((launcherPIDF.timelist.get(i)-launcherPIDF.timelist.get(k)));
                         period = 2*3.14/frequency;
                         break;
                     }
