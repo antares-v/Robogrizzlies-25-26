@@ -109,4 +109,30 @@ public double ZiegerZichloas(double targetTicksPerSec, double measuredTicksPerSe
         double out = (kP * error) + iTerm + dTerm + fTerm;
         return Range.clip(out, outputMin, outputMax);
     }
+
+    // position holding
+    public double updatePosition(double targetTicks, double measuredTicks, double dtSec) {
+        if (dtSec <= 1e-6) dtSec = 1e-3;
+
+        double error = targetTicks - measuredTicks;
+
+        // Integral with clamp (same clamp units as output power)
+        integral += error * dtSec;
+        double iTerm = kI * integral;
+        iTerm = Range.clip(iTerm, -iMax, iMax);
+
+        // Derivative on error
+        double dTerm = 0.0;
+        if (hasLast) {
+            double derivative = (error - lastError) / dtSec;
+            dTerm = kD * derivative;
+        }
+        lastError = error;
+        hasLast = true;
+
+        double fTerm = kF;
+
+        double out = (kP * error) + iTerm + dTerm + fTerm;
+        return Range.clip(out, outputMin, outputMax);
+    }
 }
