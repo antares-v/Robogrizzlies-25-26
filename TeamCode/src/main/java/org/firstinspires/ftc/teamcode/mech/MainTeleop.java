@@ -41,7 +41,6 @@ public class MainTeleop extends LinearOpMode {
     // Hardware maps
     private movement drive;
     private CRServo bottomFlywheel, topFlywheel;
-    private RevColorSensorV3 sensor;
     // private Servo spindexer;  // SPINDEXER DISABLED
     private DcMotorEx backIntake, frontIntake, launcher;
 
@@ -54,7 +53,7 @@ public class MainTeleop extends LinearOpMode {
     private final ColorDetection colorSensor = new ColorDetection();
     private int i = 0;
 
-    private int Kp;
+    private double Kp;
     private final ElapsedTime spintime = new ElapsedTime();
 
     // Button tracking
@@ -130,11 +129,11 @@ public class MainTeleop extends LinearOpMode {
     private Servo turretPitch;
     private TurretController turret;
 
-    private PinpointLocalizer localizer = new PinpointLocalizer(hardwareMap, 0.00199746322, new Pose2d(0, 0, Math.toRadians(90)));
+    private PinpointLocalizer localizer;
     private Pose2d robotPos;
 
     // tune values
-    private static double LAUNCH_kP = 0.00025;
+    private static double LAUNCH_kP = 0.01525;
     private static double LAUNCH_kI = 0.0000008;
     private static double LAUNCH_kD = 0.00001;
 
@@ -144,8 +143,8 @@ public class MainTeleop extends LinearOpMode {
     private AprilTagDetectionPipeline pipeline;
     private OpenCvCamera camera;
 
-    int cameraMonitorViewId = hardwareMap.appContext.getResources()
-            .getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+//    int cameraMonitorViewId = hardwareMap.appContext.getResources()
+//            .getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
 
     // Helpers
     private static double deadzone(double v, double dz) {
@@ -163,31 +162,26 @@ public class MainTeleop extends LinearOpMode {
         launcher = hardwareMap.get(DcMotorEx.class, "launcher");
         backIntake = hardwareMap.get(DcMotorEx.class, "backIntake");
         frontIntake = hardwareMap.get(DcMotorEx.class, "frontIntake");
-        sensor = hardwareMap.get(RevColorSensorV3.class, "colorSensor");
         turretYaw  = hardwareMap.get(CRServo.class, "turretYaw");
         turretPitch = hardwareMap.get(Servo.class, "turretPitch");
-        camera = OpenCvCameraFactory.getInstance().createWebcam(
-                hardwareMap.get(WebcamName.class, "webcam"), cameraMonitorViewId);
+        //camera = OpenCvCameraFactory.getInstance().createWebcam(
+                //hardwareMap.get(WebcamName.class, "webcam"), cameraMonitorViewId);
 
+        launcher.setDirection(DcMotorEx.Direction.REVERSE);
 
+        localizer = new PinpointLocalizer(hardwareMap, 0.00199746322, new Pose2d(0, 0, Math.toRadians(90)));
 
-        turret = new TurretController(turretYaw, turretPitch);
+        // turret = new TurretController(turretYaw, turretPitch);
 
-        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        // int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
 
-        turret.setTargetRobotRelative(36, 10, 0);
+        // turret.setTargetRobotRelative(36, 10, 0);
 
         launcher.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
 
         launcher.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
 
         launcher.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
-
-
-        frontIntake.setDirection(DcMotorEx.Direction.REVERSE);
-
-        bottomFlywheel.setDirection(DcMotorSimple.Direction.FORWARD);
-        topFlywheel.setDirection(DcMotorSimple.Direction.REVERSE);
 
         // init ball list
         ballcols.clear();
@@ -201,21 +195,18 @@ public class MainTeleop extends LinearOpMode {
 
         telemetry.addLine("Ready");
         telemetry.update();
-        camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
+        /*camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
             @Override
             public void onOpened() {
                 camera.startStreaming(640, 480, OpenCvCameraRotation.UPRIGHT);
             }
             @Override
             public void onError(int errorCode) {}
-        });
+        });*/
 
         waitForStart();
-        pipeline = new AprilTagDetectionPipeline(telemetry);
-        camera.setPipeline(pipeline);
-
-
-        colorSensor.enableLed(sensor);
+        // pipeline = new AprilTagDetectionPipeline(telemetry);
+        // camera.setPipeline(pipeline);
 
         launcherTicksPerRev = launcher.getMotorType().getTicksPerRev();
         baseLauncherPIDF = launcher.getPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER);
@@ -389,8 +380,20 @@ public class MainTeleop extends LinearOpMode {
 
             // 11) Update turret
             robotPos = localizer.getPose();
-            turret.setTargetRobotRelative(robotPos.position.x, robotPos.position.y, 0);
-            turret.update();
+            // ArrayList<AprilTagDetection> detections = pipeline.getLatestDetections();
+            /*for (AprilTagDetection tag : detections) {
+                if (tag.id == 20 || tag.id == 24) {
+                    double bearing = Math.toDegrees(Math.atan2(tag.pose.x, tag.pose.z));
+                    turret.updateVisionMeasurement(bearing, true);
+
+                    double forwardDist = tag.pose.z * 3.28084 * 12 - robotPos.position.y; // convert to inches if needed
+                    double leftRight = tag.pose.x * 3.28084 * 12 - robotPos.position.x;
+                    double height = tag.pose.y * 3.28084 * 12; // height of tag relative
+
+                    turret.setTargetRobotRelative(forwardDist, leftRight, height);
+                }
+            }*/
+            // turret.update();
 
             findKp();
 
@@ -518,12 +521,12 @@ public class MainTeleop extends LinearOpMode {
         double period = 0;
 
         telemetry.addData("Error_Oscillation", "CustomPIDF.oscillation=%.3f",launcherPIDF.oscillationratio);
-        telemetry.addData("Ku", "Kp=%.3f",Kp);
-        if(launcherPIDF.oscillationratio<.01){
+        telemetry.addData("Ku",Kp);
+        if(launcherPIDF.oscillationratio<0.01){
             if(launcherPIDF.errorlist.size()>1000){
                 int j = launcherPIDF.errorlist.indexOf(Collections.max(launcherPIDF.errorlist));
                 int k = 0;
-                for(int i=11;i<launcherPIDF.errorlist.size();i++){
+                for(int i=0;i<launcherPIDF.errorlist.size();i++){
                     if((launcherPIDF.errorlist.get(j)+.01)>launcherPIDF.errorlist.get(i) && (launcherPIDF.errorlist.get(j)-.01)<launcherPIDF.errorlist.get(i)){
                         k = i;
                     }
@@ -536,14 +539,14 @@ public class MainTeleop extends LinearOpMode {
                     }
                 }
                 telemetry.addData("Error_Oscillation", "CustomPIDF.oscillation=%.3f",launcherPIDF.oscillationratio);
-                telemetry.addData("Ku", "Kp=%.3f",Kp);
+                telemetry.addData("Ku", Kp);
                 telemetry.addData("Pu", "Period=%.3f",period);
                 telemetry.addLine("Ku found, testing over");
                 stopShooter();
             }
         } else{
-            if(launcherPIDF.errorlist.size()>100){
-                Kp+=.001;
+            if(launcherPIDF.errorlist.size()>10){
+                Kp+=0.001;
                 launcherPIDF = new CustomPIDF(Kp, LAUNCH_kI, LAUNCH_kD, launcherPIDF.kF);
             }
         }
@@ -569,7 +572,7 @@ public class MainTeleop extends LinearOpMode {
 
         // Optional: voltage compensation (helps keep behavior consistent)
         double scale = NOMINAL_VOLTAGE / batteryVoltage();
-        power = Range.clip(power * scale, -1.0, 1.0);
+        power = Range.clip(power, -1.0, 1.0);
 
         launcher.setPower(power);
 
@@ -586,14 +589,15 @@ public class MainTeleop extends LinearOpMode {
 
             case AIM: {
                 outtaking = true;
-                turret.update();
+                // turret.update();
 
                 // If turret is aimed, continue
-                if (turret.isAimed()) {
-                    shootState = ShootState.SET_SERVO;
-                    shootTimer.reset();
-                }
-
+                // if (turret.isAimed()) {
+                    // shootState = ShootState.SET_SERVO;
+                    // shootTimer.reset();
+                // }
+                shootState = ShootState.SET_SERVO;
+                Kp = 0.01525;
                 telemetry.addData("turret", "aiming...");
                 break;
             }
