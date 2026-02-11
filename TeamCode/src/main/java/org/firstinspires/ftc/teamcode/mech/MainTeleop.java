@@ -95,6 +95,7 @@ public class MainTeleop extends LinearOpMode {
     private PIDFCoefficients baseLauncherPIDF;
     private double launcherTicksPerRev;
 
+    // "At speed" logic
     private final ElapsedTime rpmStableTimer = new ElapsedTime();
     private static final long STABLE_MS = 100;           // must be at speed this long before feeding
     private static final double RPM_TOL_FRAC = 0.05;     // +/-3% window around target
@@ -126,14 +127,13 @@ public class MainTeleop extends LinearOpMode {
 
     private CRServo turretYaw;
     private Servo turretPitch;
-    private DcMotorEx turretYawEncoder;
     private TurretController turret;
 
     private PinpointLocalizer localizer;
     private Pose2d robotPos;
 
     // tune values
-    private static double LAUNCH_kP = 0.01525;
+    private static double LAUNCH_kP = 0.00025;
     private static double LAUNCH_kI = 0.0000008;
     private static double LAUNCH_kD = 0.00001;
 
@@ -143,9 +143,6 @@ public class MainTeleop extends LinearOpMode {
     private AprilTagDetectionPipeline pipeline;
     private OpenCvCamera camera;
 
-//    int cameraMonitorViewId = hardwareMap.appContext.getResources()
-//            .getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-
     // Helpers
     private static double deadzone(double v, double dz) {
         return (Math.abs(v) < dz) ? 0 : v;
@@ -154,6 +151,7 @@ public class MainTeleop extends LinearOpMode {
     @Override
     public void runOpMode() {
         // Init
+        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         drive = new movement(this, 0, 0, 0);
 
         bottomFlywheel = hardwareMap.get(CRServo.class, "bottomFlywheel");
@@ -164,28 +162,14 @@ public class MainTeleop extends LinearOpMode {
         frontIntake = hardwareMap.get(DcMotorEx.class, "frontIntake");
         turretYaw  = hardwareMap.get(CRServo.class, "turretYaw");
         turretPitch = hardwareMap.get(Servo.class, "turretPitch");
-        turretYawEncoder = hardwareMap.get(DcMotorEx.class, "turretYawEncoder");
-
-        // Encoder-only device
-        turretYawEncoder.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-        turretYawEncoder.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
-        turretYawEncoder.setPower(0);
-
-        // Turret controller (yaw uses encoder position hold; pitch uses distance table)
-        turret = new TurretController(turretYaw, turretYawEncoder, turretPitch);
-        // set gear ratio
-        turret.yawGearRatio = 1.0;
-        turret.resetYawHoldToCurrent();
-        //camera = OpenCvCameraFactory.getInstance().createWebcam(
-                //hardwareMap.get(WebcamName.class, "webcam"), cameraMonitorViewId);
+        camera = OpenCvCameraFactory.getInstance().createWebcam(
+                hardwareMap.get(WebcamName.class, "webcam"), cameraMonitorViewId);
 
         launcher.setDirection(DcMotorEx.Direction.REVERSE);
 
         localizer = new PinpointLocalizer(hardwareMap, 0.00199746322, new Pose2d(0, 0, Math.toRadians(90)));
 
         // turret = new TurretController(turretYaw, turretPitch);
-
-        // int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
 
         // turret.setTargetRobotRelative(36, 10, 0);
 
@@ -207,34 +191,19 @@ public class MainTeleop extends LinearOpMode {
 
         telemetry.addLine("Ready");
         telemetry.update();
-
-        int cameraMonitorViewId = hardwareMap.appContext.getResources()
-                .getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        camera = OpenCvCameraFactory.getInstance().createInternalCamera(
-                OpenCvInternalCamera.CameraDirection.BACK, cameraMonitorViewId);
-
-        pipeline = new AprilTagDetectionPipeline(telemetry);
-        camera.setPipeline(pipeline);
-
         camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
             @Override
             public void onOpened() {
                 camera.startStreaming(640, 480, OpenCvCameraRotation.UPRIGHT);
             }
             @Override
-            public void onError(int errorCode) { }
+            public void onError(int errorCode) {}
         });
 
-        /*camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
-            @Override
-            public void onOpened() {
-                camera.startStreaming(640, 480, OpenCvCameraRotation.UPRIGHT);
-            }
-            @Override
-            public void onError(int errorCode) {}
-        });*/
-
         waitForStart();
+        pipeline = new AprilTagDetectionPipeline(telemetry);
+        camera.setPipeline(pipeline);
+
         launcherTicksPerRev = launcher.getMotorType().getTicksPerRev();
         baseLauncherPIDF = launcher.getPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER);
 
@@ -405,38 +374,24 @@ public class MainTeleop extends LinearOpMode {
             // 10) Update localizer
             localizer.update();
 
-            // 11) Update turret + AprilTag aiming (basket tags: 20, 24)
+            // 11) Update turret
             robotPos = localizer.getPose();
+            ArrayList<AprilTagDetection> detections = pipeline.getLatestDetections();
+            for (AprilTagDetection tag : detections) {
+                telemetry.addData("detection", tag.id);
+                if (tag.id == 20 || tag.id == 24) {
+                    double bearing = Math.toDegrees(Math.atan2(tag.pose.x, tag.pose.z));
+                    // turret.updateVisionMeasurement(bearing, true);
 
-            AprilTagDetection best = null;
-            ArrayList<AprilTagDetection> detections = (pipeline != null) ? pipeline.getLatestDetections() : null;
-            if (detections != null) {
-                for (AprilTagDetection tag : detections) {
-                    if (tag.id == 20 || tag.id == 24) {
-                        // Prefer the closest tag
-                        if (best == null || tag.pose.z < best.pose.z) {
-                            best = tag;
-                        }
-                    }
+                    double forwardDist = tag.pose.z * 3.28084 * 12 - robotPos.position.y; // convert to inches if needed
+                    double leftRight = tag.pose.x * 3.28084 * 12 - robotPos.position.x;
+                    double height = tag.pose.y * 3.28084 * 12; // height of tag relative
+
+                    // turret.setTargetRobotRelative(forwardDist, leftRight, height);
                 }
             }
+            // turret.update();
 
-            if (best != null) {
-                // OpenFTC pose is in meters. Convert to inches for pitch table.
-                double forwardIn = best.pose.z * 39.3701;
-                double leftRightIn = best.pose.x * 39.3701;
-                double heightIn = best.pose.y * 39.3701;
-
-                // Horizontal bearing error to tag center (deg)
-                double yawErrDeg = Math.toDegrees(Math.atan2(best.pose.x, best.pose.z));
-
-                turret.updateVisionMeasurement(yawErrDeg, forwardIn, true);
-                turret.setTargetRobotRelative(forwardIn, leftRightIn, heightIn);
-            } else {
-                turret.updateVisionMeasurement(0.0, 0.0, false);
-            }
-
-            turret.update();
             findKp();
 
             // Telemetry updates
@@ -449,7 +404,6 @@ public class MainTeleop extends LinearOpMode {
             telemetry.addData("typeofshot", stype);
             telemetry.addData("pos", launcher.getCurrentPosition());
             telemetry.addData("vel", launcher.getVelocity());
-            telemetry.addData("turretAimed", turret.isAimed());
             telemetry.update();
 
             idle();
@@ -640,7 +594,7 @@ public class MainTeleop extends LinearOpMode {
                     // shootTimer.reset();
                 // }
                 shootState = ShootState.SET_SERVO;
-                Kp = 0.01525;
+                Kp = 0;
                 telemetry.addData("turret", "aiming...");
                 break;
             }
