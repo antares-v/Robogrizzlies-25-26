@@ -7,6 +7,8 @@ import com.qualcomm.robotcore.util.Range;
 
 public class TurretController {
 
+    // YAW SERVO GEAR RATIOS: 45:132
+    // PITCH SERVO GEAR RATIOS: 26:200
     // Hardware
     private final CRServo yawServo;
     private final Servo pitchServo;
@@ -18,7 +20,7 @@ public class TurretController {
     public double yawMaxPower = 1.0;
 
     // Approximate turret angular speed (deg/sec) when yawServo is commanded at full power (1.0).
-    public double yawDegPerSecAtFullPower = 180.0;
+    public double yawDegPerSecAtFullPower = 178.0;
 
     // Position PIDF for yaw hold/aim (deg -> power)
     private final CustomPIDF yawPidf;
@@ -37,8 +39,8 @@ public class TurretController {
     public double[] pitchPos    = {0.78,0.70,0.64,0.60};
 
     // Hard clamps for safety
-    public double pitchMinPos = 0.45;
-    public double pitchMaxPos = 0.90;
+    public double pitchMinPos = 0.5;
+    public double pitchMaxPos = 0.6;
 
     // Slew-rate to prevent pitch oscillations
     public double pitchSlewPerSec = 1.5;
@@ -69,8 +71,8 @@ public class TurretController {
         this.pitchServo = pitchServo;
 
         // Position PID defaults (YOU WILL NEED TO TUNE)
-        this.yawPidf = new CustomPIDF(0.020, 0.0, 0.001, 0.0);
-        this.yawPidf.iMax = 0.25;
+        this.yawPidf = new CustomPIDF(0.00000000000005, 0.0, 0.00000000001, 0.0);
+        this.yawPidf.iMax = 0.1;
 
         pitchCmd = pitchServo.getPosition();
         pitchDesired = pitchCmd;
@@ -122,12 +124,11 @@ public class TurretController {
         loopTimer.reset();
         if (dt <= 1e-6) dt = 0.02;
 
-        // --- Pitch ---
         double dist = Math.hypot(targetXIn, targetYIn);
         if (visionValid) dist = visionDistanceIn;
 
         if (Math.abs(targetZIn) > 0.5) {
-            double elevationDeg = Math.toDegrees(Math.atan2(targetZIn, Math.max(1e-6, dist)));
+            double elevationDeg = Math.toDegrees(Math.atan2(targetZIn, Math.max(1e-6, dist))) * 200 / 26;
             pitchDesired = elevationDegToServoPos(elevationDeg);
         } else {
             pitchDesired = interpPitch(dist);
@@ -139,8 +140,7 @@ public class TurretController {
         boolean visionFresh = visionValid && (System.currentTimeMillis() - lastVisionTime < visionTimeoutMs);
 
         if (visionFresh) {
-            double errDeg = yawInverted ? -visionYawErrorDeg : visionYawErrorDeg;
-            yawTargetDeg += errDeg;
+            yawTargetDeg += visionYawErrorDeg;
             settleTimer.reset();
         }
 
@@ -191,7 +191,7 @@ public class TurretController {
                 return Range.clip(p, pitchMinPos, pitchMaxPos);
             }
         }
-        return Range.clip(pitchPos[n - 1], pitchMinPos, pitchMaxPos);
+        return Range.clip(pitchPos[n - 1], pitchMinPos, pitchMaxPos) * 200 / 26;
     }
 
     private static double slew(double current, double target, double ratePerSec, double dt) {

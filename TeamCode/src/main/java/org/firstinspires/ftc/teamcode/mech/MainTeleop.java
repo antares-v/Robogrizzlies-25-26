@@ -159,6 +159,7 @@ public class MainTeleop extends LinearOpMode {
         turretYaw  = hardwareMap.get(CRServo.class, "turretYaw");
         turretPitch = hardwareMap.get(Servo.class, "turretPitch");
 
+
         launcher.setDirection(DcMotorEx.Direction.REVERSE);
 
         localizer = new PinpointLocalizer(hardwareMap, 0.00199746322, new Pose2d(0, 0, Math.toRadians(90)));
@@ -377,16 +378,21 @@ public class MainTeleop extends LinearOpMode {
                 List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
                 if (fiducials != null) {
                     for (LLResultTypes.FiducialResult f : fiducials) {
+                        telemetry.addData("detection", f.getFiducialId());
                         int id = f.getFiducialId();
-                        if (id == 20 || id == 24) {
+                        if (id == 20 || id == 21 || id == 24) {
                             yawErrDeg = f.getTargetXDegrees();
                             Pose3D tagPoseRobot = f.getTargetPoseRobotSpace();
                             if (tagPoseRobot != null) {
                                 double xM = tagPoseRobot.getPosition().x;
                                 double yM = tagPoseRobot.getPosition().y;
                                 double zM = tagPoseRobot.getPosition().z;
+                                turret.setTargetRobotRelative(xM, yM, zM);
                                 double distM = Math.sqrt(xM*xM + yM*yM + zM*zM);
                                 distIn = distM * 39.3701;
+                                telemetry.addData("apriltagX", xM);
+                                telemetry.addData("apriltagY", yM);
+                                telemetry.addData("apriltagZ", zM);
                             }
                             tagSeen = true;
                             break;
@@ -597,11 +603,10 @@ public class MainTeleop extends LinearOpMode {
                 // turret.update();
 
                 // If turret is aimed, continue
-                // if (turret.isAimed()) {
-                    // shootState = ShootState.SET_SERVO;
-                    // shootTimer.reset();
-                // }
-                shootState = ShootState.SET_SERVO;
+                if (turret.isAimed()) {
+                    shootState = ShootState.SET_SERVO;
+                    shootTimer.reset();
+                }
                 Kp = 0;
                 telemetry.addData("turret", "aiming...");
                 break;
