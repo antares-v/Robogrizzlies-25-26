@@ -14,19 +14,16 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.Range;
 
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 
-import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.teamcode.mech.Auto.PinpointLocalizer;
-import org.firstinspires.ftc.teamcode.mech.CV.AprilTagDetectionPipeline;
 import org.firstinspires.ftc.teamcode.mech.CV.ColorDetection;
 import org.firstinspires.ftc.teamcode.mech.movement.movement;
 import org.firstinspires.ftc.teamcode.mech.control.CustomPIDF;
 import org.firstinspires.ftc.teamcode.mech.control.TurretController;
-import org.openftc.apriltag.AprilTagDetection;
-import org.openftc.easyopencv.OpenCvCamera;
-import org.openftc.easyopencv.OpenCvCameraFactory;
-import org.openftc.easyopencv.OpenCvCameraRotation;
-import org.openftc.easyopencv.OpenCvInternalCamera;
 
 
 import java.util.ArrayList;
@@ -140,8 +137,8 @@ public class MainTeleop extends LinearOpMode {
     // kF will be computed from motor max speed at init, but you can override if you want:
     private static double LAUNCH_kF = -1.0; // -1 = auto compute
 
-    private AprilTagDetectionPipeline pipeline;
-    private OpenCvCamera camera;
+    // Limelight AprilTag detection
+    private Limelight3A limelight;
 
     // Helpers
     private static double deadzone(double v, double dz) {
@@ -151,7 +148,6 @@ public class MainTeleop extends LinearOpMode {
     @Override
     public void runOpMode() {
         // Init
-        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         drive = new movement(this, 0, 0, 0);
 
         bottomFlywheel = hardwareMap.get(CRServo.class, "bottomFlywheel");
@@ -162,14 +158,13 @@ public class MainTeleop extends LinearOpMode {
         frontIntake = hardwareMap.get(DcMotorEx.class, "frontIntake");
         turretYaw  = hardwareMap.get(CRServo.class, "turretYaw");
         turretPitch = hardwareMap.get(Servo.class, "turretPitch");
-        camera = OpenCvCameraFactory.getInstance().createWebcam(
-                hardwareMap.get(WebcamName.class, "webcam"), cameraMonitorViewId);
 
         launcher.setDirection(DcMotorEx.Direction.REVERSE);
 
         localizer = new PinpointLocalizer(hardwareMap, 0.00199746322, new Pose2d(0, 0, Math.toRadians(90)));
 
-        // turret = new TurretController(turretYaw, turretPitch);
+        turret = new TurretController(turretYaw, turretPitch);
+        turret.resetYawEstimate();
 
         // turret.setTargetRobotRelative(36, 10, 0);
 
@@ -191,18 +186,14 @@ public class MainTeleop extends LinearOpMode {
 
         telemetry.addLine("Ready");
         telemetry.update();
-        camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
-            @Override
-            public void onOpened() {
-                camera.startStreaming(640, 480, OpenCvCameraRotation.UPRIGHT);
-            }
-            @Override
-            public void onError(int errorCode) {}
-        });
+
+        // Limelight init
+        limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        limelight.setPollRateHz(100);
+        limelight.start();
+        limelight.pipelineSwitch(0); // pipeline index
 
         waitForStart();
-        pipeline = new AprilTagDetectionPipeline(telemetry);
-        camera.setPipeline(pipeline);
 
         launcherTicksPerRev = launcher.getMotorType().getTicksPerRev();
         baseLauncherPIDF = launcher.getPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER);
@@ -374,23 +365,40 @@ public class MainTeleop extends LinearOpMode {
             // 10) Update localizer
             localizer.update();
 
-            // 11) Update turret
+            // 11) Update turret (Limelight AprilTags)
             robotPos = localizer.getPose();
-            ArrayList<AprilTagDetection> detections = pipeline.getLatestDetections();
-            for (AprilTagDetection tag : detections) {
-                telemetry.addData("detection", tag.id);
-                if (tag.id == 20 || tag.id == 24) {
-                    double bearing = Math.toDegrees(Math.atan2(tag.pose.x, tag.pose.z));
-                    // turret.updateVisionMeasurement(bearing, true);
 
-                    double forwardDist = tag.pose.z * 3.28084 * 12 - robotPos.position.y; // convert to inches if needed
-                    double leftRight = tag.pose.x * 3.28084 * 12 - robotPos.position.x;
-                    double height = tag.pose.y * 3.28084 * 12; // height of tag relative
+            boolean tagSeen = false;
+            double yawErrDeg = 0.0;
+            double distIn = 0.0;
 
-                    // turret.setTargetRobotRelative(forwardDist, leftRight, height);
+            LLResult result = (limelight != null) ? limelight.getLatestResult() : null;
+            if (result != null && result.isValid()) {
+                List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
+                if (fiducials != null) {
+                    for (LLResultTypes.FiducialResult f : fiducials) {
+                        int id = f.getFiducialId();
+                        if (id == 20 || id == 24) {
+                            yawErrDeg = f.getTargetXDegrees();
+                            Pose3D tagPoseRobot = f.getTargetPoseRobotSpace();
+                            if (tagPoseRobot != null) {
+                                double xM = tagPoseRobot.getPosition().x;
+                                double yM = tagPoseRobot.getPosition().y;
+                                double zM = tagPoseRobot.getPosition().z;
+                                double distM = Math.sqrt(xM*xM + yM*yM + zM*zM);
+                                distIn = distM * 39.3701;
+                            }
+                            tagSeen = true;
+                            break;
+                        }
+                    }
                 }
             }
-            // turret.update();
+
+            if (turret != null) {
+                turret.updateVisionMeasurement(yawErrDeg, distIn, tagSeen);
+                turret.update();
+            }
 
             findKp();
 
