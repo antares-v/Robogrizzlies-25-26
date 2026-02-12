@@ -18,6 +18,7 @@ public class TurretController {
 
     // Safety clamp for max yaw power
     public double yawMaxPower = 1.0;
+    private double filteredTxDeg = 0.0;
 
     // Approximate turret angular speed (deg/sec) when yawServo is commanded at full power (1.0).
     public double yawDegPerSecAtFullPower = 178.0;
@@ -31,7 +32,7 @@ public class TurretController {
     private double visionDistanceIn = 0.0;
     private boolean visionValid = false;
     private long lastVisionTime = 0;
-    public long visionTimeoutMs = 250;
+    public long visionTimeoutMs = 500;
 
     // Pitch table (distance in inches to servo position)
     // Must be same length and strictly increasing distances.
@@ -72,7 +73,7 @@ public class TurretController {
 
         // Position PID defaults (YOU WILL NEED TO TUNE)
         this.yawPidf = new CustomPIDF(0.005, 0.0, 0.5, 0.0);
-        this.yawPidf.iMax = 0.1;
+        this.yawPidf.iMax = 0.0;
 
         pitchCmd = pitchServo.getPosition();
         pitchDesired = pitchCmd;
@@ -139,15 +140,30 @@ public class TurretController {
 
         boolean visionFresh = visionValid && (System.currentTimeMillis() - lastVisionTime < visionTimeoutMs);
 
+        double yawPower = 0.0;
+
         if (visionFresh) {
-            yawTargetDeg = yawEstimateDeg + visionYawErrorDeg;
-            settleTimer.reset();
+            // Low-pass filter to tx a bit to reduce jitter
+            double alpha = 0.25;
+            filteredTxDeg = filteredTxDeg + alpha * (visionYawErrorDeg - filteredTxDeg);
+
+            double tx = filteredTxDeg;
+            if (Math.abs(tx) < 0.5) tx = 0.0;
+
+            yawPower = yawPidf.updatePosition(0.0, tx, dt);
+
+        } else {
+            // If no tag, stop yaw
+            yawPidf.reset();
+            yawPower = 0.0;
         }
 
-        double yawPower = yawPidf.updatePosition(yawTargetDeg, yawEstimateDeg, dt);
         yawPower = Range.clip(yawPower, -yawMaxPower, yawMaxPower);
 
-        // Update our internal yaw estimate from commanded power.
+        // apply inversion
+        if (yawInverted) yawPower *= -1.0;
+
+        // Update internal estimate
         yawEstimateDeg += yawPower * yawDegPerSecAtFullPower * dt;
 
         yawServo.setPower(yawPower);
