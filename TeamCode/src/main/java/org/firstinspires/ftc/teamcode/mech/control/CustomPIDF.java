@@ -62,7 +62,7 @@ public class CustomPIDF {
         stdlist = new ArrayList<>();
     }
 
-//Actualy ts is ziegler nichloas testing for a single Kp Value, we only use kp and wait till we have osalation, which would man that the STD is fairly constnat aka 0
+//Actualy ts is ziegler nichloas testing for a single Kp Value, we only use kp and wait till we have oscillation, which would man that the STD is fairly constnat aka 0
 
 public double ZiegerZichloas(double targetTicksPerSec, double measuredTicksPerSec, double dtSec) {
         if (dtSec <= 0.00001) dtSec = 0.001;

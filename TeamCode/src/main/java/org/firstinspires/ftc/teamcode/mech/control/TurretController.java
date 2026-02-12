@@ -39,8 +39,8 @@ public class TurretController {
     public double[] pitchPos    = {0.78,0.70,0.64,0.60};
 
     // Hard clamps for safety
-    public double pitchMinPos = 0.5;
-    public double pitchMaxPos = 0.6;
+    public double pitchMinPos = 0.4;
+    public double pitchMaxPos = 0.8;
 
     // Slew-rate to prevent pitch oscillations
     public double pitchSlewPerSec = 1.5;
@@ -50,7 +50,7 @@ public class TurretController {
     public double aimTolPitchPos = 0.02;
     public long settleMs = 120;
 
-    // Target point relative to robot (optional; used for pitch if vision distance is not valid)
+    // Target point relative to robot (optional; used for pitch if vis ion distance is not valid)
     private double targetXIn = 0;   // forward
     private double targetYIn = 0;   // left
     private double targetZIn = 0;   // up (optional)
@@ -71,7 +71,7 @@ public class TurretController {
         this.pitchServo = pitchServo;
 
         // Position PID defaults (YOU WILL NEED TO TUNE)
-        this.yawPidf = new CustomPIDF(0.00000000000005, 0.0, 0.00000000001, 0.0);
+        this.yawPidf = new CustomPIDF(0.005, 0.0, 0.5, 0.0);
         this.yawPidf.iMax = 0.1;
 
         pitchCmd = pitchServo.getPosition();
@@ -140,7 +140,7 @@ public class TurretController {
         boolean visionFresh = visionValid && (System.currentTimeMillis() - lastVisionTime < visionTimeoutMs);
 
         if (visionFresh) {
-            yawTargetDeg += visionYawErrorDeg;
+            yawTargetDeg = yawEstimateDeg + visionYawErrorDeg;
             settleTimer.reset();
         }
 
@@ -191,7 +191,7 @@ public class TurretController {
                 return Range.clip(p, pitchMinPos, pitchMaxPos);
             }
         }
-        return Range.clip(pitchPos[n - 1], pitchMinPos, pitchMaxPos) * 200 / 26;
+        return Range.clip(pitchPos[n - 1], pitchMinPos, pitchMaxPos);
     }
 
     private static double slew(double current, double target, double ratePerSec, double dt) {

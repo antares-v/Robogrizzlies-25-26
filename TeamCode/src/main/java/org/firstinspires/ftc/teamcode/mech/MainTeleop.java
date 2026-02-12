@@ -387,7 +387,7 @@ public class MainTeleop extends LinearOpMode {
                                 double xM = tagPoseRobot.getPosition().x;
                                 double yM = tagPoseRobot.getPosition().y;
                                 double zM = tagPoseRobot.getPosition().z;
-                                turret.setTargetRobotRelative(xM, yM, zM);
+                                turret.setTargetRobotRelative(xM * 39.3701, yM * 39.3701, zM * 39.3701);
                                 double distM = Math.sqrt(xM*xM + yM*yM + zM*zM);
                                 distIn = distM * 39.3701;
                                 telemetry.addData("apriltagX", xM);
