@@ -393,6 +393,7 @@ public class MainTeleop extends LinearOpMode {
                                 telemetry.addData("apriltagX", xM);
                                 telemetry.addData("apriltagY", yM);
                                 telemetry.addData("apriltagZ", zM);
+                                telemetry.addData("yawErr", yawErrDeg);
                             }
                             tagSeen = true;
                             break;
@@ -418,6 +419,9 @@ public class MainTeleop extends LinearOpMode {
             telemetry.addData("typeofshot", stype);
             telemetry.addData("pos", launcher.getCurrentPosition());
             telemetry.addData("vel", launcher.getVelocity());
+            telemetry.addData("rawOutValue", turret.rawOut());
+            telemetry.addData("rawTxValue", turret.rawTx());
+            telemetry.addData("rawPosition", turret.rawPos());
             telemetry.update();
 
             idle();

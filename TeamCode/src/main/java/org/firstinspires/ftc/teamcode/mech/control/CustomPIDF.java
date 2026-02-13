@@ -133,6 +133,6 @@ public double ZiegerZichloas(double targetTicksPerSec, double measuredTicksPerSe
         double fTerm = kF;
 
         double out = (kP * error) + iTerm + dTerm + fTerm;
-        return Range.clip(out, outputMin, outputMax);
+        return out;
     }
 }

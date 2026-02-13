@@ -64,15 +64,18 @@ public class TurretController {
     private double yawEstimateDeg = 0.0;
     private double yawTargetDeg = 0.0;
 
+    private double out;
     private final ElapsedTime loopTimer = new ElapsedTime();
     private final ElapsedTime settleTimer = new ElapsedTime();
+
+    private double tx;
 
     public TurretController(CRServo yawServo, Servo pitchServo) {
         this.yawServo = yawServo;
         this.pitchServo = pitchServo;
 
         // Position PID defaults (YOU WILL NEED TO TUNE)
-        this.yawPidf = new CustomPIDF(0.005, 0.0, 0.5, 0.0);
+        this.yawPidf = new CustomPIDF(0.0005, 0.0, 0.0, 0.0);
         this.yawPidf.iMax = 0.0;
 
         pitchCmd = pitchServo.getPosition();
@@ -147,10 +150,11 @@ public class TurretController {
             double alpha = 0.25;
             filteredTxDeg = filteredTxDeg + alpha * (visionYawErrorDeg - filteredTxDeg);
 
-            double tx = filteredTxDeg;
+            tx = filteredTxDeg;
             if (Math.abs(tx) < 0.5) tx = 0.0;
 
-            yawPower = yawPidf.updatePosition(0.0, tx, dt);
+            yawPower = yawPidf.updatePosition(tx, 0, dt);
+            out = yawPower;
 
         } else {
             // If no tag, stop yaw
@@ -159,7 +163,6 @@ public class TurretController {
         }
 
         yawPower = Range.clip(yawPower, -yawMaxPower, yawMaxPower);
-
         // apply inversion
         if (yawInverted) yawPower *= -1.0;
 
@@ -167,6 +170,18 @@ public class TurretController {
         yawEstimateDeg += yawPower * yawDegPerSecAtFullPower * dt;
 
         yawServo.setPower(yawPower);
+    }
+
+    public double rawOut() {
+        return out;
+    }
+
+    public double rawTx() {
+        return tx;
+    }
+
+    public double rawPos() {
+        return yawEstimateDeg;
     }
 
     public boolean isAimed() {

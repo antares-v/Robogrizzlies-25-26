@@ -8,6 +8,9 @@ import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.TranslationalVelConstraint;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -16,6 +19,19 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+import org.firstinspires.ftc.teamcode.mech.control.TurretController;
+
+import java.util.List;
+import org.firstinspires.ftc.teamcode.mech.control.TurretController;
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
+
+import java.util.List;
 
 @Autonomous(name = "Left Drive Auto")
 public class LeftDriveAuto extends LinearOpMode {
@@ -88,7 +104,10 @@ public class LeftDriveAuto extends LinearOpMode {
         static double currentTargetVel = 0.0;
         final DcMotor backIntake, frontIntake;
         final DcMotorEx launcher;
-
+        final CRServo turretYaw;
+        final Servo turretPitch;
+        final TurretController turret;
+        final Limelight3A limelight;
         RobotHW(LinearOpMode opMode) {
             backIntake = opMode.hardwareMap.get(DcMotor.class, "backIntake");
             frontIntake = opMode.hardwareMap.get(DcMotor.class, "frontIntake");
@@ -98,6 +117,14 @@ public class LeftDriveAuto extends LinearOpMode {
             bottomFlywheel = opMode.hardwareMap.get(CRServo.class, "bottomFlywheel");
             topFlywheel = opMode.hardwareMap.get(CRServo.class, "topFlywheel");
             spindexer = opMode.hardwareMap.get(Servo.class, "spindexer");
+
+            turretYaw = opMode.hardwareMap.get(CRServo.class, "turretYaw");
+            turretPitch = opMode.hardwareMap.get(Servo.class, "turretPitch");
+            turret = new TurretController(turretYaw, turretPitch);
+            limelight = opMode.hardwareMap.get(Limelight3A.class, "limelight");
+            limelight.setPollRateHz(100);
+            limelight.start();
+            limelight.pipelineSwitch(0);
         }
 
         void setIntakePower(double pwr) {
@@ -270,7 +297,7 @@ public class LeftDriveAuto extends LinearOpMode {
             }
         };
     }
-    private enum Phase { START_BALL, SPINUP, FIRE, ADVANCE, DONE }
+    private enum Phase { START_BALL, AIM, SPINUP, FIRE, ADVANCE, DONE }
 
     private static Action shootThreeBalls(RobotHW hw) {
         return new Action() {
@@ -295,10 +322,50 @@ public class LeftDriveAuto extends LinearOpMode {
                         hw.spindexer.setPosition(Config.SPINDEX_OUTTAKE[ballIndex]);
                         hw.stopFlywheels();
 
-                        phase = Phase.SPINUP;
+                        phase = Phase.AIM;;
                         resetTimer();
                         return true;
                     }
+                case AIM: {
+                    boolean tagSeen = false;
+                    double yawErrDeg = 0.0;
+                    double distIn = 0.0;
+
+                    LLResult result = (hw.limelight != null) ? hw.limelight.getLatestResult() : null;
+                    if (result != null && result.isValid()) {
+                        List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
+                        if (fiducials != null) {
+                            for (LLResultTypes.FiducialResult f : fiducials) {
+                                int id = f.getFiducialId();
+                                if (id == 20 || id == 21 || id == 24) {
+                                    yawErrDeg = f.getTargetXDegrees();
+                                    Pose3D tagPoseRobot = f.getTargetPoseRobotSpace();
+                                    if (tagPoseRobot != null) {
+                                        double xM = tagPoseRobot.getPosition().x;
+                                        double yM = tagPoseRobot.getPosition().y;
+                                        double zM = tagPoseRobot.getPosition().z;
+                                        hw.turret.setTargetRobotRelative(xM * 39.3701, yM * 39.3701, zM * 39.3701);
+                                        double distM = Math.sqrt(xM*xM + yM*yM + zM*zM);
+                                        distIn = distM * 39.3701;
+                                    }
+                                    tagSeen = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (hw.turret != null) {
+                        hw.turret.updateVisionMeasurement(yawErrDeg, distIn, tagSeen);
+                        hw.turret.update();
+                    }
+                    if (hw.turret.isAimed() || phaseTimer.seconds() > 1.5) {
+                        phase = Phase.SPINUP;
+                        resetTimer();
+                    }
+                    return true;
+                }
+
 
                     case SPINUP: {
                         double vT = (ballIndex == 0) ? Config.TARGET_VEL_FIRST : Config.TARGET_VEL_NEXT;
