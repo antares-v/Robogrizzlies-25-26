@@ -10,7 +10,6 @@ import java.lang.Math;
  */
 public class CustomPIDF {
     public double kP, kI, kD, kF;
-
     // safety
     public double iMax = 0.4;          // max magnitude of integral contribution
     public double outputMin = -1.0;

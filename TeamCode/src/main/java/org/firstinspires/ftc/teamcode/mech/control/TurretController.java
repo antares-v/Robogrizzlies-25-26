@@ -24,7 +24,7 @@ public class TurretController {
     public double yawDegPerSecAtFullPower = 178.0;
 
     // Position PIDF for yaw hold/aim (deg -> power)
-    private final CustomPIDF yawPidf;
+//    private final CustomPIDF yawPidf;
 
     // Vision AprilTag measurement
     // Positive means the tag is to the right (Limelight targetXDegrees / tx).
@@ -75,8 +75,8 @@ public class TurretController {
         this.pitchServo = pitchServo;
 
         // Position PID defaults (YOU WILL NEED TO TUNE)
-        this.yawPidf = new CustomPIDF(0.0005, 0.0, 0.0, 0.0);
-        this.yawPidf.iMax = 0.0;
+//        this.yawPidf = new CustomPIDF(0.0005, 0.0, 0.0, 0.0);
+//        this.yawPidf.iMax = 0.0;
 
         pitchCmd = pitchServo.getPosition();
         pitchDesired = pitchCmd;
@@ -89,7 +89,7 @@ public class TurretController {
     public void resetYawEstimate(double yawDeg) {
         yawEstimateDeg = yawDeg;
         yawTargetDeg = yawDeg;
-        yawPidf.reset();
+//        yawPidf.reset();
         settleTimer.reset();
     }
 
@@ -153,12 +153,14 @@ public class TurretController {
             tx = filteredTxDeg;
             if (Math.abs(tx) < 0.5) tx = 0.0;
 
-            yawPower = yawPidf.updatePosition(tx, 0, dt);
+//            yawPower = yawPidf.updatePosition(tx, 0, dt);
+            double Kp_direct = 0.05;  // Tune this: higher = more aggressive, lower = smoother
+            yawPower = Kp_direct * tx;
             out = yawPower;
 
         } else {
             // If no tag, stop yaw
-            yawPidf.reset();
+//            yawPidf.reset();
             yawPower = 0.0;
         }
 
