@@ -5,6 +5,7 @@ import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -124,6 +125,7 @@ public class MainTeleop extends LinearOpMode {
 
     private CRServo turretYaw;
     private Servo turretPitch;
+    private AnalogInput turretYawEnc;
     private TurretController turret;
 
     private PinpointLocalizer localizer;
@@ -158,13 +160,14 @@ public class MainTeleop extends LinearOpMode {
         frontIntake = hardwareMap.get(DcMotorEx.class, "frontIntake");
         turretYaw  = hardwareMap.get(CRServo.class, "turretYaw");
         turretPitch = hardwareMap.get(Servo.class, "turretPitch");
+        turretYawEnc = hardwareMap.get(AnalogInput.class, "turretYawEnc");;
 
 
         launcher.setDirection(DcMotorEx.Direction.REVERSE);
 
         localizer = new PinpointLocalizer(hardwareMap, 0.00199746322, new Pose2d(0, 0, Math.toRadians(90)));
 
-        turret = new TurretController(turretYaw, turretPitch);
+        turret = new TurretController(turretYaw, turretPitch, turretYawEnc);
         turret.resetYawEstimate();
 
         // turret.setTargetRobotRelative(36, 10, 0);

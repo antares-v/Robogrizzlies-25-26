@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.mech.control;
 
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
@@ -13,6 +14,10 @@ public class TurretController {
     private final CRServo yawServo;
     private final Servo pitchServo;
 
+    // Optional analog yaw encoder (e.g., Axon servo encoder)
+    private final AnalogInput yawEncoder;
+    private final boolean hasYawEncoder;
+
     // If turret direction is flipped, set true
     public boolean yawInverted = false;
 
@@ -22,6 +27,21 @@ public class TurretController {
 
     // Approximate turret angular speed (deg/sec) when yawServo is commanded at full power (1.0).
     public double yawDegPerSecAtFullPower = 178.0;
+
+
+    // encoder configuration
+    // 0-3.3V over one mechanical revolution.
+    public double yawEncoderMaxVoltage = 3.3;
+    // Turret degrees represented by one full encoder revolution.
+    public double yawEncoderDegPerRev = 122.7272;
+    // Additive offset applied after unwrapping, in degrees.
+    public double yawEncoderOffsetDeg = 0.0;
+    public boolean yawEncoderInverted = false;
+
+    // Unwrapped encoder state (continuous degrees, without offset)
+    private double yawEncLastRawDeg = 0.0;
+    private double yawEncContinuousDeg = 0.0;
+    private boolean yawEncHasLast = false;
 
     // Position PIDF for yaw hold/aim (deg -> power)
     private final CustomPIDF yawPidf;
@@ -71,8 +91,15 @@ public class TurretController {
     private double tx;
 
     public TurretController(CRServo yawServo, Servo pitchServo) {
+        this(yawServo, pitchServo, null);
+    }
+
+    public TurretController(CRServo yawServo, Servo pitchServo, AnalogInput yawEncoder) {
         this.yawServo = yawServo;
         this.pitchServo = pitchServo;
+
+        this.yawEncoder = yawEncoder;
+        this.hasYawEncoder = (yawEncoder != null);
 
         // Position PID defaults (YOU WILL NEED TO TUNE)
         this.yawPidf = new CustomPIDF(0.0005, 0.0, 0.0, 0.0);
@@ -87,6 +114,12 @@ public class TurretController {
 
     /** Zero the internal yaw estimate/target. Call once at init if you want a known reference. */
     public void resetYawEstimate(double yawDeg) {
+        // If we have an encoder, set the offset so the encoder reading equals yawDeg.
+        if (hasYawEncoder) {
+            yawEncHasLast = false;
+            double encNow = readYawEncoderDeg();
+            yawEncoderOffsetDeg += (yawDeg - encNow);
+        }
         yawEstimateDeg = yawDeg;
         yawTargetDeg = yawDeg;
         yawPidf.reset();
@@ -123,10 +156,48 @@ public class TurretController {
         }
     }
 
-    public void update() {
+    
+    /** Read the analog yaw encoder and return a continuous (unwrapped) turret angle in degrees. */
+    private double readYawEncoderDeg() {
+        // Voltage -> raw degrees in [0, yawEncoderDegPerRev)
+        double v = yawEncoder.getVoltage();
+        double raw = (v / Math.max(1e-6, yawEncoderMaxVoltage)) * yawEncoderDegPerRev;
+
+        // Wrap
+        raw = raw % yawEncoderDegPerRev;
+        if (raw < 0) raw += yawEncoderDegPerRev;
+
+        if (yawEncoderInverted) {
+            raw = yawEncoderDegPerRev - raw;
+            if (raw >= yawEncoderDegPerRev) raw -= yawEncoderDegPerRev;
+        }
+
+        // Unwrap to continuous angle
+        if (!yawEncHasLast) {
+            yawEncHasLast = true;
+            yawEncLastRawDeg = raw;
+            yawEncContinuousDeg = raw;
+        } else {
+            double delta = raw - yawEncLastRawDeg;
+            double half = yawEncoderDegPerRev / 2.0;
+            if (delta > half) delta -= yawEncoderDegPerRev;
+            if (delta < -half) delta += yawEncoderDegPerRev;
+            yawEncContinuousDeg += delta;
+            yawEncLastRawDeg = raw;
+        }
+
+        return yawEncContinuousDeg + yawEncoderOffsetDeg;
+    }
+
+public void update() {
         double dt = loopTimer.seconds();
         loopTimer.reset();
         if (dt <= 1e-6) dt = 0.02;
+
+        // Update yaw estimate from encoder when available; otherwise integrate commanded power.
+        if (hasYawEncoder) {
+            yawEstimateDeg = readYawEncoderDeg();
+        }
 
         double dist = Math.hypot(targetXIn, targetYIn);
         if (visionValid) dist = visionDistanceIn;
@@ -166,8 +237,10 @@ public class TurretController {
         // apply inversion
         if (yawInverted) yawPower *= -1.0;
 
-        // Update internal estimate
-        yawEstimateDeg += yawPower * yawDegPerSecAtFullPower * dt;
+        // Update internal estimate if we don't have an encoder.
+        if (!hasYawEncoder) {
+            yawEstimateDeg += yawPower * yawDegPerSecAtFullPower * dt;
+        }
 
         yawServo.setPower(yawPower);
     }
