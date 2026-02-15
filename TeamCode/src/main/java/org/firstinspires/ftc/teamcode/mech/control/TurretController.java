@@ -34,11 +34,9 @@ public class TurretController {
     public double yawEncoderMaxVoltage = 3.3;
     // Turret degrees represented by one full encoder revolution.
     public double yawEncoderDegPerRev = 122.7272;
-    // Additive offset applied after unwrapping, in degrees.
+    // Additive offset applied after unwrapping in degrees
     public double yawEncoderOffsetDeg = 0.0;
     public boolean yawEncoderInverted = false;
-
-    // Unwrapped encoder state (continuous degrees, without offset)
     private double yawEncLastRawDeg = 0.0;
     private double yawEncContinuousDeg = 0.0;
     private boolean yawEncHasLast = false;
@@ -102,7 +100,7 @@ public class TurretController {
         this.hasYawEncoder = (yawEncoder != null);
 
         // Position PID defaults (YOU WILL NEED TO TUNE)
-        this.yawPidf = new CustomPIDF(0.0005, 0.0, 0.0, 0.0);
+        this.yawPidf = new CustomPIDF(0.0005, 0.05, 0.05, 0.0);
         this.yawPidf.iMax = 0.0;
 
         pitchCmd = pitchServo.getPosition();
@@ -112,7 +110,7 @@ public class TurretController {
         settleTimer.reset();
     }
 
-    /** Zero the internal yaw estimate/target. Call once at init if you want a known reference. */
+    /** Zero the internal yaw estimate/target */
     public void resetYawEstimate(double yawDeg) {
         // If we have an encoder, set the offset so the encoder reading equals yawDeg.
         if (hasYawEncoder) {
@@ -126,7 +124,6 @@ public class TurretController {
         settleTimer.reset();
     }
 
-    /** Convenience: set both estimate and target to 0 deg. */
     public void resetYawEstimate() {
         resetYawEstimate(0.0);
     }
@@ -157,7 +154,7 @@ public class TurretController {
     }
 
     
-    /** Read the analog yaw encoder and return a continuous (unwrapped) turret angle in degrees. */
+    /** Read the analog yaw encoder and return a turret angle in degrees. */
     private double readYawEncoderDeg() {
         // Voltage -> raw degrees in [0, yawEncoderDegPerRev)
         double v = yawEncoder.getVoltage();
