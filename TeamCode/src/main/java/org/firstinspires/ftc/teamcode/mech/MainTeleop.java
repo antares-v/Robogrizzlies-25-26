@@ -85,13 +85,12 @@ public class MainTeleop extends LinearOpMode {
     // Launcher encoder/velocity tuning
     private static final double LAUNCHER_TICKS_PER_REV = 28.0;
     // target RPMs (tune these)
-    private static final double TARGET_RPM_FIRST = 500.0;
-    private static final double TARGET_RPM_NEXT  = 600.0;
+    private static final double TARGET_RPM = 50.0;
 
     // Battery + launcher velocity compensation
     private static final double NOMINAL_VOLTAGE = 12.0;
     private PIDFCoefficients baseLauncherPIDF;
-    private double launcherTicksPerRev;
+    private double launcherTicksPerRev = 28;
 
     // "At speed" logic
     private final ElapsedTime rpmStableTimer = new ElapsedTime();
@@ -100,11 +99,7 @@ public class MainTeleop extends LinearOpMode {
 
     // Feeder behavior (CRServos that push ball into launcher)
     private static final double FEED_POWER = 1.0;       // tune (0.6–1.0)
-    private static final long FEED_MS = 500;
-
-    // computed velocity targets (ticks per second)
-    private final double TARGET_VEL_FIRST = TARGET_RPM_FIRST * LAUNCHER_TICKS_PER_REV / 60.0;
-    private final double TARGET_VEL_NEXT  = TARGET_RPM_NEXT  * LAUNCHER_TICKS_PER_REV / 60.0;
+    private static final long FEED_MS = 7500;
 
     // when this fraction of target is reached we consider it spun up
     private static final double VEL_THRESHOLD_FRAC = 0.90;
@@ -411,11 +406,9 @@ public class MainTeleop extends LinearOpMode {
             }
 
             if (turret != null) {
-                turret.updateVisionMeasurement(tagXIn, -tagYIn, tagZIn, yawErrDeg, tagSeen);
+                turret.updateVisionMeasurement(tagXIn, tagYIn, tagZIn, yawErrDeg, tagSeen);
                 turret.update();
             }
-
-            findKp();
 
             // Telemetry updates
             telemetry.addData("drive", "x=%.2f y=%.2f h=%.2f", x, y, h);
@@ -497,12 +490,6 @@ public class MainTeleop extends LinearOpMode {
             if (v > 0) minV = Math.min(minV, v);
         }
         return (minV < 99.0) ? minV : NOMINAL_VOLTAGE;
-    }
-
-    // Voltage compensation for CRServo power (keeps feed speed more consistent)
-    private double vcPower(double pwr) {
-        double scale = NOMINAL_VOLTAGE / batteryVoltage();
-        return Range.clip(pwr * scale, -1.0, 1.0);
     }
 
     // Compensate launcher F term so velocity loop behaves similarly as voltage changes
@@ -619,6 +606,7 @@ public class MainTeleop extends LinearOpMode {
                     shootState = ShootState.SET_SERVO;
                     shootTimer.reset();
                 }
+                shootState = ShootState.SET_SERVO;
                 Kp = 0;
                 telemetry.addData("turret", "aiming...");
                 break;
@@ -634,7 +622,7 @@ public class MainTeleop extends LinearOpMode {
                 // spindexer.setPosition(spindexerPosOuttake[posIdx]);  // SPINDEXER DISABLED
 
                 // Single-shot: always use the "first shot" RPM
-                setLauncherRPM(TARGET_RPM_FIRST);
+                setLauncherRPM(TARGET_RPM);
 
                 rpmStableTimer.reset();
                 shootTimer.reset();
@@ -643,7 +631,7 @@ public class MainTeleop extends LinearOpMode {
             }
 
             case SPINUP: {
-                double targetRpm = TARGET_RPM_FIRST;
+                double targetRpm = TARGET_RPM;
                 long needed = FIRST_SPINUP_MS;
 
                 boolean atSpeed = launcherAtSpeed(targetRpm);
@@ -657,8 +645,8 @@ public class MainTeleop extends LinearOpMode {
 
                 if (stableEnough || timedOut) {
                     // Feed one ball into the launcher
-                    bottomFlywheel.setPower(vcPower(FEED_POWER));
-                    topFlywheel.setPower(vcPower(FEED_POWER));
+                    bottomFlywheel.setPower(FEED_POWER);
+                    topFlywheel.setPower(FEED_POWER);
 
                     shootTimer.reset();
                     shootState = ShootState.FIRE;
@@ -683,7 +671,7 @@ public class MainTeleop extends LinearOpMode {
 
 
             case RECOVER: {
-                double targetRpm = TARGET_RPM_FIRST;
+                double targetRpm = TARGET_RPM;
 
                 // Prefer RPM recovery; also keep a minimum delay
                 boolean recovered = launcherAtSpeed(targetRpm);

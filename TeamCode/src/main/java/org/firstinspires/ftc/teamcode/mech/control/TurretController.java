@@ -45,7 +45,7 @@ public class TurretController {
     public double yawEncoderDegPerRev = 122.7272;
     // Additive offset applied after unwrapping in degrees
     public double yawEncoderOffsetDeg = 0.0;
-    public boolean yawEncoderInverted = true;
+    public boolean yawEncoderInverted = false;
     private double yawEncLastRawDeg = 0.0;
     private double yawEncContinuousDeg = 0.0;
     private boolean yawEncHasLast = false;
@@ -108,8 +108,8 @@ public class TurretController {
         this.hasYawEncoder = (yawEncoder != null);
 
         // Position PID defaults (TUNE)
-        this.yawPidf = new CustomPIDF(0.003, 0.00005, 0.0000005, 0.0);
-        this.yawPidf.iMax = 0.05;
+        this.yawPidf = new CustomPIDF(0.01, 0.000000, 0.00003, 0.0);
+        this.yawPidf.iMax = 0.2;
 
         pitchCmd = pitchServo.getPosition();
         pitchDesired = pitchCmd;
