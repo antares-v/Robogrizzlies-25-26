@@ -241,13 +241,9 @@ public class TurretController {
             hadVisionLock = true;
             settleTimer.reset();
         } else {
-            // Tag is out of view
-            // First, for a time window, keep holding the last target
-            // Then, freeze the turret yaw
-            if (hadVisionLock && (now - lastVisionTime >= visionTimeoutMs)) {
+            if (!hadVisionLock) {
                 yawTargetDeg = yawEstimateDeg;
                 yawPidf.reset();
-                hadVisionLock = false;
             }
         }
 
