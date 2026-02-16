@@ -145,9 +145,7 @@ public class TurretController {
             setTargetRobotRelative(xIn, yIn, zIn);
         }
     }
-    }
 
-    
     /** Read the analog yaw encoder and return a turret angle in degrees. */
     private double readYawEncoderDeg() {
         // Voltage -> raw degrees in [0, yawEncoderDegPerRev)
@@ -180,7 +178,7 @@ public class TurretController {
         return yawEncContinuousDeg + yawEncoderOffsetDeg;
     }
 
-public void update() {
+    public void update() {
         double dt = loopTimer.seconds();
         loopTimer.reset();
         if (dt <= 1e-6) dt = 0.02;
