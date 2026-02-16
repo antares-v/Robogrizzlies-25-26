@@ -26,6 +26,14 @@ public class TurretController {
     // Low-pass filter for computed yaw target (deg)
     private double filteredYawTargetDeg = 0.0;
 
+    public boolean useTxForYaw = true;
+    public double txSign = 1.0;
+    public double txDeadbandDeg = 0.5;
+
+    public double txFilterAlpha = 0.35;
+    private double visionTxDeg = 0.0;
+    private double filteredTxDeg = 0.0;
+
     // Approximate turret angular speed (deg/sec)
     public double yawDegPerSecAtFullPower = 178.0;
 
@@ -37,7 +45,7 @@ public class TurretController {
     public double yawEncoderDegPerRev = 122.7272;
     // Additive offset applied after unwrapping in degrees
     public double yawEncoderOffsetDeg = 0.0;
-    public boolean yawEncoderInverted = false;
+    public boolean yawEncoderInverted = true;
     private double yawEncLastRawDeg = 0.0;
     private double yawEncContinuousDeg = 0.0;
     private boolean yawEncHasLast = false;
@@ -100,8 +108,8 @@ public class TurretController {
         this.hasYawEncoder = (yawEncoder != null);
 
         // Position PID defaults (TUNE)
-        this.yawPidf = new CustomPIDF(0.0005, 0.05, 0.05, 0.0);
-        this.yawPidf.iMax = 0.0;
+        this.yawPidf = new CustomPIDF(0.003, 0.00005, 0.0000005, 0.0);
+        this.yawPidf.iMax = 0.05;
 
         pitchCmd = pitchServo.getPosition();
         pitchDesired = pitchCmd;
@@ -138,16 +146,15 @@ public class TurretController {
         settleTimer.reset();
     }
 
-    public void updateVisionMeasurement(double xIn, double yIn, double zIn, boolean isValid) {
+    public void updateVisionMeasurement(double xIn, double yIn, double zIn, double txDeg, boolean isValid) {
         this.visionValid = isValid;
         if (isValid) {
             this.lastVisionTime = System.currentTimeMillis();
             setTargetRobotRelative(xIn, yIn, zIn);
+            this.visionTxDeg = txDeg;
         }
     }
-    }
 
-    
     /** Read the analog yaw encoder and return a turret angle in degrees. */
     private double readYawEncoderDeg() {
         // Voltage -> raw degrees in [0, yawEncoderDegPerRev)
@@ -180,7 +187,7 @@ public class TurretController {
         return yawEncContinuousDeg + yawEncoderOffsetDeg;
     }
 
-public void update() {
+    public void update() {
         double dt = loopTimer.seconds();
         loopTimer.reset();
         if (dt <= 1e-6) dt = 0.02;
@@ -207,17 +214,30 @@ public void update() {
         boolean visionFresh = visionValid && (now - lastVisionTime < visionTimeoutMs);
 
         // yaw target
-        double desiredYawDeg = Math.toDegrees(Math.atan2(targetYIn, Math.max(1e-6, targetXIn)));
+        double desiredYawDegFromPose = Math.toDegrees(Math.atan2(targetYIn, Math.max(1e-6, targetXIn)));
 
-        // Low-pass filter the desired yaw to reduce jitter.
-        double alpha = 0.25;
-        filteredYawTargetDeg = filteredYawTargetDeg + alpha * (desiredYawDeg - filteredYawTargetDeg);
+        // filter yaw
+        double alphaPose = 0.25;
+        filteredYawTargetDeg = filteredYawTargetDeg + alphaPose * (desiredYawDegFromPose - filteredYawTargetDeg);
+
+        // Low-pass filter tx to reduce jitter.
+        filteredTxDeg = filteredTxDeg + txFilterAlpha * (visionTxDeg - filteredTxDeg);
+        double txUsedDeg = filteredTxDeg;
+        if (Math.abs(txUsedDeg) < txDeadbandDeg) txUsedDeg = 0.0;
 
         double yawPower;
 
         if (visionFresh) {
-            // Update yaw target when we can see a tag.
-            yawTargetDeg = filteredYawTargetDeg;
+            // Update yaw target when we can see a tag
+            double rawTargetDeg;
+            if (useTxForYaw) {
+                rawTargetDeg = yawEstimateDeg + (txSign * txUsedDeg);
+            } else {
+                rawTargetDeg = filteredYawTargetDeg;
+            }
+
+            // Keep target close to current estimate so we always take the shortest path.
+            yawTargetDeg = yawEstimateDeg + wrapTo180(rawTargetDeg - yawEstimateDeg);
             hadVisionLock = true;
             settleTimer.reset();
         } else {
@@ -233,7 +253,7 @@ public void update() {
 
         yawPower = yawPidf.updatePosition(yawTargetDeg, yawEstimateDeg, dt);
         out = yawPower;
-        debugYawErrorDeg = (yawTargetDeg - yawEstimateDeg);
+        debugYawErrorDeg = wrapTo180(yawTargetDeg - yawEstimateDeg);
 
         yawPower = Range.clip(yawPower, -yawMaxPower, yawMaxPower);
         // apply inversion
@@ -263,10 +283,19 @@ public void update() {
         boolean visionFresh = visionValid && (System.currentTimeMillis() - lastVisionTime < visionTimeoutMs);
         if (!visionFresh) return false;
 
-        boolean yawOk = Math.abs(yawTargetDeg - yawEstimateDeg) <= aimTolYawDeg;
+        boolean yawOk = Math.abs(wrapTo180(yawTargetDeg - yawEstimateDeg)) <= aimTolYawDeg;
         boolean pitchOk = Math.abs(pitchCmd - pitchDesired) <= aimTolPitchPos;
         boolean timeOk = settleTimer.milliseconds() >= settleMs;
         return yawOk && pitchOk && timeOk;
+    }
+
+
+    /** Wrap an angle error to (-180, 180] degrees. */
+    private static double wrapTo180(double deg) {
+        deg = deg % 360.0;
+        if (deg <= -180.0) deg += 360.0;
+        if (deg > 180.0) deg -= 360.0;
+        return deg;
     }
 
     private double elevationDegToServoPos(double elevationDeg) {

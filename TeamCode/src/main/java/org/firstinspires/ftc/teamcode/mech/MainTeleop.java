@@ -411,7 +411,7 @@ public class MainTeleop extends LinearOpMode {
             }
 
             if (turret != null) {
-                turret.updateVisionMeasurement(tagXIn, tagYIn, tagZIn, tagSeen);
+                turret.updateVisionMeasurement(tagXIn, -tagYIn, tagZIn, yawErrDeg, tagSeen);
                 turret.update();
             }
 
