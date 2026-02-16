@@ -228,27 +228,23 @@ public class TurretController {
         double yawPower;
 
         if (visionFresh) {
-            // Update yaw target when we can see a tag
+            double rawTargetDeg;
             if (useTxForYaw) {
-                // accumulate tx into the target
-                yawTargetDeg += (txSign * txUsedDeg);
-
-                // Keep the stored target continuous and near our current estimate
-                yawTargetDeg = yawEstimateDeg + wrapTo180(yawTargetDeg - yawEstimateDeg);
+                rawTargetDeg = yawEstimateDeg - (txSign * txUsedDeg);
             } else {
-                // Pose-based target
-                yawTargetDeg = yawEstimateDeg + wrapTo180(filteredYawTargetDeg - yawEstimateDeg);
+                rawTargetDeg = filteredYawTargetDeg;
             }
 
+            yawTargetDeg = yawEstimateDeg + wrapTo180(rawTargetDeg - yawEstimateDeg);
             hadVisionLock = true;
             settleTimer.reset();
         } else {
-            // No vision
             if (!hadVisionLock) {
                 yawTargetDeg = yawEstimateDeg;
                 yawPidf.reset();
             }
         }
+
 
 
         yawPower = yawPidf.updatePosition(yawTargetDeg, yawEstimateDeg, dt);
