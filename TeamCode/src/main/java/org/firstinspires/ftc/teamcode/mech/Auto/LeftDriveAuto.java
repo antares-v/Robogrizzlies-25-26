@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.mech.Auto;
+/*package org.firstinspires.ftc.teamcode.mech.Auto;
 
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
@@ -415,3 +415,4 @@ public class LeftDriveAuto extends LinearOpMode {
         };
     }
 }
+*/
