@@ -373,8 +373,11 @@ public class MainTeleop extends LinearOpMode {
             robotPos = localizer.getPose();
 
             boolean tagSeen = false;
-            double yawErrDeg = 0.0;
+            double yawErrDeg = 0.0; // still used for telemetry
             double distIn = 0.0;
+            double tagXIn = 0.0;
+            double tagYIn = 0.0;
+            double tagZIn = 0.0;
 
             LLResult result = (limelight != null) ? limelight.getLatestResult() : null;
             if (result != null && result.isValid()) {
@@ -384,39 +387,21 @@ public class MainTeleop extends LinearOpMode {
                         telemetry.addData("detection", f.getFiducialId());
                         int id = f.getFiducialId();
                         if (id == 20 || id == 21 || id == 24) {
+                            yawErrDeg = f.getTargetXDegrees();
                             Pose3D tagPoseRobot = f.getTargetPoseRobotSpace();
-                            if (tagPoseRobot != null && robotPos != null) {
-                                double tagXIn = tagPoseRobot.getPosition().x * 39.3701; // forward
-                                double tagYIn = tagPoseRobot.getPosition().y * 39.3701; // left
-                                double tagZIn = tagPoseRobot.getPosition().z * 39.3701; // up
-
-                                double hRad = robotPos.heading;
-                                double cos = Math.cos(hRad);
-                                double sin = Math.sin(hRad);
-
-                                double tagFieldX = robotPos.position.x + (tagXIn * cos - tagYIn * sin);
-                                double tagFieldY = robotPos.position.y + (tagXIn * sin + tagYIn * cos);
-
-                                // Absolute heading from robot to tag in field
-                                double tgtHeadingRad = Math.atan2(tagFieldY - robotPos.position.y,
-                                                                 tagFieldX - robotPos.position.x);
-
-                                // angle we want the turret to point
-                                double relRad = angleWrapRad(tgtHeadingRad - hRad);
-                                yawErrDeg = Math.toDegrees(relRad);
-
-                                turret.setTargetRobotRelative(tagXIn, tagYIn, tagZIn);
-
-                                double distInLocal = Math.sqrt(tagXIn * tagXIn + tagYIn * tagYIn + tagZIn * tagZIn);
-                                distIn = distInLocal;
-
-                                telemetry.addData("apriltagX", tagPoseRobot.getPosition().x);
-                                telemetry.addData("apriltagY", tagPoseRobot.getPosition().y);
-                                telemetry.addData("apriltagZ", tagPoseRobot.getPosition().z);
-                                telemetry.addData("targetAngleDeg", yawErrDeg);
-                            } else {
-                                // still show something if pose is missing
-                                yawErrDeg = 0.0;
+                            if (tagPoseRobot != null) {
+                                double xM = tagPoseRobot.getPosition().x;
+                                double yM = tagPoseRobot.getPosition().y;
+                                double zM = tagPoseRobot.getPosition().z;
+                                tagXIn = xM * 39.3701;
+                                tagYIn = yM * 39.3701;
+                                tagZIn = zM * 39.3701;
+                                double distM = Math.sqrt(xM*xM + yM*yM + zM*zM);
+                                distIn = distM * 39.3701;
+                                telemetry.addData("apriltagX", xM);
+                                telemetry.addData("apriltagY", yM);
+                                telemetry.addData("apriltagZ", zM);
+                                telemetry.addData("yawErr", yawErrDeg);
                             }
                             tagSeen = true;
                             break;
@@ -426,7 +411,7 @@ public class MainTeleop extends LinearOpMode {
             }
 
             if (turret != null) {
-                turret.updateVisionMeasurement(yawErrDeg, distIn, tagSeen);
+                turret.updateVisionMeasurement(tagXIn, tagYIn, tagZIn, tagSeen);
                 turret.update();
             }
 
@@ -443,7 +428,7 @@ public class MainTeleop extends LinearOpMode {
             telemetry.addData("pos", launcher.getCurrentPosition());
             telemetry.addData("vel", launcher.getVelocity());
             telemetry.addData("rawOutValue", turret.rawOut());
-            telemetry.addData("rawTxValue", turret.rawTx());
+            telemetry.addData("yawErrorDeg", turret.rawYawErrorDeg());
             telemetry.addData("rawPosition", turret.rawPos());
             telemetry.update();
 
