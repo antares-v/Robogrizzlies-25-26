@@ -108,8 +108,8 @@ public class TurretController {
         this.hasYawEncoder = (yawEncoder != null);
 
         // Position PID defaults (TUNE)
-        this.yawPidf = new CustomPIDF(0.01, 0.000000, 0.00003, 0.0);
-        this.yawPidf.iMax = 0.2;
+        this.yawPidf = new CustomPIDF(0.014, 0.000002, 0.00003, 0.0);
+        this.yawPidf.iMax = 0.14;
 
         pitchCmd = pitchServo.getPosition();
         pitchDesired = pitchCmd;
@@ -228,17 +228,20 @@ public class TurretController {
         double yawPower;
 
         if (visionFresh) {
-            double rawTargetDeg;
-            if (useTxForYaw) {
-                rawTargetDeg = yawEstimateDeg - (txSign * txUsedDeg);
-            } else {
-                rawTargetDeg = filteredYawTargetDeg;
-            }
+            // absolute target from pose
+            double rawTargetDeg = filteredYawTargetDeg;
 
+            double trimMax = 5.0; // degrees
+            double txTrim = Math.max(-trimMax, Math.min(trimMax, txSign * txUsedDeg));
+            rawTargetDeg -= txTrim;
+
+            // make target continuous relative to current estimate
             yawTargetDeg = yawEstimateDeg + wrapTo180(rawTargetDeg - yawEstimateDeg);
+
             hadVisionLock = true;
             settleTimer.reset();
-        } else {
+        }
+        else {
             if (!hadVisionLock) {
                 yawTargetDeg = yawEstimateDeg;
                 yawPidf.reset();
