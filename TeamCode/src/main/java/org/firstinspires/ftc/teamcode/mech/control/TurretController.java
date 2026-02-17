@@ -27,7 +27,7 @@ public class TurretController {
     private double filteredYawTargetDeg = 0.0;
 
     public boolean useTxForYaw = true;
-    public double txSign = -1.0;
+    public double txSign = 1.0;
     public double txDeadbandDeg = 0.5;
 
     public double txFilterAlpha = 0.35;
