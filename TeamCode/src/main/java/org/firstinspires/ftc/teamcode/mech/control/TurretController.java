@@ -19,7 +19,7 @@ public class TurretController {
     private final boolean hasYawEncoder;
 
     // If turret direction is flipped, set true
-    public boolean yawInverted = false;
+    public boolean yawInverted = true;
 
     // Safety clamp for max yaw power
     public double yawMaxPower = 1.0;
