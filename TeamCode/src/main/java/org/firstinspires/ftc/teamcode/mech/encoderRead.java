@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.mech;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.AnalogInput;
+import com.qualcomm.robotcore.hardware.CRServo;
 
 /**
  * Reads ONLY the turret yaw analog encoder and prints telemetry.
@@ -16,6 +17,7 @@ public class encoderRead extends LinearOpMode {
     private static final double YAW_ENC_MAX_VOLTAGE = 3.3;
     private static final double YAW_ENC_DEG_PER_REV = 122.7272;
     private static final boolean YAW_ENC_INVERTED   = false;
+    private static CRServo turretYaw;
 
     // Unwrap state
     private double lastRawDeg = 0.0;
@@ -27,6 +29,7 @@ public class encoderRead extends LinearOpMode {
 
     @Override
     public void runOpMode() {
+        turretYaw = hardwareMap.get(CRServo .class, "turretYaw");
         AnalogInput yawEnc;
         try {
             yawEnc = hardwareMap.get(AnalogInput.class, NAME_TURRET_YAW_ENC);
@@ -68,7 +71,7 @@ public class encoderRead extends LinearOpMode {
             telemetry.addData("Raw deg (0..rev)", "%.2f", rawDeg);
             telemetry.addData("Yaw deg (continuous)", "%.2f", contDeg);
             telemetry.update();
-
+            turretYaw.setPower(0.1f);
             idle();
         }
     }
