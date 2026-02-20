@@ -137,10 +137,29 @@ public class MainTeleop extends LinearOpMode {
     // Limelight AprilTag detection
     private Limelight3A limelight;
 
+    // TODO: Measure these offsets
+    private static final double LL_X_IN = 0.0;
+    private static final double LL_Y_IN = 0.0;
+    // Limelight yaw relative to robot forward (radians). Forward-facing = 0.
+    private static final double LL_YAW_RAD = 0.0;
+
+    // Last seen tag position in field coordinates (inches)
+    private boolean hasLastTagField = false;
+    private double lastTagFieldX = 0.0;
+    private double lastTagFieldY = 0.0;
+
     // Helpers
     private static double deadzone(double v, double dz) {
         return (Math.abs(v) < dz) ? 0 : v;
     }
+
+
+    private static double angleWrapRad(double a) {
+        while (a > Math.PI) a -= 2.0 * Math.PI;
+        while (a < -Math.PI) a += 2.0 * Math.PI;
+        return a;
+    }
+
 
     @Override
     public void runOpMode() {
@@ -266,30 +285,30 @@ public class MainTeleop extends LinearOpMode {
             // AUTO-INDEXING (SPINDEXER) DISABLED
             // Only do auto-indexing when not shooting
             // if (!rotated && shootState == ShootState.IDLE && !outtaking) {
-                // String prev = ballcols.get(i);
-                // String now  = colorSensor.getColor(sensor);
-                // ballcols.set(i, now);
-// 
-                // boolean newBallArrived = prev.equals("blank") && !now.equals("blank");
-                // if (newBallArrived) {
-                    // Re-enable auto-indexing after a new ball is intaken/detected
-                    // autoIndexLockout = false;
-                    // autoIndexedSinceLastBall = false;
-                // }
-// 
-                // if (!autoIndexLockout && !ballcols.get(i).equals("blank")) {
-                    // for (int j = 0; j < 3; j++) {
-                        // if (ballcols.get(j).equals("blank")) {
-                            // i = j;
-                            // spindexer.setPosition(spindexerPosIntake[i]);  // SPINDEXER DISABLED
-                            // spintime.reset();
-                            // rotated = true;
-// 
-                            // autoIndexedSinceLastBall = true; // remember that auto moved
-                            // break;
-                        // }
-                    // }
-                // }
+            // String prev = ballcols.get(i);
+            // String now  = colorSensor.getColor(sensor);
+            // ballcols.set(i, now);
+//
+            // boolean newBallArrived = prev.equals("blank") && !now.equals("blank");
+            // if (newBallArrived) {
+            // Re-enable auto-indexing after a new ball is intaken/detected
+            // autoIndexLockout = false;
+            // autoIndexedSinceLastBall = false;
+            // }
+//
+            // if (!autoIndexLockout && !ballcols.get(i).equals("blank")) {
+            // for (int j = 0; j < 3; j++) {
+            // if (ballcols.get(j).equals("blank")) {
+            // i = j;
+            // spindexer.setPosition(spindexerPosIntake[i]);  // SPINDEXER DISABLED
+            // spintime.reset();
+            // rotated = true;
+//
+            // autoIndexedSinceLastBall = true; // remember that auto moved
+            // break;
+            // }
+            // }
+            // }
             // }
 
 
@@ -300,48 +319,48 @@ public class MainTeleop extends LinearOpMode {
             // MANUAL INDEXING (SPINDEXER) DISABLED
             // 4) Indexer and sample color
             // if (dLeftPressed && i < spindexerPosIntake.length - 1 && !rotated) {
-                // rotated = true;
-                // outtaking = false;
-                // i++;
-                // spintime.reset();
-                // spindexer.setPosition(spindexerPosIntake[i]);  // SPINDEXER DISABLED
-// 
-                // if (autoIndexedSinceLastBall) autoIndexLockout = true; // driver override after auto
-                // telemetry.update();
+            // rotated = true;
+            // outtaking = false;
+            // i++;
+            // spintime.reset();
+            // spindexer.setPosition(spindexerPosIntake[i]);  // SPINDEXER DISABLED
+//
+            // if (autoIndexedSinceLastBall) autoIndexLockout = true; // driver override after auto
+            // telemetry.update();
             // }
-// 
+//
             // if (dRightPressed && i > 0 && !rotated) {
-                // rotated = true;
-                // outtaking = false;
-                // i--;
-                // spintime.reset();
-                // spindexer.setPosition(spindexerPosIntake[i]);  // SPINDEXER DISABLED
-// 
-                // if (autoIndexedSinceLastBall) autoIndexLockout = true; // driver override after auto
-                // telemetry.update();
+            // rotated = true;
+            // outtaking = false;
+            // i--;
+            // spintime.reset();
+            // spindexer.setPosition(spindexerPosIntake[i]);  // SPINDEXER DISABLED
+//
+            // if (autoIndexedSinceLastBall) autoIndexLockout = true; // driver override after auto
+            // telemetry.update();
             // }
-// 
+//
             // PATTERN / ORDER SORTING DISABLED (NO SPINDEXER)
             // 5) Pattern selection (one-time at the start or round) (X, Y, B)
             // boolean consumedYThisLoop = false;
-// 
+//
             // if (!patternChecked) {
-                // if (xPressed) {
-                    // p = 0;
-                    // patternChecked = true;
-                    // patternName = "g_first";
-                // } else if (yPressed) {
-                    // p = 1;
-                    // patternChecked = true;
-                    // patternName = "g_second";
-                    // consumedYThisLoop = true; // don't fire on same press
-                // } else if (bPressed) {
-                    // p = 2;
-                    // patternChecked = true;
-                    // patternName = "g_third";
-                // }
+            // if (xPressed) {
+            // p = 0;
+            // patternChecked = true;
+            // patternName = "g_first";
+            // } else if (yPressed) {
+            // p = 1;
+            // patternChecked = true;
+            // patternName = "g_second";
+            // consumedYThisLoop = true; // don't fire on same press
+            // } else if (bPressed) {
+            // p = 2;
+            // patternChecked = true;
+            // patternName = "g_third";
             // }
-// 
+            // }
+//
             // 6) Cancel firing immediately for fallback (A)
             if (aPressed) {
                 cancelShooting();
@@ -405,11 +424,58 @@ public class MainTeleop extends LinearOpMode {
                 }
             }
 
+            if (tagSeen) {
+                // Tag position relative to camera (inches)
+                double tagCamX = tagXIn;
+                double tagCamY = -tagYIn;
+
+                // Camera to robot
+                double c = Math.cos(LL_YAW_RAD);
+                double s = Math.sin(LL_YAW_RAD);
+
+                double tagRobotX = LL_X_IN + (tagCamX * c - tagCamY * s);
+                double tagRobotY = LL_Y_IN + (tagCamX * s + tagCamY * c);
+
+                // Robot to field
+                double rh = robotPos.heading.toDouble(); // radians
+                double ch = Math.cos(rh);
+                double sh = Math.sin(rh);
+
+                lastTagFieldX = robotPos.position.x + (tagRobotX * ch - tagRobotY * sh);
+                lastTagFieldY = robotPos.position.y + (tagRobotX * sh + tagRobotY * ch);
+                hasLastTagField = true;
+            }
+
             if (turret != null) {
-                turret.updateVisionMeasurement(tagXIn, -tagYIn, tagZIn, yawErrDeg, tagSeen);
+                if (tagSeen) {
+                    turret.updateVisionMeasurement(tagXIn, -tagYIn, tagZIn, yawErrDeg, true);
+                } else if (hasLastTagField) {
+                    double dx = lastTagFieldX - robotPos.position.x;
+                    double dy = lastTagFieldY - robotPos.position.y;
+
+                    double bearingField = Math.atan2(dy, dx);
+                    double bearingRobot = angleWrapRad(bearingField - robotPos.heading.toDouble());
+
+                    double aimDistIn = 24.0;
+                    double targetRobotX = aimDistIn * Math.cos(bearingRobot);
+                    double targetRobotY = aimDistIn * Math.sin(bearingRobot);
+
+                    turret.setTargetRobotRelative(targetRobotX, targetRobotY, 0.0);
+
+                    // Make sure the turret controller doesn't think vision is fresh.
+                    turret.updateVisionMeasurement(0.0, 0.0, 0.0, 0.0, false);
+                } else {
+                    // No vision and nothing remembered
+                    turret.updateVisionMeasurement(0.0, 0.0, 0.0, 0.0, false);
+                }
+
                 turret.update();
             }
 
+            telemetry.addData("tagMemory", hasLastTagField ? "YES" : "NO");
+            if (hasLastTagField) {
+                telemetry.addData("lastTagField", "x=%.1f y=%.1f", lastTagFieldX, lastTagFieldY);
+            }
             // Telemetry updates
             telemetry.addData("drive", "x=%.2f y=%.2f h=%.2f", x, y, h);
             telemetry.addData("pattern", patternName);

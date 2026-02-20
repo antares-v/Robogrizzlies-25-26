@@ -26,7 +26,7 @@ public class TurretController {
     // Low-pass filter for computed yaw target (deg)
     private double filteredYawTargetDeg = 0.0;
 
-    public boolean useTxForYaw = true;
+    public boolean useTxForYaw = false;
     public double txSign = 1.0;
     public double txDeadbandDeg = 0.5;
 
