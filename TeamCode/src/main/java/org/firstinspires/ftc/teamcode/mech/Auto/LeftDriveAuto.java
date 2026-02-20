@@ -94,7 +94,7 @@ public class LeftDriveAuto extends LinearOpMode {
         static double currentTargetVel = 0.0;
         final DcMotor backIntake, frontIntake;
         final DcMotorEx launcher;
-        final CRServo turretYaw;
+        final Servo turretYaw;
         final Servo turretPitch;
         final TurretController turret;
         final Limelight3A limelight;
@@ -116,7 +116,7 @@ public class LeftDriveAuto extends LinearOpMode {
             topFlywheel = opMode.hardwareMap.get(CRServo.class, "topFlywheel");
             // spindexer = opMode.hardwareMap.get(Servo.class, "spindexer");
 
-            turretYaw = opMode.hardwareMap.get(CRServo.class, "turretYaw");
+            turretYaw = opMode.hardwareMap.get(Servo.class, "turretYaw");
             turretPitch = opMode.hardwareMap.get(Servo.class, "turretPitch");
             turret = new TurretController(turretYaw, turretPitch);
             limelight = opMode.hardwareMap.get(Limelight3A.class, "limelight");

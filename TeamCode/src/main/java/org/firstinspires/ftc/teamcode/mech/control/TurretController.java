@@ -6,12 +6,13 @@ import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
+
 public class TurretController {
 
     // YAW SERVO GEAR RATIOS: 45:132
     // PITCH SERVO GEAR RATIOS: 26:200
     // Hardware
-    private final CRServo yawServo;
+    private final Servo yawServo;
     private final Servo pitchServo;
 
     // Optional analog yaw encoder (e.g., Axon servo encoder)
@@ -26,7 +27,7 @@ public class TurretController {
     // Low-pass filter for computed yaw target (deg)
     private double filteredYawTargetDeg = 0.0;
 
-    public boolean useTxForYaw = true;
+    public boolean useTxForYaw = false;
     public double txSign = 1.0;
     public double txDeadbandDeg = 0.5;
 
@@ -49,9 +50,9 @@ public class TurretController {
     private double yawEncLastRawDeg = 0.0;
     private double yawEncContinuousDeg = 0.0;
     private boolean yawEncHasLast = false;
-
-    // Position PIDF for yaw
-    private final CustomPIDF yawPidf;
+//
+//    // Position PIDF for yaw
+//    private final CustomPIDF yawPidf;
 
     // Vision AprilTag measurement in inches in robot space
     private boolean visionValid = false;
@@ -87,7 +88,7 @@ public class TurretController {
 
     // Internal yaw state (deg)
     private double yawEstimateDeg = 0.0;
-    private double yawTargetDeg = 0.0;
+    private double yawTargetDeg = 0.1;
 
     private final ElapsedTime loopTimer = new ElapsedTime();
     private final ElapsedTime settleTimer = new ElapsedTime();
@@ -96,24 +97,26 @@ public class TurretController {
     private double out;
     private double debugYawErrorDeg;
 
-    public TurretController(CRServo yawServo, Servo pitchServo) {
+    boolean islocked;
+
+    public TurretController(Servo yawServo, Servo pitchServo) {
         this(yawServo, pitchServo, null);
     }
 
-    public TurretController(CRServo yawServo, Servo pitchServo, AnalogInput yawEncoder) {
+    public TurretController(Servo yawServo, Servo pitchServo, AnalogInput yawEncoder) {
         this.yawServo = yawServo;
         this.pitchServo = pitchServo;
 
         this.yawEncoder = yawEncoder;
         this.hasYawEncoder = (yawEncoder != null);
 
-        // Position PID defaults (TUNE)
-        this.yawPidf = new CustomPIDF(0.01, 0.000000, 0.00003, 0.0);
-        this.yawPidf.iMax = 0.2;
+//        // Position PID defaults (TUNE)
+//        this.yawPidf = new CustomPIDF(0.01, 0.000000, 0.00003, 0.0);
+//        this.yawPidf.iMax = 0.2;
 
         pitchCmd = pitchServo.getPosition();
         pitchDesired = pitchCmd;
-
+        yawServo.setPosition(0.0);
         loopTimer.reset();
         settleTimer.reset();
     }
@@ -128,7 +131,6 @@ public class TurretController {
         }
         yawEstimateDeg = yawDeg;
         yawTargetDeg = yawDeg;
-        yawPidf.reset();
         settleTimer.reset();
     }
 
@@ -216,9 +218,7 @@ public class TurretController {
         // yaw target
         double desiredYawDegFromPose = Math.toDegrees(Math.atan2(targetYIn, Math.max(1e-6, targetXIn)));
 
-        // filter yaw
-        double alphaPose = 0.25;
-        filteredYawTargetDeg = filteredYawTargetDeg + alphaPose * (desiredYawDegFromPose - filteredYawTargetDeg);
+        filteredYawTargetDeg = filteredYawTargetDeg + 1 * (desiredYawDegFromPose - filteredYawTargetDeg);
 
         // Low-pass filter tx to reduce jitter.
         filteredTxDeg = filteredTxDeg + txFilterAlpha * (visionTxDeg - filteredTxDeg);
@@ -241,26 +241,20 @@ public class TurretController {
         } else {
             if (!hadVisionLock) {
                 yawTargetDeg = yawEstimateDeg;
-                yawPidf.reset();
+//                yawPidf.reset();
             }
         }
 
 
-
-        yawPower = yawPidf.updatePosition(yawTargetDeg, yawEstimateDeg, dt);
-        out = yawPower;
+//
+//        yawPower = yawPidf.updatePosition(yawTargetDeg, yawEstimateDeg, dt);
         debugYawErrorDeg = wrapTo180(yawTargetDeg - yawEstimateDeg);
 
-        yawPower = Range.clip(yawPower, -yawMaxPower, yawMaxPower);
-        // apply inversion
-        if (yawInverted) yawPower *= -1.0;
 
-        // Update internal estimate if we don't have an encoder.
-        if (!hasYawEncoder) {
-            yawEstimateDeg += yawPower * yawDegPerSecAtFullPower * dt;
-        }
+        // Update internal estimate if we don't have an encoder
 
-        yawServo.setPower(yawPower);
+        if(0.0f <= yawTargetDeg && yawTargetDeg<= 120.0f){yawServo.setPosition(yawTargetDeg); islocked = true;}
+        else {islocked = false;}
     }
 
     public double rawOut() {
@@ -277,7 +271,7 @@ public class TurretController {
 
     public boolean isAimed() {
         boolean visionFresh = visionValid && (System.currentTimeMillis() - lastVisionTime < visionTimeoutMs);
-        if (!visionFresh) return false;
+        if (!visionFresh || !islocked) return false;
 
         boolean yawOk = Math.abs(wrapTo180(yawTargetDeg - yawEstimateDeg)) <= aimTolYawDeg;
         boolean pitchOk = Math.abs(pitchCmd - pitchDesired) <= aimTolPitchPos;

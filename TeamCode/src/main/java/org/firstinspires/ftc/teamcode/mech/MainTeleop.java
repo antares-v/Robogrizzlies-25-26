@@ -118,7 +118,7 @@ public class MainTeleop extends LinearOpMode {
 
     // turret control
 
-    private CRServo turretYaw;
+    private Servo turretYaw;
     private Servo turretPitch;
     private AnalogInput turretYawEnc;
     private TurretController turret;
@@ -153,7 +153,7 @@ public class MainTeleop extends LinearOpMode {
         launcher = hardwareMap.get(DcMotorEx.class, "launcher");
         backIntake = hardwareMap.get(DcMotorEx.class, "backIntake");
         frontIntake = hardwareMap.get(DcMotorEx.class, "frontIntake");
-        turretYaw  = hardwareMap.get(CRServo.class, "turretYaw");
+        turretYaw  = hardwareMap.get(Servo.class, "turretYaw");
         turretPitch = hardwareMap.get(Servo.class, "turretPitch");
         turretYawEnc = hardwareMap.get(AnalogInput.class, "turretYawEnc");;
 
