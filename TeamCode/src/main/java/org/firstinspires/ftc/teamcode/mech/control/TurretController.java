@@ -278,7 +278,6 @@ if (frozen) {
 
         long now = System.currentTimeMillis();
         boolean visionFresh = (!frozen) && visionValid && (now - lastVisionTime < visionTimeoutMs);
-        boolean visionFresh = visionValid && (now - lastVisionTime < visionTimeoutMs);
         debugVisionFresh = visionFresh;
 
         // yaw target
