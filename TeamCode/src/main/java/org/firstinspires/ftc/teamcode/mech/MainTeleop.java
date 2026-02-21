@@ -86,7 +86,7 @@ public class MainTeleop extends LinearOpMode {
     // Launcher encoder/velocity tuning
     private static final double LAUNCHER_TICKS_PER_REV = 28.0;
     // target RPMs (tune these)
-    private static final double TARGET_RPM = 50.0;
+    private static final double TARGET_RPM = 1500.0;
 
     // Battery + launcher velocity compensation
     private static final double NOMINAL_VOLTAGE = 12.0;
@@ -232,7 +232,6 @@ public class MainTeleop extends LinearOpMode {
 
         waitForStart();
 
-        launcherTicksPerRev = launcher.getMotorType().getTicksPerRev();
         baseLauncherPIDF = launcher.getPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER);
 
         // Max ticks/sec = maxRPM * ticksPerRev / 60
