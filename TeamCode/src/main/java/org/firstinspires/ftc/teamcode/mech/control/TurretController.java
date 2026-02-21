@@ -42,9 +42,9 @@ public class TurretController {
     // 0-3.3V over one mechanical revolution.
     public double yawEncoderMaxVoltage = 3.3;
     // Turret degrees represented by one full encoder revolution.
-    public double yawEncoderDegPerRev = 122.7272;
+    public double yawEncoderDegPerRev = 360;
     // Additive offset applied after unwrapping in degrees
-    public double yawEncoderOffsetDeg = 0.0;
+    public double yawEncoderOffsetDeg = -75;
     public boolean yawEncoderInverted = false;
     private double yawEncLastRawDeg = 0.0;
     private double yawEncContinuousDeg = 0.0;
@@ -58,6 +58,9 @@ public class TurretController {
     private long lastVisionTime = 0;
     public long visionTimeoutMs = 500;
     private boolean hadVisionLock = false;
+    // Mechanical frame offset between "turret zero" and "robot forward".
+    // Positive values rotate the target CCW in robot-frame degrees.
+    public double yawRobotForwardOffsetDeg = 0.0;
 
     // Pitch table (distance in inches to servo position)
     // Must be same length and strictly increasing distances.
@@ -226,24 +229,29 @@ public class TurretController {
         if (Math.abs(txUsedDeg) < txDeadbandDeg) txUsedDeg = 0.0;
 
         double yawPower;
+        double rawTargetDeg;
 
-        if (visionFresh) {
-            double rawTargetDeg;
-            if (useTxForYaw) {
-                rawTargetDeg = yawEstimateDeg - (txSign * txUsedDeg);
-            } else {
-                rawTargetDeg = filteredYawTargetDeg;
-            }
-
-            yawTargetDeg = yawEstimateDeg + wrapTo180(rawTargetDeg - yawEstimateDeg);
+        // Vision tx from a robot-fixed camera should define an absolute target in robot frame,
+        // not a delta from current turret angle each loop.
+        // When vision is stale, keep aiming using the robot-relative target vector
+        // (used for remembered absolute tag tracking).
+        if (visionFresh && useTxForYaw) {
+            rawTargetDeg = yawRobotForwardOffsetDeg - (txSign * txUsedDeg);
             hadVisionLock = true;
             settleTimer.reset();
         } else {
-            if (!hadVisionLock) {
-                yawTargetDeg = yawEstimateDeg;
+            rawTargetDeg = filteredYawTargetDeg + yawRobotForwardOffsetDeg;
+            if (visionFresh) {
+                hadVisionLock = true;
+                settleTimer.reset();
+            } else if (!hadVisionLock) {
+                // If we have never seen vision yet, avoid integrating toward a stale default.
+                rawTargetDeg = yawEstimateDeg;
                 yawPidf.reset();
             }
         }
+
+        yawTargetDeg = yawEstimateDeg + wrapTo180(rawTargetDeg - yawEstimateDeg);
 
 
 

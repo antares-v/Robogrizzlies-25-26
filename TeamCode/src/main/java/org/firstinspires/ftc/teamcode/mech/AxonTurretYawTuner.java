@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.mech;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -26,8 +26,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 @TeleOp(name = "Axon Turret Yaw Tuner", group = "Debug")
 public class AxonTurretYawTuner extends LinearOpMode {
 
-    private static final String SERVO_NAME = "yawServo";    // TODO: CRServo device name in RC config
-    private static final String ANALOG_NAME = "yawEncoder"; // TODO: AnalogInput device name in RC config
+    private static final String SERVO_NAME = "turretYaw";    // TODO: CRServo device name in RC config
+    private static final String ANALOG_NAME = "turretYawEnc"; // TODO: AnalogInput device name in RC config
 
     // Encoder electrical range (REV Analog is typically 0-3.3V)
     private static final double ENCODER_MAX_V = 3.3;
