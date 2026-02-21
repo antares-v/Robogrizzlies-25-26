@@ -31,7 +31,7 @@ public class TurretController {
     private boolean filteredYawTargetInitialized = false;
 
     public boolean useTxForYaw = false;
-    public double txSign = 1.0;
+    public double txSign = -1.0;
     public double txDeadbandDeg = 0.2;
 
     public double txFilterAlpha = 0.75;
@@ -47,7 +47,7 @@ public class TurretController {
     public double yawEncoderMaxVoltage = 3.3;
     // Turret degrees represented by one full encoder revolution.
     // For 45:132 servo:turret with encoder on servo shaft => 360 * (45/132) = 122.7272.
-    public double yawEncoderDegPerRev = 110.7272;
+    public double yawEncoderDegPerRev = 122.7272;
     // Additive offset applied after unwrapping in degrees
     public double yawEncoderOffsetDeg = 0;
     public boolean yawEncoderInverted = false;

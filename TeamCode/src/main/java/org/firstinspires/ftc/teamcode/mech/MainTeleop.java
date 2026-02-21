@@ -150,7 +150,7 @@ public class MainTeleop extends LinearOpMode {
     // Persistent offset from robot-forward frame to turret frame.
     private static final double TURRET_YAW_FORWARD_OFFSET_DEG = 15;
     // Start slightly lower so compensation is stronger (can be tuned live).
-    private static final double TURRET_YAW_ENC_DEG_PER_REV = 110.0;
+    private static final double TURRET_YAW_ENC_DEG_PER_REV = 122.7272;
 
     // Last seen tag position in field coordinates (inches)
     private boolean hasLastTagField = false;
