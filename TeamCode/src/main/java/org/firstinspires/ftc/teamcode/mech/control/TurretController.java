@@ -27,7 +27,34 @@ public class TurretController {
     public double yawStaticMinPower = 0.12;
     public double yawStaticErrDeg = 2.0;
     // Low-pass filter for computed yaw target (deg)
-    private double filteredYawTargetDeg = 0.0;
+    
+// Freeze / disable turret outputs (used for driver override)
+private boolean frozen = false;
+
+// Freeze/unfreeze turret. When frozen, yaw power is set to 0 and pitch holds its last position.
+public void setFrozen(boolean frozen) {
+    if (this.frozen != frozen) {
+        this.frozen = frozen;
+        // Prevent a huge dt spike when re-enabling.
+        loopTimer.reset();
+        // Stop yaw integrator windup while frozen.
+        yawPidf.reset();
+        // Reset pose/tx filters so re-centering doesn't fight old targets.
+        filteredYawTargetInitialized = false;
+        hadVisionLock = false;
+    }
+    if (this.frozen) {
+        // Immediately stop motion.
+        yawServo.setPower(0.0);
+        pitchServo.setPosition(pitchCmd);
+    }
+}
+
+public boolean isFrozen() {
+    return frozen;
+}
+
+private double filteredYawTargetDeg = 0.0;
     private boolean filteredYawTargetInitialized = false;
 
     public boolean useTxForYaw = false;
@@ -152,6 +179,7 @@ public class TurretController {
     public double getYawTargetDeg() { return yawTargetDeg; }
 
     public void setTargetRobotRelative(double xIn, double yIn, double zIn) {
+        if (frozen) return;
         this.targetXIn = xIn;
         this.targetYIn = yIn;
         this.targetZIn = zIn;
@@ -159,6 +187,11 @@ public class TurretController {
     }
 
     public void updateVisionMeasurement(double xIn, double yIn, double zIn, double txDeg, boolean isValid) {
+        if (frozen) {
+            // Still record last known tx for smoothing, but don't treat as a fresh lock.
+            visionValid = false;
+            return;
+        }
         this.visionValid = isValid;
         if (isValid) {
             this.lastVisionTime = System.currentTimeMillis();
@@ -213,6 +246,15 @@ public class TurretController {
             yawEstimateDeg = readYawEncoderDeg();
         }
 
+
+// If frozen, keep pitch where it was, and re-center yaw to robot-forward (tx=0).
+// This gives the driver a predictable "parked" turret direction.
+if (frozen) {
+    // Hold pitch at last commanded position
+    pitchServo.setPosition(pitchCmd);
+}
+
+        if (!frozen) {
         // Distances to target in robot frame
         double horizontalDist = Math.sqrt(targetXIn * targetXIn + targetYIn * targetYIn);
         double lineOfSightDist = Math.sqrt(horizontalDist * horizontalDist + targetZIn * targetZIn);
@@ -227,13 +269,16 @@ public class TurretController {
 
         pitchCmd = slew(pitchCmd, pitchDesired, pitchSlewPerSec, dt);
         pitchServo.setPosition(pitchCmd);
+        } else {
+            // frozen: keep pitchCmd as-is (already written above)
+        }
 
         long now = System.currentTimeMillis();
-        boolean visionFresh = visionValid && (now - lastVisionTime < visionTimeoutMs);
+        boolean visionFresh = (!frozen) && visionValid && (now - lastVisionTime < visionTimeoutMs);
 
         // yaw target
         // atan2 already handles x=0 safely; clamping x positive breaks back-half aiming.
-        double desiredYawDegFromPose = Math.toDegrees(Math.atan2(targetYIn, targetXIn));
+        double desiredYawDegFromPose = frozen ? 0.0 : Math.toDegrees(Math.atan2(targetYIn, targetXIn));
 
         // filter yaw
         double alphaPose = 0.25;

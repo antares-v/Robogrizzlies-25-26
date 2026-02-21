@@ -157,6 +157,11 @@ public class MainTeleop extends LinearOpMode {
     private double lastTagFieldX = 0.0;
     private double lastTagFieldY = 0.0;
 
+
+// Last seen tag height in robot coordinates (inches). Used to keep pitch stable after tag loss.
+private boolean hasLastTagZ = false;
+private double lastTagRobotZIn = 0.0;
+
     // Helpers
     private static double deadzone(double v, double dz) {
         return (Math.abs(v) < dz) ? 0 : v;
@@ -400,6 +405,13 @@ public class MainTeleop extends LinearOpMode {
                 if (dLeftPressed) turret.yawRobotForwardOffsetDeg = angleWrapDeg(turret.yawRobotForwardOffsetDeg - 1.0);
             }
 
+
+// 6.75) Turret freeze toggle (X)
+// First press freezes turret in place; second press re-enables tracking.
+if (xPressed && turret != null) {
+    turret.setFrozen(!turret.isFrozen());
+}
+
             // 7) Start firing (Y)
             if (yPressed && shootState == ShootState.IDLE) {
                 // No spindexer / no sorting / single-ball robot: spin up launcher, then feed once.
@@ -476,6 +488,9 @@ public class MainTeleop extends LinearOpMode {
                             lastTagFieldY = robotPos.position.y + (tagRobotXIn * sh + tagRobotYIn * ch);
                             hasLastTagField = true;
 
+                            lastTagRobotZIn = tagRobotZIn;
+                            hasLastTagZ = true;
+
                             tagSeen = true;
                             break;
                         }
@@ -496,7 +511,8 @@ public class MainTeleop extends LinearOpMode {
                     double sh = Math.sin(rh);
                     double targetRobotX =  dx * ch + dy * sh;
                     double targetRobotY = -dx * sh + dy * ch;
-                    turret.setTargetRobotRelative(targetRobotX, targetRobotY, 0.0);
+                    double zHold = hasLastTagZ ? lastTagRobotZIn : 0.0;
+                    turret.setTargetRobotRelative(targetRobotX, targetRobotY, zHold);
                     turret.updateVisionMeasurement(0.0, 0.0, 0.0, 0.0, false);
                     memoryTrackingActive = true;
                 } else {
@@ -506,9 +522,11 @@ public class MainTeleop extends LinearOpMode {
 
                 turret.update();
                 telemetry.addData("trackMode", tagSeen ? "VISION" : (memoryTrackingActive ? "MEMORY" : "NONE"));
+                telemetry.addData("turretFrozen", turret.isFrozen() ? "YES" : "NO");
             }
 
             telemetry.addData("tagMemory", hasLastTagField ? "YES" : "NO");
+            telemetry.addData("tagZHold", hasLastTagZ ? String.format("%.1f in", lastTagRobotZIn) : "NO");
             if (hasLastTagField) {
                 telemetry.addData("lastTagField", "x=%.1f y=%.1f", lastTagFieldX, lastTagFieldY);
             }
