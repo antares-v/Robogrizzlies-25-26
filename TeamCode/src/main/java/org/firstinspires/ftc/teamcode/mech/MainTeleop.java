@@ -425,6 +425,7 @@ public class MainTeleop extends LinearOpMode {
             double distIn = 0.0;
             double tagRobotXIn = 0.0;
             double tagRobotYIn = 0.0;
+            double tagRobotZIn = 0.0;
 
             LLResult result = (limelight != null) ? limelight.getLatestResult() : null;
             if (result != null && result.isValid()) {
@@ -441,6 +442,7 @@ public class MainTeleop extends LinearOpMode {
                                 double xM = tagPoseRobot.getPosition().x;
                                 double yM = tagPoseRobot.getPosition().y;
                                 double zM = tagPoseRobot.getPosition().z;
+                                tagRobotZIn = zM * 39.3701;
                                 double distM = Math.sqrt(xM*xM + yM*yM + zM*zM);
                                 distIn = distM * 39.3701;
                                 havePoseRange = distIn > 1.0;
@@ -484,7 +486,7 @@ public class MainTeleop extends LinearOpMode {
             if (turret != null) {
                 boolean memoryTrackingActive = false;
                 if (tagSeen) {
-                    turret.updateVisionMeasurement(tagRobotXIn, tagRobotYIn, 0.0, yawErrDeg, true);
+                    turret.updateVisionMeasurement(tagRobotXIn, tagRobotYIn, tagRobotZIn, yawErrDeg, true);
                 } else if (hasLastTagField) {
                     // Field -> robot transform (x forward, y left).
                     double dx = lastTagFieldX - robotPos.position.x;
@@ -523,6 +525,8 @@ public class MainTeleop extends LinearOpMode {
             telemetry.addData("rawOutValue", turret.rawOut());
             telemetry.addData("yawErrorDeg", turret.rawYawErrorDeg());
             telemetry.addData("rawPosition", turret.rawPos());
+            telemetry.addData("pitchCmd", "%.3f", turret.rawPitchCmd());
+            telemetry.addData("pitchDesired", "%.3f", turret.rawPitchDesired());
             telemetry.addData("tagSeen", tagSeen);
             telemetry.addData("tagDistIn", "%.1f", distIn);
             telemetry.addData("turretYawOffsetDeg", "%.1f", turret.yawRobotForwardOffsetDeg);
