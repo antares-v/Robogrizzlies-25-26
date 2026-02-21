@@ -115,6 +115,12 @@ public class MainTeleop extends LinearOpMode {
     private CustomPIDF launcherPIDF;
     private final ElapsedTime launcherLoopTimer = new ElapsedTime();
     private double launcherTargetTicksPerSec = 0.0;
+
+    // Raw encoder velocity estimation (from position ticks)
+    private int launcherLastPos = 0;
+    private double launcherLastTime = 0.0;   // seconds (getRuntime())
+    private double launcherVelTicksPerSec = 0.0;
+    private static final double LAUNCHER_VEL_ALPHA = 0.25; // 0..1, higher = less filtering
     private boolean launcherControlEnabled = false;
 
     // turret control
@@ -233,6 +239,11 @@ public class MainTeleop extends LinearOpMode {
         waitForStart();
 
         launcherTicksPerRev = launcher.getMotorType().getTicksPerRev();
+
+        // Init raw-encoder velocity estimator
+        launcherLastPos = launcher.getCurrentPosition();
+        launcherLastTime = getRuntime();
+        launcherVelTicksPerSec = 0.0;
         baseLauncherPIDF = launcher.getPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER);
 
         // Max ticks/sec = maxRPM * ticksPerRev / 60
@@ -520,7 +531,7 @@ public class MainTeleop extends LinearOpMode {
             telemetry.addData("shotIndex", shotIndex);
             telemetry.addData("typeofshot", stype);
             telemetry.addData("pos", launcher.getCurrentPosition());
-            telemetry.addData("vel", launcher.getVelocity());
+            telemetry.addData("vel", getLauncherVelTicksPerSecFromPos());
             telemetry.addData("rawOutValue", turret.rawOut());
             telemetry.addData("yawErrorDeg", turret.rawYawErrorDeg());
             telemetry.addData("rawPosition", turret.rawPos());
@@ -614,10 +625,29 @@ public class MainTeleop extends LinearOpMode {
         launcherPIDF.reset();
         launcherLoopTimer.reset();
     }
+    private double getLauncherVelTicksPerSecFromPos() {
+        int pos = launcher.getCurrentPosition();
+        double now = getRuntime();
+        double dt = now - launcherLastTime;
+
+        if (dt <= 1e-4) return launcherVelTicksPerSec; // avoid divide-by-zero / tiny dt
+
+        double raw = (pos - launcherLastPos) / dt; // ticks/sec
+
+        // low-pass filter to reduce noise
+        launcherVelTicksPerSec = LAUNCHER_VEL_ALPHA * raw + (1.0 - LAUNCHER_VEL_ALPHA) * launcherVelTicksPerSec;
+
+        launcherLastPos = pos;
+        launcherLastTime = now;
+
+        return launcherVelTicksPerSec;
+    }
+
+
 
 
     private double getLauncherRPM() {
-        return launcher.getVelocity() / launcherTicksPerRev * 60.0;
+        return getLauncherVelTicksPerSecFromPos() / launcherTicksPerRev * 60.0;
     }
 
     private boolean launcherAtSpeed(double targetRpm) {
@@ -631,7 +661,7 @@ public class MainTeleop extends LinearOpMode {
         double dt = launcherLoopTimer.seconds();
         launcherLoopTimer.reset();
 
-        double measured = launcher.getVelocity(); // ticks/sec
+        double measured = getLauncherVelTicksPerSecFromPos(); // ticks/sec (from position)
         double target = launcherTargetTicksPerSec;
 
         double power = launcherPIDF.ZiegerZichloas(target, measured, dt);
@@ -682,7 +712,7 @@ public class MainTeleop extends LinearOpMode {
         double dt = launcherLoopTimer.seconds();
         launcherLoopTimer.reset();
 
-        double measured = launcher.getVelocity(); // ticks/sec
+        double measured = getLauncherVelTicksPerSecFromPos(); // ticks/sec (from position)
         double target = launcherTargetTicksPerSec;
 
         double power = launcherPIDF.update(target, measured, dt);
