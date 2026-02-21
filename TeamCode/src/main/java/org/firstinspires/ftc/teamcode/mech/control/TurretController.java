@@ -32,9 +32,9 @@ public class TurretController {
 
     public boolean useTxForYaw = false;
     public double txSign = 1.0;
-    public double txDeadbandDeg = 0.2;
+    public double txDeadbandDeg = 0.5;
 
-    public double txFilterAlpha = 0.75;
+    public double txFilterAlpha = 0.9;
     private double visionTxDeg = 0.0;
     private double filteredTxDeg = 0.0;
 
@@ -61,7 +61,7 @@ public class TurretController {
     // Vision AprilTag measurement in inches in robot space
     private boolean visionValid = false;
     private long lastVisionTime = 0;
-    public long visionTimeoutMs = 500;
+    public long visionTimeoutMs = 200;
     private boolean hadVisionLock = false;
     // Mechanical frame offset between "turret zero" and "robot forward".
     // Positive values rotate the target CCW in robot-frame degrees.
