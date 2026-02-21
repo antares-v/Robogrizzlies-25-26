@@ -19,7 +19,7 @@ import com.qualcomm.robotcore.util.Range;
 public class pitchServoTuner extends LinearOpMode {
 
     // ----------- CONFIGURE THESE -----------
-    private static final String PITCH_SERVO_NAME = "pitch"; // <-- change to your hardware name
+    private static final String PITCH_SERVO_NAME = "turretPitch"; // <-- change to your hardware name
 
     // Safe mechanical range for your linkage (NOT necessarily 0..1).
     private static final double PITCH_MIN_POS = 0.15;  // <-- find by testing (just before hard stop)
@@ -31,7 +31,7 @@ public class pitchServoTuner extends LinearOpMode {
     private static final double MAX_ANGLE_DEG = 60.0;  // angle when servo is at PITCH_MAX_POS
 
     // Nudge size per "click" of d-pad (smaller = finer control).
-    private static final double NUDGE_STEP_POS = 0.003;
+    private static final double NUDGE_STEP_POS = 0.05;
 
     // Debounce so holding d-pad doesn’t spam too fast. (seconds)
     private static final double NUDGE_COOLDOWN_S = 0.08;

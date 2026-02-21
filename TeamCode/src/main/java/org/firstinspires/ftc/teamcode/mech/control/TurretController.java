@@ -72,6 +72,8 @@ public class TurretController {
     // Hard clamps for safety
     public double pitchMinPos = 0.4;
     public double pitchMaxPos = 0.8;
+    public double yawMinDeg = -75.0;
+    public double yawMaxDeg = 75.0;
 
     // Slew-rate to prevent pitch oscillations
     public double pitchSlewPerSec = 1.5;
@@ -273,7 +275,11 @@ public class TurretController {
             }
         }
 
-        yawTargetDeg = yawEstimateDeg + wrapTo180(rawTargetDeg - yawEstimateDeg);
+        // Apply hard yaw limits in wrapped turret-frame degrees after all offsets.
+        double currentYawWrappedDeg = wrapTo180(yawEstimateDeg);
+        double desiredYawWrappedDeg = wrapTo180(rawTargetDeg);
+        double limitedYawWrappedDeg = Range.clip(desiredYawWrappedDeg, yawMinDeg, yawMaxDeg);
+        yawTargetDeg = yawEstimateDeg + wrapTo180(limitedYawWrappedDeg - currentYawWrappedDeg);
 
 
 

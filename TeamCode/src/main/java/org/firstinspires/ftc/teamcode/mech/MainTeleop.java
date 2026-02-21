@@ -148,7 +148,7 @@ public class MainTeleop extends LinearOpMode {
     // Used only when pose range is unavailable for a detected tag.
     private static final double DEFAULT_TAG_RANGE_IN = 48.0;
     // Persistent offset from robot-forward frame to turret frame.
-    private static final double TURRET_YAW_FORWARD_OFFSET_DEG = 31.0;
+    private static final double TURRET_YAW_FORWARD_OFFSET_DEG = 15;
     // Start slightly lower so compensation is stronger (can be tuned live).
     private static final double TURRET_YAW_ENC_DEG_PER_REV = 110.0;
 
