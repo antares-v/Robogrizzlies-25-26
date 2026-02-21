@@ -31,10 +31,10 @@ public class TurretController {
     private boolean filteredYawTargetInitialized = false;
 
     public boolean useTxForYaw = false;
-    public double txSign = -1.0;
-    public double txDeadbandDeg = 0.2;
+    public double txSign = 1.0;
+    public double txDeadbandDeg = 0.5;
 
-    public double txFilterAlpha = 0.75;
+    public double txFilterAlpha = 0.9;
     private double visionTxDeg = 0.0;
     private double filteredTxDeg = 0.0;
     // Blend between tx-derived yaw and pose-derived yaw when vision is fresh.
@@ -64,7 +64,7 @@ public class TurretController {
     // Vision AprilTag measurement in inches in robot space
     private boolean visionValid = false;
     private long lastVisionTime = 0;
-    public long visionTimeoutMs = 500;
+    public long visionTimeoutMs = 200;
     private boolean hadVisionLock = false;
     // Mechanical frame offset between "turret zero" and "robot forward".
     // Positive values rotate the target CCW in robot-frame degrees.
@@ -72,12 +72,12 @@ public class TurretController {
 
     // Pitch table (distance in inches to servo position)
     // Must be same length and strictly increasing distances.
-    public double[] pitchDistIn = { 18, 30, 42, 54 };
+    public double[] pitchDistIn = { 15, 30, 50, 80 };
     public double[] pitchPos    = {0.0,0.3,0.6,1.0};
 
     // Hard clamps for safety
-    public double pitchMinPos = 0.4;
-    public double pitchMaxPos = 0.8;
+    public double pitchMinPos = 0.0;
+    public double pitchMaxPos = 1.0;
     public double yawMinDeg = -150.0;
     public double yawMaxDeg = 150.0;
 
