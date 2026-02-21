@@ -309,9 +309,7 @@ if (frozen) {
         // (used for remembered absolute tag tracking).
         if (visionFresh && useTxForYaw) {
             // Fresh vision + tx mode: yaw is driven directly from tx.
-            double txTargetDeg = yawRobotForwardOffsetDeg - (txSign * txUsedDeg);
-            double poseTargetDeg = desiredYawDegFromPose + yawRobotForwardOffsetDeg;
-            rawTargetDeg = lerpAngleDeg(txTargetDeg, poseTargetDeg, freshVisionPoseBlend);
+            rawTargetDeg = yawRobotForwardOffsetDeg - (txSign * txUsedDeg);
             debugYawSource = "TX";
             hadVisionLock = true;
             settleTimer.reset();
