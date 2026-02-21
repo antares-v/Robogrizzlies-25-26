@@ -532,7 +532,7 @@ public class MainTeleop extends LinearOpMode {
             telemetry.addData("turretYawOffsetDeg", "%.1f", turret.yawRobotForwardOffsetDeg);
             telemetry.addData("yawEncDegPerRev", "%.4f", turret.yawEncoderDegPerRev);
             telemetry.addData("tune", "up/down=encDegPerRev left/right=offset");
-            telemetry.addData("max voltage for encoder", turret.maxVoltage());
+            telemetry.addData("distance", distIn);
             telemetry.update();
 
             idle();

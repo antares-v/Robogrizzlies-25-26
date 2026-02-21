@@ -31,7 +31,7 @@ public class TurretController {
     private boolean filteredYawTargetInitialized = false;
 
     public boolean useTxForYaw = false;
-    public double txSign = -1.0;
+    public double txSign = 1.0;
     public double txDeadbandDeg = 0.2;
 
     public double txFilterAlpha = 0.75;
@@ -69,12 +69,12 @@ public class TurretController {
 
     // Pitch table (distance in inches to servo position)
     // Must be same length and strictly increasing distances.
-    public double[] pitchDistIn = { 18, 30, 42, 54 };
+    public double[] pitchDistIn = { 15, 30, 50, 80 };
     public double[] pitchPos    = {0.0,0.3,0.6,1.0};
 
     // Hard clamps for safety
-    public double pitchMinPos = 0.4;
-    public double pitchMaxPos = 0.8;
+    public double pitchMinPos = 0.0;
+    public double pitchMaxPos = 1.0;
     public double yawMinDeg = -150.0;
     public double yawMaxDeg = 150.0;
 
