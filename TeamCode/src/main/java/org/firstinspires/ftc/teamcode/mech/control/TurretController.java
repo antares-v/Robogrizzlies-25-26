@@ -244,11 +244,26 @@ public class TurretController {
             if (visionFresh) {
                 hadVisionLock = true;
                 settleTimer.reset();
-            } else if (!hadVisionLock) {
-                // If we have never seen vision yet, avoid integrating toward a stale default.
-                rawTargetDeg = yawEstimateDeg;
-                yawPidf.reset();
+            } else {
+                // No fresh vision. Still track using robot-relative target (from Pinpoint / memory).
+                double targetNorm = Math.hypot(targetXIn, targetYIn);
+
+                if (targetNorm > 1e-3) {
+                    // Use pose-based yaw target (filteredYawTargetDeg)
+                    rawTargetDeg = filteredYawTargetDeg;
+
+                    yawTargetDeg = yawEstimateDeg + wrapTo180(rawTargetDeg - yawEstimateDeg);
+
+                    // Keep PID running so it continues tracking.
+                    hadVisionLock = true;
+                } else {
+                    // No target at all then hold current heading
+                    yawTargetDeg = yawEstimateDeg;
+                    yawPidf.reset();
+                    hadVisionLock = false;
+                }
             }
+        }
         }
 
         yawTargetDeg = yawEstimateDeg + wrapTo180(rawTargetDeg - yawEstimateDeg);
