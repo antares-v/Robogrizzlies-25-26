@@ -70,7 +70,7 @@ public class MainTeleop extends LinearOpMode {
     private boolean autoIndexedSinceLastBall = false;  // true = auto moved since last ball was detected
 
     // Shooter states
-    private enum ShootState { IDLE, AIM, SET_SERVO, SPINUP, FIRE, RECOVER }
+    private enum ShootState { IDLE, START, SPINUP, FIRE, RECOVER }
     private ShootState shootState = ShootState.IDLE; //initial shootstate
 
     private final ElapsedTime shootTimer = new ElapsedTime();
@@ -128,9 +128,9 @@ public class MainTeleop extends LinearOpMode {
     private Pose2d robotPos;
 
     // tune values
-    private static double LAUNCH_kP = 0.00025;
-    private static double LAUNCH_kI = 0.0000008;
-    private static double LAUNCH_kD = 0.00001;
+    private static double LAUNCH_kP = 0.005;
+    private static double LAUNCH_kI = 0.00005;
+    private static double LAUNCH_kD = 0.00003;
 
     // kF will be computed from motor max speed at init, but you can override if you want:
     private static double LAUNCH_kF = -1.0; // -1 = auto compute
@@ -238,7 +238,7 @@ public class MainTeleop extends LinearOpMode {
         double maxRpm = launcher.getMotorType().getMaxRPM();
         double maxTicksPerSec = (maxRpm * launcherTicksPerRev) / 60.0;
 //keep all other constans zero while testing Kp but talk to gavin about kf intergration into thes system
-        double kF = 0;//(LAUNCH_kF > 0) ? LAUNCH_kF : (1.0 / maxTicksPerSec);
+        double kF = 0.5;//(LAUNCH_kF > 0) ? LAUNCH_kF : (1.0 / maxTicksPerSec);
 
         launcherPIDF = new CustomPIDF(LAUNCH_kP, LAUNCH_kI, LAUNCH_kD, kF);
         launcherPIDF.iMax = 0.35; // clamp integral contribution (power units)
@@ -579,7 +579,7 @@ public class MainTeleop extends LinearOpMode {
         shotIndex = 0;
 
         // kick off
-        shootState = ShootState.AIM;
+        shootState = ShootState.START;
         shootTimer.reset();
     }
 
@@ -703,21 +703,7 @@ public class MainTeleop extends LinearOpMode {
                 outtaking = false;
                 return;
 
-            case AIM: {
-                outtaking = true;
-                // turret.update();
-
-                // If turret is aimed, continue
-                if (turret.isAimed()) {
-                    shootState = ShootState.SET_SERVO;
-                    shootTimer.reset();
-                }
-                Kp = 0;
-                telemetry.addData("turret", "aiming...");
-                break;
-            }
-
-            case SET_SERVO: {
+            case START: {
                 outtaking = true;
                 // Move servo to the next desired outtake position
                 // int posIdx = shotOrder[shotIndex];  // SPINDEXER DISABLED
