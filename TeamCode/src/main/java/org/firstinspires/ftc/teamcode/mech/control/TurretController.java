@@ -67,7 +67,7 @@ public class TurretController {
     // Pitch table (distance in inches to servo position)
     // Must be same length and strictly increasing distances.
     public double[] pitchDistIn = { 18, 30, 42, 54 };
-    public double[] pitchPos    = {0.78,0.70,0.64,0.60};
+    public double[] pitchPos    = {0.0,0.3,0.6,1.0};
 
     // Hard clamps for safety
     public double pitchMinPos = 0.4;
@@ -276,12 +276,14 @@ public class TurretController {
         }
 
         // Apply hard yaw limits in wrapped turret-frame degrees after all offsets.
-        double currentYawWrappedDeg = wrapTo180(yawEstimateDeg);
-        double desiredYawWrappedDeg = wrapTo180(rawTargetDeg);
-        double limitedYawWrappedDeg = Range.clip(desiredYawWrappedDeg, yawMinDeg, yawMaxDeg);
-        yawTargetDeg = yawEstimateDeg + wrapTo180(limitedYawWrappedDeg - currentYawWrappedDeg);
+        // Make desired target continuous near current estimate
+        double desiredCont = yawEstimateDeg + wrapTo180(rawTargetDeg - yawEstimateDeg);
 
+        // Hard clamp in continuous turret degrees
+        yawTargetDeg = Range.clip(desiredCont, yawMinDeg, yawMaxDeg);
 
+        // Error for PID (wrapped error is fine for smoothness)
+        debugYawErrorDeg = wrapTo180(yawTargetDeg - yawEstimateDeg);
 
         yawPower = yawPidf.updatePosition(yawTargetDeg, yawEstimateDeg, dt);
         out = yawPower;
