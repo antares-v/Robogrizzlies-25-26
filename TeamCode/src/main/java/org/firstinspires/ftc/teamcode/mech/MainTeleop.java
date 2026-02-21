@@ -450,20 +450,33 @@ public class MainTeleop extends LinearOpMode {
                 if (tagSeen) {
                     turret.updateVisionMeasurement(tagXIn, -tagYIn, tagZIn, yawErrDeg, true);
                 } else if (hasLastTagField) {
-                    double dx = lastTagFieldX - robotPos.position.x;
-                    double dy = lastTagFieldY - robotPos.position.y;
 
-                    double bearingField = Math.atan2(dy, dx);
-                    double bearingRobot = angleWrapRad(bearingField - robotPos.heading.toDouble());
+                // Field delta to remembered tag
+                double dxF = lastTagFieldX - robotPos.position.x;
+                double dyF = lastTagFieldY - robotPos.position.y;
 
-                    double aimDistIn = 24.0;
-                    double targetRobotX = aimDistIn * Math.cos(bearingRobot);
-                    double targetRobotY = aimDistIn * Math.sin(bearingRobot);
+                // Rotate field delta into ROBOT frame (R(-heading))
+                double rh = robotPos.heading.toDouble();
+                double ch = Math.cos(rh);
+                double sh = Math.sin(rh);
 
-                    turret.setTargetRobotRelative(targetRobotX, targetRobotY, 0.0);
+                double tagRobotX =  dxF * ch + dyF * sh;
+                double tagRobotY = -dxF * sh + dyF * ch;
 
-                    // Make sure the turret controller doesn't think vision is fresh.
-                    turret.updateVisionMeasurement(0.0, 0.0, 0.0, 0.0, false);
+                double relX = tagRobotX - LL_X_IN;
+                double relY = tagRobotY - LL_Y_IN;
+
+                double c = Math.cos(-LL_YAW_RAD);
+                double s = Math.sin(-LL_YAW_RAD);
+
+                double tagCamX = relX * c - relY * s;
+                double tagCamY = relX * s + relY * c;
+
+                double yawErrDegPred = Math.toDegrees(Math.atan2(tagCamY, tagCamX));
+
+                // Feed the turret a meaningful target even without vision
+                // (mark false so you don't treat it as "fresh camera data" if your controller cares)
+                turret.updateVisionMeasurement(tagCamX, tagCamY, 0.0, yawErrDegPred, false);
                 } else {
                     // No vision and nothing remembered
                     turret.updateVisionMeasurement(0.0, 0.0, 0.0, 0.0, false);
