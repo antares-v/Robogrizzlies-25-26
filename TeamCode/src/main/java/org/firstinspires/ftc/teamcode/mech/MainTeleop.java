@@ -201,6 +201,8 @@ public class MainTeleop extends LinearOpMode {
         turret.resetYawEstimate();
         turret.useTxForYaw = true;
         turret.txSign = 1.0;
+        turret.txFilterAlpha = 1.0;
+        turret.txDeadbandDeg = 0.05;
         turret.yawRobotForwardOffsetDeg = angleWrapDeg(TURRET_YAW_FORWARD_OFFSET_DEG);
 
         // turret.setTargetRobotRelative(36, 10, 0);
@@ -525,6 +527,10 @@ public class MainTeleop extends LinearOpMode {
             telemetry.addData("rawOutValue", turret.rawOut());
             telemetry.addData("yawErrorDeg", turret.rawYawErrorDeg());
             telemetry.addData("rawPosition", turret.rawPos());
+            telemetry.addData("useTxForYaw", turret.useTxForYaw);
+            telemetry.addData("visionFresh", turret.rawVisionFresh());
+            telemetry.addData("yawSource", turret.rawYawSource());
+            telemetry.addData("txUsedDeg", "%.2f", turret.rawTxUsedDeg());
             telemetry.addData("pitchCmd", "%.3f", turret.rawPitchCmd());
             telemetry.addData("pitchDesired", "%.3f", turret.rawPitchDesired());
             telemetry.addData("tagSeen", tagSeen);

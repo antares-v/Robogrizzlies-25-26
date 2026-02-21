@@ -105,6 +105,9 @@ public class TurretController {
     // debug values
     private double out;
     private double debugYawErrorDeg;
+    private double debugTxUsedDeg = 0.0;
+    private boolean debugVisionFresh = false;
+    private String debugYawSource = "NONE";
 
     public TurretController(CRServo yawServo, Servo pitchServo) {
         this(yawServo, pitchServo, null);
@@ -230,6 +233,7 @@ public class TurretController {
 
         long now = System.currentTimeMillis();
         boolean visionFresh = visionValid && (now - lastVisionTime < visionTimeoutMs);
+        debugVisionFresh = visionFresh;
 
         // yaw target
         // atan2 already handles x=0 safely; clamping x positive breaks back-half aiming.
@@ -248,6 +252,7 @@ public class TurretController {
         filteredTxDeg = filteredTxDeg + txFilterAlpha * (visionTxDeg - filteredTxDeg);
         double txUsedDeg = filteredTxDeg;
         if (Math.abs(txUsedDeg) < txDeadbandDeg) txUsedDeg = 0.0;
+        debugTxUsedDeg = txUsedDeg;
 
         double yawPower;
         double rawTargetDeg;
@@ -257,7 +262,9 @@ public class TurretController {
         // When vision is stale, keep aiming using the robot-relative target vector
         // (used for remembered absolute tag tracking).
         if (visionFresh && useTxForYaw) {
+            // Fresh vision + tx mode: yaw is driven directly from tx.
             rawTargetDeg = yawRobotForwardOffsetDeg - (txSign * txUsedDeg);
+            debugYawSource = "TX";
             hadVisionLock = true;
             settleTimer.reset();
         } else {
@@ -265,8 +272,10 @@ public class TurretController {
             // so fallback tracking can keep up during fast robot turns.
             if (useTxForYaw) {
                 rawTargetDeg = desiredYawDegFromPose + yawRobotForwardOffsetDeg;
+                debugYawSource = "POSE_MEM";
             } else {
                 rawTargetDeg = filteredYawTargetDeg + yawRobotForwardOffsetDeg;
+                debugYawSource = "POSE_FILT";
             }
             if (visionFresh) {
                 hadVisionLock = true;
@@ -274,6 +283,7 @@ public class TurretController {
             } else if (!hadVisionLock) {
                 // If we have never seen vision yet, avoid integrating toward a stale default.
                 rawTargetDeg = yawEstimateDeg;
+                debugYawSource = "HOLD_NOLOCK";
                 yawPidf.reset();
             }
         }
@@ -328,6 +338,18 @@ public class TurretController {
 
     public double rawPitchDesired() {
         return pitchDesired;
+    }
+
+    public double rawTxUsedDeg() {
+        return debugTxUsedDeg;
+    }
+
+    public boolean rawVisionFresh() {
+        return debugVisionFresh;
+    }
+
+    public String rawYawSource() {
+        return debugYawSource;
     }
 
     public boolean isAimed() {
