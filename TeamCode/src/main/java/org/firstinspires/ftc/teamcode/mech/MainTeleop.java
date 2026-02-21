@@ -70,7 +70,7 @@ public class MainTeleop extends LinearOpMode {
     private boolean autoIndexedSinceLastBall = false;  // true = auto moved since last ball was detected
 
     // Shooter states
-    private enum ShootState { IDLE, AIM, SET_SERVO, SPINUP, FIRE, RECOVER }
+    private enum ShootState { IDLE, START, SPINUP, FIRE, RECOVER }
     private ShootState shootState = ShootState.IDLE; //initial shootstate
 
     private final ElapsedTime shootTimer = new ElapsedTime();
@@ -86,7 +86,7 @@ public class MainTeleop extends LinearOpMode {
     // Launcher encoder/velocity tuning
     private static final double LAUNCHER_TICKS_PER_REV = 28.0;
     // target RPMs (tune these)
-    private static final double TARGET_RPM = 50.0;
+    private static final double TARGET_RPM = 1500.0;
 
     // Battery + launcher velocity compensation
     private static final double NOMINAL_VOLTAGE = 12.0;
@@ -115,12 +115,6 @@ public class MainTeleop extends LinearOpMode {
     private CustomPIDF launcherPIDF;
     private final ElapsedTime launcherLoopTimer = new ElapsedTime();
     private double launcherTargetTicksPerSec = 0.0;
-
-    // Raw encoder velocity estimation (from position ticks)
-    private int launcherLastPos = 0;
-    private double launcherLastTime = 0.0;   // seconds (getRuntime())
-    private double launcherVelTicksPerSec = 0.0;
-    private static final double LAUNCHER_VEL_ALPHA = 0.25; // 0..1, higher = less filtering
     private boolean launcherControlEnabled = false;
 
     // turret control
@@ -134,9 +128,9 @@ public class MainTeleop extends LinearOpMode {
     private Pose2d robotPos;
 
     // tune values
-    private static double LAUNCH_kP = 0.00025;
-    private static double LAUNCH_kI = 0.0000008;
-    private static double LAUNCH_kD = 0.00001;
+    private static double LAUNCH_kP = 0.005;
+    private static double LAUNCH_kI = 0.00005;
+    private static double LAUNCH_kD = 0.00003;
 
     // kF will be computed from motor max speed at init, but you can override if you want:
     private static double LAUNCH_kF = -1.0; // -1 = auto compute
@@ -238,19 +232,13 @@ public class MainTeleop extends LinearOpMode {
 
         waitForStart();
 
-        launcherTicksPerRev = launcher.getMotorType().getTicksPerRev();
-
-        // Init raw-encoder velocity estimator
-        launcherLastPos = launcher.getCurrentPosition();
-        launcherLastTime = getRuntime();
-        launcherVelTicksPerSec = 0.0;
         baseLauncherPIDF = launcher.getPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER);
 
         // Max ticks/sec = maxRPM * ticksPerRev / 60
         double maxRpm = launcher.getMotorType().getMaxRPM();
         double maxTicksPerSec = (maxRpm * launcherTicksPerRev) / 60.0;
 //keep all other constans zero while testing Kp but talk to gavin about kf intergration into thes system
-        double kF = 0;//(LAUNCH_kF > 0) ? LAUNCH_kF : (1.0 / maxTicksPerSec);
+        double kF = 0.5;//(LAUNCH_kF > 0) ? LAUNCH_kF : (1.0 / maxTicksPerSec);
 
         launcherPIDF = new CustomPIDF(LAUNCH_kP, LAUNCH_kI, LAUNCH_kD, kF);
         launcherPIDF.iMax = 0.35; // clamp integral contribution (power units)
@@ -531,7 +519,7 @@ public class MainTeleop extends LinearOpMode {
             telemetry.addData("shotIndex", shotIndex);
             telemetry.addData("typeofshot", stype);
             telemetry.addData("pos", launcher.getCurrentPosition());
-            telemetry.addData("vel", getLauncherVelTicksPerSecFromPos());
+            telemetry.addData("vel", launcher.getVelocity());
             telemetry.addData("rawOutValue", turret.rawOut());
             telemetry.addData("yawErrorDeg", turret.rawYawErrorDeg());
             telemetry.addData("rawPosition", turret.rawPos());
@@ -591,7 +579,7 @@ public class MainTeleop extends LinearOpMode {
         shotIndex = 0;
 
         // kick off
-        shootState = ShootState.AIM;
+        shootState = ShootState.START;
         shootTimer.reset();
     }
 
@@ -625,29 +613,10 @@ public class MainTeleop extends LinearOpMode {
         launcherPIDF.reset();
         launcherLoopTimer.reset();
     }
-    private double getLauncherVelTicksPerSecFromPos() {
-        int pos = launcher.getCurrentPosition();
-        double now = getRuntime();
-        double dt = now - launcherLastTime;
-
-        if (dt <= 1e-4) return launcherVelTicksPerSec; // avoid divide-by-zero / tiny dt
-
-        double raw = (pos - launcherLastPos) / dt; // ticks/sec
-
-        // low-pass filter to reduce noise
-        launcherVelTicksPerSec = LAUNCHER_VEL_ALPHA * raw + (1.0 - LAUNCHER_VEL_ALPHA) * launcherVelTicksPerSec;
-
-        launcherLastPos = pos;
-        launcherLastTime = now;
-
-        return launcherVelTicksPerSec;
-    }
-
-
 
 
     private double getLauncherRPM() {
-        return getLauncherVelTicksPerSecFromPos() / launcherTicksPerRev * 60.0;
+        return launcher.getVelocity() / launcherTicksPerRev * 60.0;
     }
 
     private boolean launcherAtSpeed(double targetRpm) {
@@ -661,7 +630,7 @@ public class MainTeleop extends LinearOpMode {
         double dt = launcherLoopTimer.seconds();
         launcherLoopTimer.reset();
 
-        double measured = getLauncherVelTicksPerSecFromPos(); // ticks/sec (from position)
+        double measured = launcher.getVelocity(); // ticks/sec
         double target = launcherTargetTicksPerSec;
 
         double power = launcherPIDF.ZiegerZichloas(target, measured, dt);
@@ -712,7 +681,7 @@ public class MainTeleop extends LinearOpMode {
         double dt = launcherLoopTimer.seconds();
         launcherLoopTimer.reset();
 
-        double measured = getLauncherVelTicksPerSecFromPos(); // ticks/sec (from position)
+        double measured = launcher.getVelocity(); // ticks/sec
         double target = launcherTargetTicksPerSec;
 
         double power = launcherPIDF.update(target, measured, dt);
@@ -734,21 +703,7 @@ public class MainTeleop extends LinearOpMode {
                 outtaking = false;
                 return;
 
-            case AIM: {
-                outtaking = true;
-                // turret.update();
-
-                // If turret is aimed, continue
-                if (turret.isAimed()) {
-                    shootState = ShootState.SET_SERVO;
-                    shootTimer.reset();
-                }
-                Kp = 0;
-                telemetry.addData("turret", "aiming...");
-                break;
-            }
-
-            case SET_SERVO: {
+            case START: {
                 outtaking = true;
                 // Move servo to the next desired outtake position
                 // int posIdx = shotOrder[shotIndex];  // SPINDEXER DISABLED
