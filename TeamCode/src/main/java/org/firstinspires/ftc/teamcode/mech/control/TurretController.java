@@ -128,7 +128,7 @@ public class TurretController {
         if (hasYawEncoder) {
             yawEncHasLast = false;
             double encNow = readYawEncoderDeg();
-            yawEncoderOffsetDeg += (yawDeg - encNow);
+            yawEncoderOffsetDeg = yawDeg - encNow;
         }
         yawEstimateDeg = yawDeg;
         yawTargetDeg = yawDeg;
@@ -163,6 +163,7 @@ public class TurretController {
     private double readYawEncoderDeg() {
         // Voltage -> raw degrees in [0, yawEncoderDegPerRev)
         double v = yawEncoder.getVoltage();
+        yawEncoderMaxVoltage = yawEncoder.getMaxVoltage();
         double raw = (v / Math.max(1e-6, yawEncoderMaxVoltage)) * yawEncoderDegPerRev;
 
         // Wrap
