@@ -23,15 +23,18 @@ public class TurretController {
 
     // Safety clamp for max yaw power
     public double yawMaxPower = 1.0;
+    // Minimum command to overcome static friction when error is still meaningful.
+    public double yawStaticMinPower = 0.12;
+    public double yawStaticErrDeg = 2.0;
     // Low-pass filter for computed yaw target (deg)
     private double filteredYawTargetDeg = 0.0;
     private boolean filteredYawTargetInitialized = false;
 
     public boolean useTxForYaw = false;
     public double txSign = 1.0;
-    public double txDeadbandDeg = 0.5;
+    public double txDeadbandDeg = 0.2;
 
-    public double txFilterAlpha = 0.35;
+    public double txFilterAlpha = 0.75;
     private double visionTxDeg = 0.0;
     private double filteredTxDeg = 0.0;
 
@@ -72,8 +75,8 @@ public class TurretController {
     // Hard clamps for safety
     public double pitchMinPos = 0.4;
     public double pitchMaxPos = 0.8;
-    public double yawMinDeg = -75.0;
-    public double yawMaxDeg = 75.0;
+    public double yawMinDeg = -150.0;
+    public double yawMaxDeg = 150.0;
 
     // Slew-rate to prevent pitch oscillations
     public double pitchSlewPerSec = 1.5;
@@ -115,7 +118,7 @@ public class TurretController {
         this.hasYawEncoder = (yawEncoder != null);
 
         // Position PID defaults (TUNE)
-        this.yawPidf = new CustomPIDF(0.013, 0.000000, 0.00003, 0.0);
+        this.yawPidf = new CustomPIDF(0.018, 0.000000, 0.00004, 0.0);
         this.yawPidf.iMax = 0.2;
 
         pitchCmd = pitchServo.getPosition();
@@ -288,6 +291,12 @@ public class TurretController {
         yawPower = yawPidf.updatePosition(yawTargetDeg, yawEstimateDeg, dt);
         out = yawPower;
         debugYawErrorDeg = wrapTo180(yawTargetDeg - yawEstimateDeg);
+
+        // Ensure we actually move when error is non-trivial but PID output is too small.
+        if (Math.abs(debugYawErrorDeg) > yawStaticErrDeg && Math.abs(yawPower) < yawStaticMinPower) {
+            double s = (Math.abs(yawPower) > 1e-6) ? Math.signum(yawPower) : Math.signum(debugYawErrorDeg);
+            yawPower = s * yawStaticMinPower;
+        }
 
         yawPower = Range.clip(yawPower, -yawMaxPower, yawMaxPower);
         // apply inversion

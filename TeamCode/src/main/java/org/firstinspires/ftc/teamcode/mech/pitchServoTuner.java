@@ -22,8 +22,8 @@ public class pitchServoTuner extends LinearOpMode {
     private static final String PITCH_SERVO_NAME = "turretPitch"; // <-- change to your hardware name
 
     // Safe mechanical range for your linkage (NOT necessarily 0..1).
-    private static final double PITCH_MIN_POS = 0.15;  // <-- find by testing (just before hard stop)
-    private static final double PITCH_MAX_POS = 0.85;  // <-- find by testing (just before hard stop)
+    private static final double PITCH_MIN_POS = 0;  // <-- find by testing (just before hard stop)
+    private static final double PITCH_MAX_POS = 1;  // <-- find by testing (just before hard stop)
 
     // Angle calibration for linear mapping:
     // Define what angle (degrees) your mechanism is at when the servo is at MIN and MAX.
