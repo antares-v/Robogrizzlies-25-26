@@ -142,6 +142,12 @@ public class MainTeleop extends LinearOpMode {
     private static final double LL_Y_IN = 0.0;
     // Limelight yaw relative to robot forward (radians). Forward-facing = 0.
     private static final double LL_YAW_RAD = 0.0;
+    // Limelight tx is typically +right. Robot frame here uses +left.
+    private static final double TX_TO_ROBOT_LEFT_SIGN = -1.0;
+    // Used only when pose range is unavailable for a detected tag.
+    private static final double DEFAULT_TAG_RANGE_IN = 48.0;
+    // If turret "0 deg" is physically not robot-forward, tune this (e.g. ~180 to face opposite).
+    private static final double TURRET_YAW_FORWARD_OFFSET_DEG = 180.0;
 
     // Last seen tag position in field coordinates (inches)
     private boolean hasLastTagField = false;
@@ -183,6 +189,9 @@ public class MainTeleop extends LinearOpMode {
 
         turret = new TurretController(turretYaw, turretPitch, turretYawEnc);
         turret.resetYawEstimate();
+        turret.useTxForYaw = true;
+        turret.txSign = 1.0;
+        turret.yawRobotForwardOffsetDeg = TURRET_YAW_FORWARD_OFFSET_DEG;
 
         // turret.setTargetRobotRelative(36, 10, 0);
 
@@ -389,9 +398,8 @@ public class MainTeleop extends LinearOpMode {
             boolean tagSeen = false;
             double yawErrDeg = 0.0; // still used for telemetry
             double distIn = 0.0;
-            double tagXIn = 0.0;
-            double tagYIn = 0.0;
-            double tagZIn = 0.0;
+            double tagRobotXIn = 0.0;
+            double tagRobotYIn = 0.0;
 
             LLResult result = (limelight != null) ? limelight.getLatestResult() : null;
             if (result != null && result.isValid()) {
@@ -402,21 +410,45 @@ public class MainTeleop extends LinearOpMode {
                         int id = f.getFiducialId();
                         if (id == 20 || id == 21 || id == 24) {
                             yawErrDeg = f.getTargetXDegrees();
+                            boolean havePoseRange = false;
                             Pose3D tagPoseRobot = f.getTargetPoseRobotSpace();
                             if (tagPoseRobot != null) {
                                 double xM = tagPoseRobot.getPosition().x;
                                 double yM = tagPoseRobot.getPosition().y;
                                 double zM = tagPoseRobot.getPosition().z;
-                                tagXIn = xM * 39.3701;
-                                tagYIn = yM * 39.3701;
-                                tagZIn = zM * 39.3701;
                                 double distM = Math.sqrt(xM*xM + yM*yM + zM*zM);
                                 distIn = distM * 39.3701;
+                                havePoseRange = distIn > 1.0;
                                 telemetry.addData("apriltagX", xM);
                                 telemetry.addData("apriltagY", yM);
                                 telemetry.addData("apriltagZ", zM);
                                 telemetry.addData("yawErr", yawErrDeg);
                             }
+
+                            if (!havePoseRange) {
+                                distIn = DEFAULT_TAG_RANGE_IN;
+                            }
+
+                            // Build robot-relative target using tx bearing and range.
+                            double bearingCamRad = Math.toRadians(TX_TO_ROBOT_LEFT_SIGN * yawErrDeg);
+                            double tagCamX = distIn * Math.cos(bearingCamRad); // forward from camera
+                            double tagCamY = distIn * Math.sin(bearingCamRad); // left from camera
+
+                            double c = Math.cos(LL_YAW_RAD);
+                            double s = Math.sin(LL_YAW_RAD);
+                            tagRobotXIn = LL_X_IN + (tagCamX * c - tagCamY * s);
+                            tagRobotYIn = LL_Y_IN + (tagCamX * s + tagCamY * c);
+
+                            if (havePoseRange) {
+                                // Save absolute field location for continued tracking after tag loss.
+                                double rh = robotPos.heading.toDouble();
+                                double ch = Math.cos(rh);
+                                double sh = Math.sin(rh);
+                                lastTagFieldX = robotPos.position.x + (tagRobotXIn * ch - tagRobotYIn * sh);
+                                lastTagFieldY = robotPos.position.y + (tagRobotXIn * sh + tagRobotYIn * ch);
+                                hasLastTagField = true;
+                            }
+
                             tagSeen = true;
                             break;
                         }
@@ -424,59 +456,20 @@ public class MainTeleop extends LinearOpMode {
                 }
             }
 
-            if (tagSeen) {
-                // Tag position relative to camera (inches)
-                double tagCamX = tagXIn;
-                double tagCamY = -tagYIn;
-
-                // Camera to robot
-                double c = Math.cos(LL_YAW_RAD);
-                double s = Math.sin(LL_YAW_RAD);
-
-                double tagRobotX = LL_X_IN + (tagCamX * c - tagCamY * s);
-                double tagRobotY = LL_Y_IN + (tagCamX * s + tagCamY * c);
-
-                // Robot to field
-                double rh = robotPos.heading.toDouble(); // radians
-                double ch = Math.cos(rh);
-                double sh = Math.sin(rh);
-
-                lastTagFieldX = robotPos.position.x + (tagRobotX * ch - tagRobotY * sh);
-                lastTagFieldY = robotPos.position.y + (tagRobotX * sh + tagRobotY * ch);
-                hasLastTagField = true;
-            }
-
             if (turret != null) {
                 if (tagSeen) {
-                    turret.updateVisionMeasurement(tagXIn, -tagYIn, tagZIn, yawErrDeg, true);
+                    turret.updateVisionMeasurement(tagRobotXIn, tagRobotYIn, 0.0, yawErrDeg, true);
                 } else if (hasLastTagField) {
-
-                // Field delta to remembered tag
-                double dxF = lastTagFieldX - robotPos.position.x;
-                double dyF = lastTagFieldY - robotPos.position.y;
-
-                // Rotate field delta into ROBOT frame (R(-heading))
-                double rh = robotPos.heading.toDouble();
-                double ch = Math.cos(rh);
-                double sh = Math.sin(rh);
-
-                double tagRobotX =  dxF * ch + dyF * sh;
-                double tagRobotY = -dxF * sh + dyF * ch;
-
-                double relX = tagRobotX - LL_X_IN;
-                double relY = tagRobotY - LL_Y_IN;
-
-                double c = Math.cos(-LL_YAW_RAD);
-                double s = Math.sin(-LL_YAW_RAD);
-
-                double tagCamX = relX * c - relY * s;
-                double tagCamY = relX * s + relY * c;
-
-                double yawErrDegPred = Math.toDegrees(Math.atan2(tagCamY, tagCamX));
-
-                // Feed the turret a meaningful target even without vision
-                // (mark false so you don't treat it as "fresh camera data" if your controller cares)
-                turret.updateVisionMeasurement(tagCamX, tagCamY, 0.0, yawErrDegPred, false);
+                    // Field -> robot transform (x forward, y left).
+                    double dx = lastTagFieldX - robotPos.position.x;
+                    double dy = lastTagFieldY - robotPos.position.y;
+                    double rh = robotPos.heading.toDouble();
+                    double ch = Math.cos(rh);
+                    double sh = Math.sin(rh);
+                    double targetRobotX =  dx * ch + dy * sh;
+                    double targetRobotY = -dx * sh + dy * ch;
+                    turret.setTargetRobotRelative(targetRobotX, targetRobotY, 0.0);
+                    turret.updateVisionMeasurement(0.0, 0.0, 0.0, 0.0, false);
                 } else {
                     // No vision and nothing remembered
                     turret.updateVisionMeasurement(0.0, 0.0, 0.0, 0.0, false);
