@@ -264,7 +264,7 @@ public class TurretController {
                 }
             }
         }
-        }
+
 
         yawTargetDeg = yawEstimateDeg + wrapTo180(rawTargetDeg - yawEstimateDeg);
 
