@@ -25,6 +25,7 @@ public class TurretController {
     public double yawMaxPower = 1.0;
     // Low-pass filter for computed yaw target (deg)
     private double filteredYawTargetDeg = 0.0;
+    private boolean filteredYawTargetInitialized = false;
 
     public boolean useTxForYaw = false;
     public double txSign = 1.0;
@@ -45,7 +46,7 @@ public class TurretController {
     // For 45:132 servo:turret with encoder on servo shaft => 360 * (45/132) = 122.7272.
     public double yawEncoderDegPerRev = 122.7272;
     // Additive offset applied after unwrapping in degrees
-    public double yawEncoderOffsetDeg = -75;
+    public double yawEncoderOffsetDeg = 0;
     public boolean yawEncoderInverted = false;
     private double yawEncLastRawDeg = 0.0;
     private double yawEncContinuousDeg = 0.0;
@@ -112,7 +113,7 @@ public class TurretController {
         this.hasYawEncoder = (yawEncoder != null);
 
         // Position PID defaults (TUNE)
-        this.yawPidf = new CustomPIDF(0.01, 0.000000, 0.00003, 0.0);
+        this.yawPidf = new CustomPIDF(0.013, 0.000000, 0.00003, 0.0);
         this.yawPidf.iMax = 0.2;
 
         pitchCmd = pitchServo.getPosition();
@@ -132,6 +133,8 @@ public class TurretController {
         }
         yawEstimateDeg = yawDeg;
         yawTargetDeg = yawDeg;
+        filteredYawTargetDeg = yawDeg;
+        filteredYawTargetInitialized = false;
         yawPidf.reset();
         settleTimer.reset();
     }
@@ -205,14 +208,16 @@ public class TurretController {
             yawEstimateDeg = readYawEncoderDeg();
         }
 
-        // distance to target
-        double dist = Math.sqrt(targetXIn*targetXIn + targetYIn*targetYIn + targetZIn*targetZIn);
+        // Distances to target in robot frame
+        double horizontalDist = Math.sqrt(targetXIn * targetXIn + targetYIn * targetYIn);
+        double lineOfSightDist = Math.sqrt(horizontalDist * horizontalDist + targetZIn * targetZIn);
 
         if (Math.abs(targetZIn) > 0.5) {
-            double elevationDeg = Math.toDegrees(Math.atan2(targetZIn, Math.max(1e-6, dist))) * 200 / 26;
+            // Pitch elevation should be based on horizontal distance, not line-of-sight distance.
+            double elevationDeg = Math.toDegrees(Math.atan2(targetZIn, Math.max(1e-6, horizontalDist))) * 200 / 26;
             pitchDesired = elevationDegToServoPos(elevationDeg);
         } else {
-            pitchDesired = interpPitch(dist);
+            pitchDesired = interpPitch(lineOfSightDist);
         }
 
         pitchCmd = slew(pitchCmd, pitchDesired, pitchSlewPerSec, dt);
@@ -222,11 +227,17 @@ public class TurretController {
         boolean visionFresh = visionValid && (now - lastVisionTime < visionTimeoutMs);
 
         // yaw target
-        double desiredYawDegFromPose = Math.toDegrees(Math.atan2(targetYIn, Math.max(1e-6, targetXIn)));
+        // atan2 already handles x=0 safely; clamping x positive breaks back-half aiming.
+        double desiredYawDegFromPose = Math.toDegrees(Math.atan2(targetYIn, targetXIn));
 
         // filter yaw
         double alphaPose = 0.25;
-        filteredYawTargetDeg = filteredYawTargetDeg + alphaPose * (desiredYawDegFromPose - filteredYawTargetDeg);
+        if (!filteredYawTargetInitialized) {
+            filteredYawTargetDeg = desiredYawDegFromPose;
+            filteredYawTargetInitialized = true;
+        } else {
+            filteredYawTargetDeg = lerpAngleDeg(filteredYawTargetDeg, desiredYawDegFromPose, alphaPose);
+        }
 
         // Low-pass filter tx to reduce jitter.
         filteredTxDeg = filteredTxDeg + txFilterAlpha * (visionTxDeg - filteredTxDeg);
@@ -245,7 +256,13 @@ public class TurretController {
             hadVisionLock = true;
             settleTimer.reset();
         } else {
-            rawTargetDeg = filteredYawTargetDeg + yawRobotForwardOffsetDeg;
+            // In tx-yaw mode, when vision is stale use direct pose yaw (not filtered)
+            // so fallback tracking can keep up during fast robot turns.
+            if (useTxForYaw) {
+                rawTargetDeg = desiredYawDegFromPose + yawRobotForwardOffsetDeg;
+            } else {
+                rawTargetDeg = filteredYawTargetDeg + yawRobotForwardOffsetDeg;
+            }
             if (visionFresh) {
                 hadVisionLock = true;
                 settleTimer.reset();
@@ -343,5 +360,11 @@ public class TurretController {
         double delta = target - current;
         if (Math.abs(delta) <= maxStep) return target;
         return current + Math.signum(delta) * maxStep;
+    }
+
+    private static double lerpAngleDeg(double fromDeg, double toDeg, double alpha) {
+        alpha = Range.clip(alpha, 0.0, 1.0);
+        double delta = wrapTo180(toDeg - fromDeg);
+        return fromDeg + alpha * delta;
     }
 }

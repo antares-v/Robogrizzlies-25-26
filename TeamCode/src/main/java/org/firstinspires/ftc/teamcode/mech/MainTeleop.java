@@ -140,7 +140,7 @@ public class MainTeleop extends LinearOpMode {
 
     // TODO: Measure these offsets
     private static final double LL_X_IN = 0.0;
-    private static final double LL_Y_IN = 0.0;
+    private static final double LL_Y_IN = 8.0;
     // Limelight yaw relative to robot forward (radians). Forward-facing = 0.
     private static final double LL_YAW_RAD = 0.0;
     // Limelight tx is typically +right. Robot frame here uses +left.
@@ -148,7 +148,7 @@ public class MainTeleop extends LinearOpMode {
     // Used only when pose range is unavailable for a detected tag.
     private static final double DEFAULT_TAG_RANGE_IN = 48.0;
     // Persistent offset from robot-forward frame to turret frame.
-    private static final double TURRET_YAW_FORWARD_OFFSET_DEG = 37.0;
+    private static final double TURRET_YAW_FORWARD_OFFSET_DEG = 31.0;
     // Start slightly lower so compensation is stronger (can be tuned live).
     private static final double TURRET_YAW_ENC_DEG_PER_REV = 110.0;
 
@@ -669,7 +669,7 @@ public class MainTeleop extends LinearOpMode {
         }
         // Optional: voltage compensation (helps keep behavior consistent)
         double scale = NOMINAL_VOLTAGE / batteryVoltage();
-        power = Range.clip(power * scale, -1.0, 1.0);
+        power = Range.clip(power, -1.0, 1.0);
 
         launcher.setPower(power);
 
@@ -689,7 +689,7 @@ public class MainTeleop extends LinearOpMode {
 
         // Optional: voltage compensation (helps keep behavior consistent)
         double scale = NOMINAL_VOLTAGE / batteryVoltage();
-        power = Range.clip(power, -1.0, 1.0);
+        power = Range.clip(power * scale, -1.0, 1.0);
 
         launcher.setPower(power);
 
@@ -713,7 +713,6 @@ public class MainTeleop extends LinearOpMode {
                     shootState = ShootState.SET_SERVO;
                     shootTimer.reset();
                 }
-                shootState = ShootState.SET_SERVO;
                 Kp = 0;
                 telemetry.addData("turret", "aiming...");
                 break;
