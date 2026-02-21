@@ -56,6 +56,7 @@ public class MainTeleop extends LinearOpMode {
 
     // Button tracking
     private boolean dLeftPrev = false, dRightPrev = false;
+    private boolean dUpPrev = false, dDownPrev = false;
     private boolean xPrev = false, yPrev = false, bPrev = false, aPrev = false;
 
     // Pattern selection
@@ -146,8 +147,10 @@ public class MainTeleop extends LinearOpMode {
     private static final double TX_TO_ROBOT_LEFT_SIGN = -1.0;
     // Used only when pose range is unavailable for a detected tag.
     private static final double DEFAULT_TAG_RANGE_IN = 48.0;
-    // If turret "0 deg" is physically not robot-forward, tune this (e.g. ~180 to face opposite).
-    private static final double TURRET_YAW_FORWARD_OFFSET_DEG = 180.0;
+    // Persistent offset from robot-forward frame to turret frame.
+    private static final double TURRET_YAW_FORWARD_OFFSET_DEG = 37.0;
+    // Start slightly lower so compensation is stronger (can be tuned live).
+    private static final double TURRET_YAW_ENC_DEG_PER_REV = 110.0;
 
     // Last seen tag position in field coordinates (inches)
     private boolean hasLastTagField = false;
@@ -163,6 +166,12 @@ public class MainTeleop extends LinearOpMode {
     private static double angleWrapRad(double a) {
         while (a > Math.PI) a -= 2.0 * Math.PI;
         while (a < -Math.PI) a += 2.0 * Math.PI;
+        return a;
+    }
+
+    private static double angleWrapDeg(double a) {
+        while (a > 180.0) a -= 360.0;
+        while (a <= -180.0) a += 360.0;
         return a;
     }
 
@@ -188,10 +197,11 @@ public class MainTeleop extends LinearOpMode {
         localizer = new PinpointLocalizer(hardwareMap, 0.00199746322, new Pose2d(0, 0, Math.toRadians(90)));
 
         turret = new TurretController(turretYaw, turretPitch, turretYawEnc);
+        turret.yawEncoderDegPerRev = TURRET_YAW_ENC_DEG_PER_REV;
         turret.resetYawEstimate();
         turret.useTxForYaw = true;
         turret.txSign = 1.0;
-        turret.yawRobotForwardOffsetDeg = TURRET_YAW_FORWARD_OFFSET_DEG;
+        turret.yawRobotForwardOffsetDeg = angleWrapDeg(TURRET_YAW_FORWARD_OFFSET_DEG);
 
         // turret.setTargetRobotRelative(36, 10, 0);
 
@@ -251,12 +261,18 @@ public class MainTeleop extends LinearOpMode {
             // 2) Edge detection
             boolean dLeft = gamepad1.dpad_left;
             boolean dRight = gamepad1.dpad_right;
+            boolean dUp = gamepad1.dpad_up;
+            boolean dDown = gamepad1.dpad_down;
 
             boolean dLeftPressed  = dLeft  && !dLeftPrev;
             boolean dRightPressed = dRight && !dRightPrev;
+            boolean dUpPressed = dUp && !dUpPrev;
+            boolean dDownPressed = dDown && !dDownPrev;
 
             dLeftPrev = dLeft;
             dRightPrev = dRight;
+            dUpPrev = dUp;
+            dDownPrev = dDown;
 
             boolean xNow = gamepad1.x;
             boolean yNow = gamepad1.y;
@@ -375,6 +391,16 @@ public class MainTeleop extends LinearOpMode {
                 cancelShooting();
             }
 
+            // 6.5) Live turret tuning
+            // D-pad up/down: encoder deg/rev (tracking strength)
+            // D-pad left/right: yaw frame offset
+            if (turret != null) {
+                if (dUpPressed) turret.yawEncoderDegPerRev = Range.clip(turret.yawEncoderDegPerRev + 1.0, 40.0, 400.0);
+                if (dDownPressed) turret.yawEncoderDegPerRev = Range.clip(turret.yawEncoderDegPerRev - 1.0, 40.0, 400.0);
+                if (dRightPressed) turret.yawRobotForwardOffsetDeg = angleWrapDeg(turret.yawRobotForwardOffsetDeg + 1.0);
+                if (dLeftPressed) turret.yawRobotForwardOffsetDeg = angleWrapDeg(turret.yawRobotForwardOffsetDeg - 1.0);
+            }
+
             // 7) Start firing (Y)
             if (yPressed && shootState == ShootState.IDLE) {
                 // No spindexer / no sorting / single-ball robot: spin up launcher, then feed once.
@@ -439,15 +465,15 @@ public class MainTeleop extends LinearOpMode {
                             tagRobotXIn = LL_X_IN + (tagCamX * c - tagCamY * s);
                             tagRobotYIn = LL_Y_IN + (tagCamX * s + tagCamY * c);
 
-                            if (havePoseRange) {
-                                // Save absolute field location for continued tracking after tag loss.
-                                double rh = robotPos.heading.toDouble();
-                                double ch = Math.cos(rh);
-                                double sh = Math.sin(rh);
-                                lastTagFieldX = robotPos.position.x + (tagRobotXIn * ch - tagRobotYIn * sh);
-                                lastTagFieldY = robotPos.position.y + (tagRobotXIn * sh + tagRobotYIn * ch);
-                                hasLastTagField = true;
-                            }
+                            // Save absolute field location for continued tracking after tag loss.
+                            // Even if distance is fallback-estimated, this keeps "perma tracking"
+                            // behavior alive after first sighting.
+                            double rh = robotPos.heading.toDouble();
+                            double ch = Math.cos(rh);
+                            double sh = Math.sin(rh);
+                            lastTagFieldX = robotPos.position.x + (tagRobotXIn * ch - tagRobotYIn * sh);
+                            lastTagFieldY = robotPos.position.y + (tagRobotXIn * sh + tagRobotYIn * ch);
+                            hasLastTagField = true;
 
                             tagSeen = true;
                             break;
@@ -457,6 +483,7 @@ public class MainTeleop extends LinearOpMode {
             }
 
             if (turret != null) {
+                boolean memoryTrackingActive = false;
                 if (tagSeen) {
                     turret.updateVisionMeasurement(tagRobotXIn, tagRobotYIn, 0.0, yawErrDeg, true);
                 } else if (hasLastTagField) {
@@ -470,12 +497,14 @@ public class MainTeleop extends LinearOpMode {
                     double targetRobotY = -dx * sh + dy * ch;
                     turret.setTargetRobotRelative(targetRobotX, targetRobotY, 0.0);
                     turret.updateVisionMeasurement(0.0, 0.0, 0.0, 0.0, false);
+                    memoryTrackingActive = true;
                 } else {
                     // No vision and nothing remembered
                     turret.updateVisionMeasurement(0.0, 0.0, 0.0, 0.0, false);
                 }
 
                 turret.update();
+                telemetry.addData("trackMode", tagSeen ? "VISION" : (memoryTrackingActive ? "MEMORY" : "NONE"));
             }
 
             telemetry.addData("tagMemory", hasLastTagField ? "YES" : "NO");
@@ -495,6 +524,11 @@ public class MainTeleop extends LinearOpMode {
             telemetry.addData("rawOutValue", turret.rawOut());
             telemetry.addData("yawErrorDeg", turret.rawYawErrorDeg());
             telemetry.addData("rawPosition", turret.rawPos());
+            telemetry.addData("tagSeen", tagSeen);
+            telemetry.addData("tagDistIn", "%.1f", distIn);
+            telemetry.addData("turretYawOffsetDeg", "%.1f", turret.yawRobotForwardOffsetDeg);
+            telemetry.addData("yawEncDegPerRev", "%.4f", turret.yawEncoderDegPerRev);
+            telemetry.addData("tune", "up/down=encDegPerRev left/right=offset");
             telemetry.update();
 
             idle();
