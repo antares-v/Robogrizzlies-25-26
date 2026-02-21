@@ -159,6 +159,9 @@ public class TurretController {
         }
     }
 
+    public double maxVoltage() {
+        return yawEncoder.getMaxVoltage();
+    }
     /** Read the analog yaw encoder and return a turret angle in degrees. */
     private double readYawEncoderDeg() {
         // Voltage -> raw degrees in [0, yawEncoderDegPerRev)
