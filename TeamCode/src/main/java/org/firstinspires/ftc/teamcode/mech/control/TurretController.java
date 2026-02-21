@@ -37,6 +37,9 @@ public class TurretController {
     public double txFilterAlpha = 0.75;
     private double visionTxDeg = 0.0;
     private double filteredTxDeg = 0.0;
+    // Blend between tx-derived yaw and pose-derived yaw when vision is fresh.
+    // 0.0 = tx only, 1.0 = pose only.
+    public double freshVisionPoseBlend = 0.35;
 
     // Approximate turret angular speed (deg/sec)
     public double yawDegPerSecAtFullPower = 178.0;
@@ -263,7 +266,9 @@ public class TurretController {
         // (used for remembered absolute tag tracking).
         if (visionFresh && useTxForYaw) {
             // Fresh vision + tx mode: yaw is driven directly from tx.
-            rawTargetDeg = yawRobotForwardOffsetDeg - (txSign * txUsedDeg);
+            double txTargetDeg = yawRobotForwardOffsetDeg - (txSign * txUsedDeg);
+            double poseTargetDeg = desiredYawDegFromPose + yawRobotForwardOffsetDeg;
+            rawTargetDeg = lerpAngleDeg(txTargetDeg, poseTargetDeg, freshVisionPoseBlend);
             debugYawSource = "TX";
             hadVisionLock = true;
             settleTimer.reset();
