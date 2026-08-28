@@ -18,7 +18,7 @@ public class movement {
     public static double BR_PERCENT = 1;
     public static double FL_PERCENT = 1.0;
     public static double BL_PERCENT = 1;
-    public double power = 100.0;
+    public double power = 1.0;
     public static double x0;
     public static double y0;
     public static double h0;
@@ -45,16 +45,22 @@ public class movement {
     public boolean is_busy(){
         return (FL.getPower() > 0 || FR.getPower() > 0 || BL.getPower() > 0  || BR.getPower() > 0 );
     }
+    static double[] mixWheelPowers(double l_x, double l_y, double turn, double power) {
+        power = Math.max(-1.0, Math.min(1.0, power));
+        double fl = (+l_y - l_x - turn) * FL_PERCENT * power;
+        double fr = (+l_y + l_x + turn) * FR_PERCENT * power;
+        double bl = (+l_y + l_x - turn) * BL_PERCENT * power;
+        double br = (+l_y - l_x + turn) * BR_PERCENT * power;
+        double max = Math.max(1.0, Math.max(Math.max(Math.abs(fl), Math.abs(fr)), Math.max(Math.abs(bl), Math.abs(br))));
+        return new double[]{fl / max, fr / max, bl / max, br / max};
+    }
     public void move(double l_x, double l_y, double turn){
-        double FLPower = (+l_y - l_x - turn) * FL_PERCENT * power;
-        double FRPower = (+l_y + l_x + turn) * FR_PERCENT * power;
-        double BLPower = (+l_y + l_x - turn) * BL_PERCENT * power;
-        double BRPower = (+l_y - l_x + turn) * BR_PERCENT * power;
+        double[] wheelPowers = mixWheelPowers(l_x, l_y, turn, power);
 
-        FL.setPower(FLPower);
-        FR.setPower(FRPower);
-        BL.setPower(BLPower);
-        BR.setPower(BRPower);
+        FL.setPower(wheelPowers[0]);
+        FR.setPower(wheelPowers[1]);
+        BL.setPower(wheelPowers[2]);
+        BR.setPower(wheelPowers[3]);
 
       //  telemetry.addData("flpower", FLPower);
     }

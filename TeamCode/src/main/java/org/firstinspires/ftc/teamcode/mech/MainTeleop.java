@@ -180,6 +180,10 @@ private double lastTagRobotZIn = 0.0;
         return a;
     }
 
+    static double calculateLauncherKF(double configuredKF, double maxTicksPerSec) {
+        return configuredKF > 0.0 ? configuredKF : (maxTicksPerSec > 0.0 ? 1.0 / maxTicksPerSec : 0.0);
+    }
+
 
     @Override
     public void runOpMode() {
@@ -206,8 +210,8 @@ private double lastTagRobotZIn = 0.0;
         turret.resetYawEstimate();
         turret.useTxForYaw = true;
         turret.txSign = 1.0;
-        turret.txFilterAlpha = 1.0;
-        turret.txDeadbandDeg = 0.05;
+        turret.txFilterAlpha = 0.25;
+        turret.txDeadbandDeg = 0.5;
         turret.yawRobotForwardOffsetDeg = angleWrapDeg(TURRET_YAW_FORWARD_OFFSET_DEG);
 
         // turret.setTargetRobotRelative(36, 10, 0);
@@ -244,8 +248,7 @@ private double lastTagRobotZIn = 0.0;
         // Max ticks/sec = maxRPM * ticksPerRev / 60
         double maxRpm = launcher.getMotorType().getMaxRPM();
         double maxTicksPerSec = (maxRpm * launcherTicksPerRev) / 60.0;
-//keep all other constans zero while testing Kp but talk to gavin about kf intergration into thes system
-        double kF = 0.5;//(LAUNCH_kF > 0) ? LAUNCH_kF : (1.0 / maxTicksPerSec);
+        double kF = calculateLauncherKF(LAUNCH_kF, maxTicksPerSec);
 
         launcherPIDF = new CustomPIDF(LAUNCH_kP, LAUNCH_kI, LAUNCH_kD, kF);
         launcherPIDF.iMax = 0.35; // clamp integral contribution (power units)

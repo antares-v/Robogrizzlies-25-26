@@ -102,8 +102,8 @@ private double filteredYawTargetDeg = 0.0;
     // Hard clamps for safety
     public double pitchMinPos = 0.0;
     public double pitchMaxPos = 1.0;
-    public double yawMinDeg = -150.0;
-    public double yawMaxDeg = 150.0;
+    public double yawMinDeg = -180.0;
+    public double yawMaxDeg = 180.0;
 
     // Slew-rate to prevent pitch oscillations
     public double pitchSlewPerSec = 1.5;
@@ -186,7 +186,6 @@ private double filteredYawTargetDeg = 0.0;
         this.targetXIn = xIn;
         this.targetYIn = yIn;
         this.targetZIn = zIn;
-        settleTimer.reset();
     }
 
     public void updateVisionMeasurement(double xIn, double yIn, double zIn, double txDeg, boolean isValid) {
@@ -264,7 +263,7 @@ if (frozen) {
 
         if (Math.abs(targetZIn) > 0.5) {
             // Pitch elevation should be based on horizontal distance, not line-of-sight distance.
-            double elevationDeg = Math.toDegrees(Math.atan2(targetZIn, Math.max(1e-6, horizontalDist))) * 200 / 26;
+            double elevationDeg = Math.toDegrees(Math.atan2(targetZIn, Math.max(1e-6, horizontalDist)));
             pitchDesired = elevationDegToServoPos(elevationDeg);
         } else {
             pitchDesired = interpPitch(lineOfSightDist);
@@ -311,7 +310,6 @@ if (frozen) {
             rawTargetDeg = yawRobotForwardOffsetDeg - (txSign * txUsedDeg);
             debugYawSource = "TX";
             hadVisionLock = true;
-            settleTimer.reset();
         } else {
             // In tx-yaw mode, when vision is stale use direct pose yaw (not filtered)
             // so fallback tracking can keep up during fast robot turns.
@@ -324,7 +322,6 @@ if (frozen) {
             }
             if (visionFresh) {
                 hadVisionLock = true;
-                settleTimer.reset();
             } else if (!hadVisionLock) {
                 // If we have never seen vision yet, avoid integrating toward a stale default.
                 rawTargetDeg = yawEstimateDeg;
@@ -333,19 +330,19 @@ if (frozen) {
             }
         }
 
-        // Apply hard yaw limits in wrapped turret-frame degrees after all offsets.
-        // Make desired target continuous near current estimate
-        double desiredCont = yawEstimateDeg + wrapTo180(rawTargetDeg - yawEstimateDeg);
+        double wrappedTargetDeg = wrapTo180(rawTargetDeg);
+        if (wrappedTargetDeg == 180.0 && yawEstimateDeg < 0.0) wrappedTargetDeg = -180.0;
+        yawTargetDeg = Range.clip(wrappedTargetDeg, yawMinDeg, yawMaxDeg);
 
-        // Hard clamp in continuous turret degrees
-        yawTargetDeg = Range.clip(desiredCont, yawMinDeg, yawMaxDeg);
+        debugYawErrorDeg = yawTargetDeg - yawEstimateDeg;
 
-        // Error for PID (wrapped error is fine for smoothness)
-        debugYawErrorDeg = wrapTo180(yawTargetDeg - yawEstimateDeg);
-
-        yawPower = yawPidf.updatePosition(yawTargetDeg, yawEstimateDeg, dt);
-        out = yawPower;
-        debugYawErrorDeg = wrapTo180(yawTargetDeg - yawEstimateDeg);
+        if (Math.abs(debugYawErrorDeg) <= aimTolYawDeg) {
+            yawPidf.reset();
+            yawPower = 0.0;
+        } else {
+            yawPower = yawPidf.updatePosition(yawTargetDeg, yawEstimateDeg, dt);
+        }
+        debugYawErrorDeg = yawTargetDeg - yawEstimateDeg;
 
         // Ensure we actually move when error is non-trivial but PID output is too small.
         if (Math.abs(debugYawErrorDeg) > yawStaticErrDeg && Math.abs(yawPower) < yawStaticMinPower) {
@@ -354,15 +351,21 @@ if (frozen) {
         }
 
         yawPower = Range.clip(yawPower, -yawMaxPower, yawMaxPower);
+        out = yawPower;
+        double estimatePower = yawPower;
         // apply inversion
         if (yawInverted) yawPower *= -1.0;
 
         // Update internal estimate if we don't have an encoder.
         if (!hasYawEncoder) {
-            yawEstimateDeg += yawPower * yawDegPerSecAtFullPower * dt;
+            yawEstimateDeg += estimatePower * yawDegPerSecAtFullPower * dt;
         }
 
         yawServo.setPower(yawPower);
+
+        if (Math.abs(debugYawErrorDeg) > aimTolYawDeg || Math.abs(pitchCmd - pitchDesired) > aimTolPitchPos) {
+            settleTimer.reset();
+        }
     }
 
     public double rawOut() {
@@ -401,7 +404,7 @@ if (frozen) {
         boolean visionFresh = visionValid && (System.currentTimeMillis() - lastVisionTime < visionTimeoutMs);
         if (!visionFresh) return false;
 
-        boolean yawOk = Math.abs(wrapTo180(yawTargetDeg - yawEstimateDeg)) <= aimTolYawDeg;
+        boolean yawOk = Math.abs(yawTargetDeg - yawEstimateDeg) <= aimTolYawDeg;
         boolean pitchOk = Math.abs(pitchCmd - pitchDesired) <= aimTolPitchPos;
         boolean timeOk = settleTimer.milliseconds() >= settleMs;
         return yawOk && pitchOk && timeOk;
